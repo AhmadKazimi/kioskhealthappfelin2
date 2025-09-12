@@ -121,11 +121,12 @@ const VitalCard = ({ icon, iconBg, label, value }: {
   </Card>
 )
 
-const ScannerInterface = ({ onPrev, onNext, scanning, showResults }: {
+const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplete }: {
   onPrev: () => void
   onNext: () => void
   scanning: boolean
   showResults: boolean
+  onScanComplete?: () => void
 }) => {
   const { t, i18n } = useTranslation()
   const isArabic = i18n.language === 'ar'
@@ -164,13 +165,7 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults }: {
               <div className="relative w-full h-full">
                 <div className="relative h-full">
                   <div className="relative z-10 h-full">
-                    <ShenaiScanner onScanComplete={() => {
-                      setShowResults(true);
-                      // Automatically move to next step after scan completion
-                      setTimeout(() => {
-                        onNext();
-                      }, 2000); // Give user 2 seconds to see the scan completed
-                    }} />
+                    <ShenaiScanner onScanComplete={onScanComplete} />
                   </div>
                 </div>
               </div>
@@ -284,6 +279,13 @@ export default function FaceScanScreen({ onPrev, onNext }: FaceScanScreenProps) 
       onNext={handleContinue}
       scanning={scanning}
       showResults={showResults}
+      onScanComplete={() => {
+        setShowResults(true);
+        // Automatically move to next step after scan completion
+        setTimeout(() => {
+          onNext();
+        }, 2000); // Give user 2 seconds to see the scan completed
+      }}
     />
   )
 }
