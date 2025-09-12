@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<publishData>
+  <publishProfile profileName="kioskhealthappfelin - Web Deploy" publishMethod="MSDeploy" publishUrl="kioskhealthappfelin.scm.uaenorth-01.azurewebsites.net:443" msdeploySite="kioskhealthappfelin" userName="$kioskhealthappfelin" userPWD="NA2w0E388xy8sfiJWlN3Cxtpg76AXdHu5NGFf17tR8wr3FCP1E6Mqljkx9LD" destinationAppUrl="https://kioskhealthappfelin.uaenorth-01.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites">
+    <databases />
+  </publishProfile>
+  <publishProfile profileName="kioskhealthappfelin - FTP" publishMethod="FTP" publishUrl="ftps://waws-prod-dxb-003.ftp.azurewebsites.windows.net/site/wwwroot" ftpPassiveMode="True" userName="kioskhealthappfelin\$kioskhealthappfelin" userPWD="NA2w0E388xy8sfiJWlN3Cxtpg76AXdHu5NGFf17tR8wr3FCP1E6Mqljkx9LD" destinationAppUrl="https://kioskhealthappfelin.uaenorth-01.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites">
+    <databases />
+  </publishProfile>
+  <publishProfile profileName="kioskhealthappfelin - Zip Deploy" publishMethod="ZipDeploy" publishUrl="kioskhealthappfelin.scm.uaenorth-01.azurewebsites.net:443" userName="$kioskhealthappfelin" userPWD="NA2w0E388xy8sfiJWlN3Cxtpg76AXdHu5NGFf17tR8wr3FCP1E6Mqljkx9LD" destinationAppUrl="https://kioskhealthappfelin.uaenorth-01.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites">
+    <databases />
+  </publishProfile>
+</publishData> 

@@ -1,0 +1,42 @@
+set ssl:verify-certificate no
+set ftp:ssl-allow yes
+set ftp:ssl-force yes
+set ftp:ssl-protect-data yes
+open ftps://waws-prod-dxb-003.ftp.azurewebsites.windows.net
+user kioskhealthappfelin\$kioskhealthappfelin NA2w0E388xy8sfiJWlN3Cxtpg76AXdHu5NGFf17tR8wr3FCP1E6Mqljkx9LD
+cd /site/wwwroot
+
+echo "🧹 Cleaning remote directory..."
+rm -rf .next
+rm -rf public
+rm -rf src
+rm -rf shenai-sdk
+rm -rf components
+rm -rf hooks
+rm -f server.js
+rm -f web.config
+rm -f package.json
+rm -f package-lock.json
+rm -f next.config.ts
+
+echo "📤 Uploading configuration files..."
+put server.js
+put web.config
+put package.json
+put package-lock.json
+put next.config.ts
+put next-i18next.config.js
+put tsconfig.json
+
+echo "📤 Uploading build output..."
+mirror -R .next .next
+mirror -R public public
+mirror -R shenai-sdk shenai-sdk
+
+echo "📤 Uploading source code..."
+mirror -R src src
+mirror -R components components
+mirror -R hooks hooks
+
+echo "✅ Deployment completed!"
+quit

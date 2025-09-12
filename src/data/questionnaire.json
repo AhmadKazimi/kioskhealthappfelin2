@@ -1,0 +1,502 @@
+{
+  "Premature Ventricular Contractions": {
+    "title": "Premature Ventricular Contractions",
+    "title_ar": "التشنجات القلبية المبكرة",
+    "questions": [
+      {
+        "text": "Did you feel any unusual heartbeats like a \"thump,\" \"flutter,\" or skipped beat recently?",
+        "text_ar": "هل شعرت مؤخرًا بخفقان غير معتاد في القلب، مثل \"ضربة قوية\"، \"رفرفة\"، أو نبضة مفقودة؟ ",
+
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you noticed your heart suddenly beating harder or stronger for just one beat?",
+        "text_ar": "هل لاحظت أن قلبك يضرب بقوة أو قوية عندما يضرب مرة واحدة فقط؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Did this happen while you were resting or lying down?",
+        "text_ar": "هل هذا الحدث حدث أثناء الراحة أو الاسترخاء؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you consumed caffeine, alcohol, or were you very tired recently?",
+        "text_ar": "هل شربت الكافيين أو الكحول أو كنت مؤهلاً للإسترخاء؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": -1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Has this happened to you before?",
+        "text_ar": "هل هذا الحدث حدث أثناء الراحة أو الاسترخاء؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      }
+    ],
+    "min_score_threshold": 2,
+    "calculated_max_score": 4
+  },
+  "Atrial Fibrillation": {
+    "title": "Atrial Fibrillation",
+    "title_ar": "الرجفان الأذيني (AFib)",
+    "questions": [
+      {
+        "text": "Have you noticed your heart beating irregularly, like it's \u201cfluttering\u201d or skipping around?",
+        "text_ar": "هل لاحظت أن نبض قلبك غير منتظم، وكأنه \"يرفرف\" أو \"يتخبط\"؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you ever felt lightheaded or almost fainted recently?",
+        "text_ar": "هل شعرت بدوخة أو كدت تفقد الوعي مؤخرًا؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 2,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you been diagnosed with high blood pressure or had a stroke before?",
+        "text_ar": "هل تم تشخيصك سابقًا بارتفاع ضغط الدم أو الإصابة بجلطة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 2,
+          "No": 0
+        }
+      },
+      {
+        "text": "Did the irregular heartbeats last for several minutes or come and go?",
+        "text_ar": "هل استمرت النبضات القلبية الغير منتظمة لمدة عدة دقائق أو ظهرت وذهبت؟",
+        "type": "multiple_choice",
+        "options": [
+          "Lasted several minutes",
+          "Came and went",
+          "Not sure"
+        ],
+        "options_ar": [
+          "استمر لمدة عدة دقائق",
+          "ظهرت واختفت",
+          "غير متأكد"
+        ],
+        "scoring": {
+          "Lasted several minutes": 1,
+          "Came and went": 1,
+          "Not sure": 0
+        }
+      }
+    ],
+    "min_score_threshold": 4,
+    "calculated_max_score": 7
+  },
+  "Myocardial Infarction": {
+    "title": "Myocardial Infarction",
+    "title_ar": "النوبة القلبية",
+    "questions": [
+      {
+        "text": "Are you currently experiencing chest pain, tightness, or pressure?",
+        "text_ar": "هل تشعر حاليًا بألم أو ضغط أو ضيق في الصدر؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Does the chest pain\\pressure\\heaviness increase or occur on effort and relieved by rest?",
+        "text_ar": "هل يزداد الألم أو الضغط مع الجهد ويخف مع الراحة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 3,
+          "No": 0
+        }
+      },
+      {
+        "text": "Did the chest pain spread to your arm, neck, or jaw?",
+        "text_ar": "هل انتشر الألم أو الضغط إلى الذراع أو الرقبة أو الفك؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you been diagnosed with heart disease before?",
+        "text_ar": "هل تم تشخيصك سابقًا بمرض القلب؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 2,
+          "No": 0
+        }
+      },
+      {
+        "text": "Smoking?",
+        "text_ar": "هل أنت مدخن؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Family history( first degree relative has heart attack or coronary stenting at age before 55)??",
+        "text_ar": "هل لدى أحد من أقاربك من الدرجة الأولى نوبة قلبية أو تركيب دعامة قبل سن 55؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 2,
+          "No": 0
+        }
+      }
+    ],
+    "min_score_threshold": 6,
+    "calculated_max_score": 10
+  },
+  "Sleep Apnea": {
+    "title": "Sleep Apnea",
+    "title_ar": "انقطاع النفس أثناء النوم",
+    "questions": [
+      {
+        "text": "Do you snore loudly or have been told you stop breathing during sleep?",
+        "text_ar": "هل تشخر بصوت عالٍ أو أخبرك أحد أنك تتوقف عن التنفس أثناء النوم؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Do you often wake up feeling tired even after a full night\u2019s sleep?",
+        "text_ar": "هل تستيقظ متعبًا رغم النوم لساعات كافية؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Do you fall asleep easily during the day (e.g., watching TV, reading)?",
+        "text_ar": "هل تنام بسهولة خلال النهار (مثلًا أثناء مشاهدة التلفاز أو القراءة)؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Has anyone noticed you gasp or choke in your sleep?",
+        "text_ar": "هل لاحظ أحد أنك تختنق أو تلهث أثناء النوم؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Do you have high blood pressure?",
+        "text_ar": "هل تعاني من ارتفاع ضغط الدم؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Do you have a short neck?",
+        "text_ar": "هل لديك رقبة قصيرة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 2,
+          "No": 0
+        }
+      }
+    ],
+    "min_score_threshold": 3,
+    "calculated_max_score": 7
+  },
+  "Atrial Flutter": {
+    "title": "Atrial Flutter",
+    "title_ar": "الرفرفة الأذينية",
+    "questions": [
+      {
+        "text": "Have you felt a rapid, steady heartbeat that came on suddenly?",
+        "text_ar": "هل شعرت بسرعة في ضربات القلب بدأت فجأة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Was your heart beating fast even when you were resting?",
+        "text_ar": "هل حدث ذلك أثناء الراحة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Did you feel dizzy, lightheaded, or breathless during it?",
+        "text_ar": "هل شعرت بدوخة أو ضيق تنفس أو دوار أثناء ذلك؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 2,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you ever been diagnosed with atrial fibrillation or flutter before?",
+        "text_ar": "هل تم تشخيصك من قبل بالرفرفة أو الرجفان الأذيني؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 2,
+          "No": 0
+        }
+      },
+      {
+        "text": "Did the episode end suddenly or come and go multiple times?",
+        "text_ar": "كيف انتهت الحالة؟",
+        "type": "multiple_choice",
+        "options": [
+          "Ended suddenly",
+          "Came and went",
+          "Not sure"
+        ],
+        "options_ar": [
+          "انتهى فجأة",
+          "ظهر واختفى",
+          "غير متأكد"
+        ],
+        "scoring": {
+          "Ended suddenly": 1,
+          "Came and went": 1,
+          "Not sure": 0
+        }
+      }
+    ],
+    "min_score_threshold": 3,
+    "calculated_max_score": 8
+  },
+  "Supraventricular Tachycardia": {
+    "title": "Supraventricular Tachycardia",
+    "title_ar": "تسارع نبض القلب فوق البطيني",
+    "questions": [
+      {
+        "text": "Did your heart suddenly start beating very fast, like racing?",
+        "text_ar": "هل بدأ قلبك فجأة ينبض بسرعة كبيرة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Were you sitting, relaxing, or not doing anything active when it started?",
+        "text_ar": "هل حدث ذلك وأنت في حالة استرخاء أو راحة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 2,
+          "No": 0
+        }
+      },
+      {
+        "text": "Did the fast heartbeat stop just as suddenly as it started?",
+        "text_ar": "هل توقف الخفقان فجأة كما بدأ؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Did you feel chest pressure, shortness of breath, or anxiety during the episode?",
+        "text_ar": "هل شعرت بضغط في الصدر أو ضيق تنفس أو قلق أثناء النوبة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Has this happened before in similar fashion?",
+        "text_ar": "هل حدث ذلك من قبل بنفس الطريقة؟ ",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      }
+    ],
+    "min_score_threshold": 4,
+    "calculated_max_score": 6
+  },
+  "Sinus Bradycardia": {
+    "title": "Sinus Bradycardia",
+    "title_ar": "بطء نبض القلب الجيبي (Sinus Bradycardia)",
+    "questions": [
+      {
+        "text": "Was your heart rate below 50 bpm when you were resting?",
+        "text_ar": "هل كان معدل ضربات قلبك أقل من 50 نبضة في الدقيقة وأنت في راحة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Did you feel unusually tired, dizzy, or faint recently?",
+        "text_ar": "هل شعرت بتعب شديد أو دوخة أو قرب فقدان الوعي مؤخرًا؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Are you very athletic or used to intense physical training?",
+        "text_ar": "هل تمارس رياضة مكثفة أو معتاد على تدريب بدني قوي؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": -1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Are you taking medications that might slow your heart rate (e.g., beta blockers)?",
+        "text_ar": "هل تتناول أدوية قد تبطئ ضربات القلب (مثل حاصرات بيتا)؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": -1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you felt your heart pause or beat irregularly when lying down?",
+        "text_ar": "هل شعرت بتوقف أو اضطراب في ضربات القلب أثناء الاستلقاء؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      }
+    ],
+    "min_score_threshold": 2,
+    "calculated_max_score": 3
+  },
+  "Congestive Heart Failure": {
+    "title": "Congestive Heart Failure",
+    "title_ar": "فشل القلب الاحتقاني (CHF)",
+    "questions": [
+      {
+        "text": "Do your ankles, feet, or legs often swell up?",
+        "text_ar": "هل تتورم قدماك أو كاحلاك أو ساقاك بشكل متكرر؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Do you feel short of breath when lying flat or walking a short distance?",
+        "text_ar": "هل تشعر بضيق تنفس أثناء الاستلقاء أو المشي لمسافة قصيرة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 3,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you gained weight rapidly over a few days without trying?",
+        "text_ar": "هل زاد وزنك بسرعة خلال أيام قليلة بدون سبب واضح؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Do you wake up at night feeling breathless or coughing?",
+        "text_ar": "هل تستيقظ ليلاً وأنت تشعر بضيق تنفس أو سعال؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 3,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you been diagnosed with high blood pressure or heart disease before?",
+        "text_ar": "هل تم تشخيصك سابقًا بارتفاع ضغط الدم أو أمراض القلب؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      }
+    ],
+    "min_score_threshold": 3,
+    "calculated_max_score": 9
+  },
+  "Heart Block": {
+    "title": "Heart Block",
+    "title_ar": "انسداد كهرباء القلب (Heart Block)",
+    "questions": [
+      {
+        "text": "Do you sometimes feel like your heart is skipping beats or beating very slowly?",
+        "text_ar": "هل شعرت أن قلبك يتوقف أحيانًا أو ينبض ببطء شديد؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you had episodes of fainting or feeling close to fainting?",
+        "text_ar": "هل مررت بحالات إغماء أو قرب فقدان الوعي؟ ",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 3,
+          "No": 0
+        }
+      },
+      {
+        "text": "Are you using medications for the heart that might slow electrical signals (like beta-blockers or calcium channel blockers)?",
+        "text_ar": "هل تتناول أدوية قد تبطئ الإشارات الكهربائية في القلب (مثل حاصرات بيتا أو مثبطات قنوات الكالسيوم)؟ ",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": -1,
+          "No": 0
+        }
+      },
+      {
+        "text": "Have you had a pacemaker or been told your heart rhythm needs monitoring?",
+        "text_ar": "هل لديك جهاز منظم ضربات القلب أو قيل لك أن إيقاع القلب لديك يحتاج مراقبة؟",
+        "type": "yes_no",
+        "scoring": {
+          "Yes": 3,
+          "No": 0
+        }
+      }
+    ],
+    "min_score_threshold": 3,
+    "calculated_max_score": 7
+  }
+}
