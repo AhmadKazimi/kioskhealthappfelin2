@@ -44,9 +44,17 @@ export default function HealthSummaryScreen() {
   const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   useEffect(() => {  
-    Cookies.set('userId', clientId ?? "", { expires: 1 }); 
+    if (clientId) {
+      Cookies.set('userId', clientId, { expires: 1 }); 
+    }
 
     const fetchData = async () => {
+      if (!clientId) {
+        setIsError(true);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true); 
         const response = await fetch(`${apiUrl}/client/GetClient?id=${clientId}`, {

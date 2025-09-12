@@ -52,6 +52,11 @@ export default function FaceScanResult({
             const userId = Cookies.get('userId');
             const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL; 
 
+            if (!userId) {
+                setIsFetching(false);
+                return;
+            }
+
             const getClientResponse = await fetch(`${apiUrl}/client/GetClient?id=${userId}`, {
                 method: "GET",
                 headers: {

@@ -51,6 +51,11 @@ export default function UserProfile({ onBack, clientId = "" }: UserProfileProps)
       setLoading(true) 
 
       try {
+        if (!clientId) {
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch(`${apiUrl}/Client/GetClientProfile?clientId=${clientId}`, {
             method: "GET",
             headers: {

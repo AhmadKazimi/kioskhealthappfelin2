@@ -115,6 +115,10 @@ export default function HealthSummaryModal({
 
   useEffect(() => {
     const fetcherResults = async () => {  
+      if (!userId) {
+        return;
+      }
+
       const allResults = await fetch(`${apiUrl}/ScanResult/GetClientLatestScanResult?clientId=${userId}`, {
         method: "GET",
         headers: {

@@ -327,6 +327,12 @@ console.log('Care:',suggestedCare);
         setIsLoading(true); 
         const userId = Cookies.get('userId');
 
+        if (!userId) {
+          setIsError(true);
+          setIsLoading(false);
+          return;
+        }
+
         const response = await fetch(`${apiUrl}/client/GetClient?id=${userId}`, {
           method: "GET",
           headers: {
