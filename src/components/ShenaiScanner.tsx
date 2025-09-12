@@ -4,10 +4,13 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 
-const ShenaiScanner = () => {
+interface ShenaiScannerProps {
+    onScanComplete?: () => void;
+}
+
+const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
     const { t } = useTranslation();
     const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    const hostUrl = process.env.NEXT_PUBLIC_HOST_DOMAIN; 
     const [isLoading, setIsLoading] = useState(false);
 
     const setLoading = (loading: boolean) => {
@@ -63,8 +66,10 @@ const ShenaiScanner = () => {
                         inputs: [heartBeatsArray]
                     })
                 });
-                if (hostUrl) {
-                    window.location.href = String(hostUrl) + '/?ischecked=true';
+                
+                // Call the completion callback instead of redirecting
+                if (onScanComplete) {
+                    onScanComplete();
                 }
             } catch (error) {
                 console.error('Error saving scan results:', error);
@@ -196,7 +201,7 @@ const ShenaiScanner = () => {
             (window as any).shenaiInitialized = false;
             (window as any).setReactLoading = undefined;
         };
-    }, [apiUrl, hostUrl]);
+    }, [apiUrl, onScanComplete]);
 
     return (
       <div className="w-full h-full min-h-[300px] flex items-center justify-center">

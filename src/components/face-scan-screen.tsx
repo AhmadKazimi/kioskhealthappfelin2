@@ -164,7 +164,13 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults }: {
               <div className="relative w-full h-full">
                 <div className="relative h-full">
                   <div className="relative z-10 h-full">
-                    <ShenaiScanner />
+                    <ShenaiScanner onScanComplete={() => {
+                      setShowResults(true);
+                      // Automatically move to next step after scan completion
+                      setTimeout(() => {
+                        onNext();
+                      }, 2000); // Give user 2 seconds to see the scan completed
+                    }} />
                   </div>
                 </div>
               </div>
