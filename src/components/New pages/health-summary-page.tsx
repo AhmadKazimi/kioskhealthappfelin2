@@ -209,6 +209,9 @@
         event.preventDefault();
       }
       
+      // Stop the timer when user clicks send email
+      setIsTimerActive(false);
+      
       try { 
         if (!userData?.Email) {
           await Swal.fire({
@@ -216,6 +219,8 @@
             title: t('healthSummary.emailError'),
             text: t('healthSummary.emailMissing'),
           });
+          // Redirect after error
+          window.location.href = '/';
           return;
         }
         setSendingEmail(true);
@@ -249,19 +254,33 @@
             // Clear session storage after successful email
             sessionStorage.removeItem('clientData');
             
-            Swal.fire({
+            await Swal.fire({
               icon: "success",
               title: t('healthSummary.emailSuccess'),
               showConfirmButton: false,
               timer: 1500, 
             });
+            // Redirect after successful email
+            window.location.href = '/';
         } else {
           console.error("Failed to send email");
-          alert(t('healthSummary.emailError'));
+          await Swal.fire({
+            icon: "error",
+            title: t('healthSummary.emailError'),
+            showConfirmButton: true,
+          });
+          // Redirect after error
+          window.location.href = '/';
         }
       } catch (error) {
         console.error("Error:", error);
-        alert(t('healthSummary.emailError'));
+        await Swal.fire({
+          icon: "error",
+          title: t('healthSummary.emailError'),
+          showConfirmButton: true,
+        });
+        // Redirect after error
+        window.location.href = '/';
       } finally {
         setSendingEmail(false);
       }
