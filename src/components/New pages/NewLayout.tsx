@@ -244,8 +244,8 @@ export default function NewLayout({
     };
     return (
       <>
-      {/* Mobile View */}
-      <div className="block lg:hidden h-full w-full bg-white rounded-t-3xl">
+      {/* Mobile View (up to md breakpoint) */}
+      <div className="block md:hidden h-full w-full bg-white rounded-t-3xl">
       {currentStep >= 1 && currentStep <= 6 && (
         <ProgressTracker
           ref={progressTrackerRef}
@@ -260,7 +260,25 @@ export default function NewLayout({
           {renderStep()}
         </div>
       </div>
-      {/* Desktop View */}
+      
+      {/* Tablet View (md to lg breakpoint: 768px-1023px) */}
+      <div className="hidden md:block lg:hidden h-full w-full bg-white rounded-t-3xl">
+        {currentStep >= 1 && currentStep <= 6 && (
+          <ProgressTracker
+            ref={progressTrackerRef}
+            initialStep={currentStep}
+            className="flex flex-row justify-center items-center"
+            onStepChange={handleStepChange}
+            showNavigationButtons={false}
+            disabled={false}
+          />
+        )}
+        <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
+          {renderStep()}
+        </div>
+      </div>
+      
+      {/* Desktop View (lg and up: 1024px+) */}
       <div className="hidden lg:block">
         <div className="relative hidden lg:flex z-50 w-full h-[80vh] items-start justify-center gap-2 xl:gap-[24px]" style={{zIndex: 50}}>
             <div className="flex-1 w-full h-full flex items-start justify-center min-w-0">

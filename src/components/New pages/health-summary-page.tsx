@@ -177,8 +177,7 @@
     // Handle close button click
     const handleClose = useCallback(() => {
       setIsTimerActive(false);
-      // Force refresh by using window.location.href
-      window.location.href = '/';
+      onClose();
     }, [onClose]);
 
     // Timer countdown effect (avoid navigation inside state updater)
@@ -195,11 +194,8 @@
     useEffect(() => {
       if (!isTimerActive) return;
       if (timer === 0) {
-        // Force refresh and navigate to home
         setIsTimerActive(false);
         onClose();
-        // Force refresh by using window.location.href
-        window.location.href = '/';
       }
     }, [timer, isTimerActive, onClose]);
 
@@ -219,8 +215,6 @@
             title: t('healthSummary.emailError'),
             text: t('healthSummary.emailMissing'),
           });
-          // Redirect after error
-          window.location.href = '/';
           return;
         }
         setSendingEmail(true);
@@ -260,8 +254,6 @@
               showConfirmButton: false,
               timer: 1500, 
             });
-            // Redirect after successful email
-            window.location.href = '/';
         } else {
           console.error("Failed to send email");
           await Swal.fire({
@@ -269,8 +261,6 @@
             title: t('healthSummary.emailError'),
             showConfirmButton: true,
           });
-          // Redirect after error
-          window.location.href = '/';
         }
       } catch (error) {
         console.error("Error:", error);
@@ -279,8 +269,6 @@
           title: t('healthSummary.emailError'),
           showConfirmButton: true,
         });
-        // Redirect after error
-        window.location.href = '/';
       } finally {
         setSendingEmail(false);
       }
