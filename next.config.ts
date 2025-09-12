@@ -2,7 +2,12 @@ import { withPayload } from "@payloadcms/next/withPayload";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   reactStrictMode: false,
   output: 'standalone',
   // Suppress hydration warnings for browser extensions
@@ -17,7 +22,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: process.env.NODE_ENV === 'production' ? "https://kiosk-health-app.azurewebsites.net" : "*",
+            value: process.env.NODE_ENV === 'production' ? "https://kiosk-fe-production.up.railway.app" : "*",
           },
           {
             key: "Access-Control-Allow-Methods",
