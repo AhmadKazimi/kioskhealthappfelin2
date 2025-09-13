@@ -1,0 +1,271 @@
+/* RTL (Right-to-Left) Support for Arabic Language */
+
+/* Global RTL Layout */
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+/* RTL Flexbox Utilities */
+.rtl .flex-row-reverse {
+  flex-direction: row-reverse;
+}
+
+.rtl .space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+/* RTL Grid Utilities */
+.rtl .text-right {
+  text-align: right;
+}
+
+.rtl .text-left {
+  text-align: left;
+}
+
+/* RTL Animation Support */
+@media (prefers-reduced-motion: no-preference) {
+  .rtl .animate-slide-in-left {
+    animation: slide-in-right 0.3s ease-out;
+  }
+  
+  .rtl .animate-slide-in-right {
+    animation: slide-in-left 0.3s ease-out;
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* RTL Button and Form Support */
+.rtl .justify-start {
+  justify-content: flex-end;
+}
+
+.rtl .justify-end {
+  justify-content: flex-start;
+}
+
+.rtl .items-start {
+  align-items: flex-end;
+}
+
+.rtl .items-end {
+  align-items: flex-start;
+}
+
+/* RTL Table Support */
+.rtl table {
+  direction: rtl;
+}
+
+.rtl th,
+.rtl td {
+  text-align: right;
+}
+
+/* RTL Input Support */
+.rtl input[type="text"],
+.rtl input[type="email"],
+.rtl input[type="tel"],
+.rtl textarea {
+  direction: rtl;
+  text-align: right;
+}
+
+/* RTL Dropdown/Select Support */
+.rtl select {
+  direction: rtl;
+  text-align: right;
+}
+
+/* RTL Modal and Dialog Support */
+.rtl .modal-content,
+.rtl .dialog-content {
+  direction: rtl;
+  text-align: right;
+}
+
+/* RTL Progress Bar Support */
+.rtl .progress-bar {
+  direction: ltr; /* Keep progress direction LTR for consistency */
+}
+
+/* RTL Video and Media Support */
+.rtl video.rtl-mirror {
+  transform: scaleX(-1);
+}
+
+/* RTL Responsive Utilities */
+@media (min-width: 640px) {
+  .rtl .sm\:flex-row-reverse {
+    flex-direction: row-reverse;
+  }
+}
+
+@media (min-width: 768px) {
+  .rtl .md\:flex-row-reverse {
+    flex-direction: row-reverse;
+  }
+}
+
+@media (min-width: 1024px) {
+  .rtl .lg\:flex-row-reverse {
+    flex-direction: row-reverse;
+  }
+  
+  .rtl .lg\:space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 1;
+  }
+}
+
+@media (min-width: 1280px) {
+  .rtl .xl\:flex-row-reverse {
+    flex-direction: row-reverse;
+  }
+}
+
+/* RTL Scroll Support */
+.rtl .overflow-x-auto {
+  direction: ltr; /* Keep horizontal scroll direction consistent */
+}
+
+.rtl .overflow-x-auto > * {
+  direction: rtl; /* But content inside should be RTL */
+}
+
+/* RTL Card and Container Support */
+.rtl .rounded-l-none {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+}
+
+.rtl .rounded-r-none {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+
+/* RTL Border Support */
+.rtl .border-l-2 {
+  border-left-width: 0;
+  border-right-width: 2px;
+}
+
+.rtl .border-r-2 {
+  border-right-width: 0;
+  border-left-width: 2px;
+}
+
+/* RTL Margin and Padding Adjustments */
+.rtl .ml-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.rtl .mr-auto {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+.rtl .pl-4 {
+  padding-left: 0;
+  padding-right: 1rem;
+}
+
+.rtl .pr-4 {
+  padding-right: 0;
+  padding-left: 1rem;
+}
+
+/* RTL Icon Support */
+.rtl .transform.rotate-180 {
+  transform: rotate(0deg);
+}
+
+.rtl .chevron-right {
+  transform: rotate(180deg);
+}
+
+.rtl .chevron-left {
+  transform: rotate(180deg);
+}
+
+/* RTL Shadow Support */
+.rtl .shadow-lg {
+  box-shadow: -0.625rem 0.625rem 1.25rem -0.3125rem rgba(0, 0, 0, 0.1), -0.25rem 0.25rem 0.625rem -0.125rem rgba(0, 0, 0, 0.05);
+}
+
+/* RTL Typography */
+.rtl h1, .rtl h2, .rtl h3, .rtl h4, .rtl h5, .rtl h6 {
+  text-align: right;
+}
+
+.rtl p {
+  text-align: right;
+}
+
+/* RTL List Support */
+.rtl ul, .rtl ol {
+  padding-right: 1.5rem;
+  padding-left: 0;
+}
+
+.rtl li {
+  text-align: right;
+}
+
+/* RTL Navigation Support */
+.rtl nav {
+  direction: rtl;
+}
+
+.rtl .nav-item {
+  text-align: right;
+}
+
+/* RTL Form Label Support */
+.rtl label {
+  text-align: right;
+}
+
+/* RTL Tooltip Support */
+.rtl .tooltip {
+  direction: rtl;
+  text-align: right;
+}
+
+/* RTL Toast/Alert Support */
+.rtl .toast,
+.rtl .alert {
+  direction: rtl;
+  text-align: right;
+}

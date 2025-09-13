@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import ProgressTracker from "../ProgressTracker";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface LeftSectionProps {
   currentStep?: number;
@@ -20,12 +21,16 @@ const LeftSection: React.FC<LeftSectionProps> = ({
   showNavigationButtons = false,
   children 
 }) => {
+  const { i18n } = useTranslation();
+  const isArabic = i18n.language === 'ar';
+  
   return (
     <motion.div 
-      className="left-section w-full bg-white rounded-3xl p-2 sm:p-4 md:p-6 h-full container overflow-hidden flex flex-col"
-      initial={{ opacity: 0, x: -100 }}
+      className={`left-section w-full bg-white rounded-2xl lg:rounded-3xl p-3 sm:p-4 md:p-6 h-full overflow-hidden flex flex-col ${isArabic ? 'rtl' : 'ltr'}`}
+      initial={{ opacity: 0, x: isArabic ? 100 : -100 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+      dir={isArabic ? 'rtl' : 'ltr'}
     >
       <motion.div
         className="w-full overflow-hidden flex-shrink-0"

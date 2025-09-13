@@ -36,9 +36,9 @@ const ScanResults = ({ vitals, onPrev, onNext }: {
   const isArabic = i18n.language === 'ar'
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4 lg:p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center space-y-6 lg:space-y-8">
+    <div className={`h-full bg-gradient-to-br from-blue-50 via-white to-blue-50 p-3 sm:p-4 lg:p-6 overflow-hidden ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
+      <div className="w-full h-full max-w-6xl mx-auto flex flex-col">
+        <div className="text-center space-y-4 sm:space-y-6 lg:space-y-8 flex-shrink-0">
           {/* Success Header */}
           <div className="space-y-3 lg:space-y-4">
             <div className="w-16 h-16 lg:w-20 lg:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 lg:mb-6">
@@ -53,7 +53,7 @@ const ScanResults = ({ vitals, onPrev, onNext }: {
           </div>
 
           {/* Vitals Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 lg:mb-12 px-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8 lg:mb-12 px-2 sm:px-4">
             <VitalCard
               icon={<Heart className="w-6 h-6  text-red-600" />}
               iconBg="bg-red-100"
@@ -82,7 +82,7 @@ const ScanResults = ({ vitals, onPrev, onNext }: {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col lg:flex-row justify-between gap-4 lg:gap-0 pt-6 lg:pt-8 px-4">
+        <div className={`flex flex-col sm:flex-row ${isArabic ? 'sm:flex-row-reverse' : ''} justify-between gap-3 sm:gap-4 pt-4 sm:pt-6 lg:pt-8 px-2 sm:px-4 flex-shrink-0 mt-auto`}>
           <Button 
             onClick={onPrev} 
             className="text-lg lg:text-xl py-4 lg:py-6 px-8 lg:px-12 bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-2 w-full lg:w-auto"
@@ -132,19 +132,19 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
   const isArabic = i18n.language === 'ar'
   
   return (
-    <div className="lg:min-h-screen p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto h-screen lg:h-[80vh] flex flex-col">
+    <div className={`h-full p-3 sm:p-4 lg:p-6 overflow-hidden ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
+      <div className="w-full h-full max-w-7xl mx-auto flex flex-col">
         {/* Header */}
-        <div className="text-center space-y-2 mb-1 lg:mb-2 flex-shrink-0">
-          <h2 className="text-2xl lg:text-5xl font-bold text-blue-800">
+        <div className="text-center space-y-2 mb-2 sm:mb-3 lg:mb-4 flex-shrink-0">
+          <h2 className="text-xl sm:text-2xl lg:text-4xl xl:text-5xl font-bold text-blue-800">
             {t('faceScan.title')}
           </h2>
         </div>
 
         {/* Main Content Area */}
-        <div className="flex flex-col lg:flex-row flex-1 items-center justify-between space-y-4 lg:space-y-0 lg:space-x-8 w-full min-h-0">
+        <div className={`flex flex-col lg:flex-row flex-1 items-center justify-between space-y-3 sm:space-y-4 lg:space-y-0 ${isArabic ? 'lg:space-x-reverse lg:space-x-8' : 'lg:space-x-8'} w-full min-h-0`}>
           {/* Left Side - Back Button */}
-          <div className="w-full lg:w-1/6 flex items-center justify-center order-2 lg:order-1 flex-shrink-0">
+          <div className={`w-full lg:w-1/6 flex items-center justify-center ${isArabic ? 'order-2 lg:order-3' : 'order-2 lg:order-1'} flex-shrink-0`}>
             <Button
               onClick={onPrev}
               disabled={scanning}
@@ -161,19 +161,15 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
 
           {/* Center - Scanner */}
           <div className="w-full lg:w-4/6 flex flex-col items-center justify-center order-1 lg:order-2 flex-1 min-h-0">
-            <div className="relative w-full h-full max-h-[60vh] lg:max-h-none">
-              <div className="relative w-full h-full">
-                <div className="relative h-full">
-                  <div className="relative z-10 h-full">
-                    <ShenaiScanner onScanComplete={onScanComplete} />
-                  </div>
-                </div>
+            <div className="relative w-full h-full max-h-[50vh] sm:max-h-[60vh] lg:max-h-none">
+              <div className="w-full h-full overflow-hidden rounded-2xl lg:rounded-3xl">
+                <ShenaiScanner onScanComplete={onScanComplete} />
               </div>
             </div>
           </div>
 
           {/* Right Side - Next Button */}
-          <div className="w-full lg:w-1/6 flex items-center justify-center order-3 flex-shrink-0">
+          <div className={`w-full lg:w-1/6 flex items-center justify-center ${isArabic ? 'order-3 lg:order-1' : 'order-3'} flex-shrink-0`}>
           {showResults && (<button 
               type="button"
               onClick={onNext}

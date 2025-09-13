@@ -225,7 +225,8 @@
     "questionnaire": "الاستبيان",
     "question": "السؤال",
     "selectOption": "اختر خياراً",
-    "noQuestionnaireAvailable": "لا يوجد استبيان متاح لهذه الحالة."
+    "noQuestionnaireAvailable": "لا يوجد استبيان متاح لهذه الحالة.",
+    "pleaseWait": "يرجى الانتظار..."
   },
       "healthSummary": {
     "title": "ملخص التقييم الصحي",

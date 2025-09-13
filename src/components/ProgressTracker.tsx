@@ -37,7 +37,7 @@ const ProgressTracker = forwardRef<ProgressTrackerRef, ProgressTrackerProps>(({
   const [activeStep, setActiveStep] = useState(initialStep);
   const [isAnimating, setIsAnimating] = useState(false);
   const screenWidth = useScreenWidth();
-  const phoneStyle = screenWidth < 768;
+  const phoneStyle = screenWidth < 1024; // Use mobile style for both mobile and tablet (< lg breakpoint)
   
   // RTL detection
   const isRTL = i18n?.language === 'ar' || (typeof document !== 'undefined' && document.documentElement.dir === 'rtl');
@@ -211,7 +211,7 @@ const ProgressTracker = forwardRef<ProgressTrackerRef, ProgressTrackerProps>(({
                 text-xs font-medium transition-all duration-300 leading-tight px-1
                 ${step.number === activeStep 
                   ? 'text-blue-600 font-semibold opacity-100 transform translate-y-0' 
-                  : screenWidth > 480 
+                  : screenWidth > 640 // Show text labels on sm and larger screens for better tablet experience
                     ? 'text-gray-400 opacity-70 transform translate-y-0' 
                     : 'opacity-0 transform -translate-y-2 pointer-events-none'
                 }
@@ -222,7 +222,7 @@ const ProgressTracker = forwardRef<ProgressTrackerRef, ProgressTrackerProps>(({
                 textAlign: isRTL ? 'right' : 'center'
               }}
               >
-                {screenWidth > 480 || step.number === activeStep ? step.title : ''}
+                {screenWidth > 640 || step.number === activeStep ? step.title : ''}
               </div>
             </div>
           </div>

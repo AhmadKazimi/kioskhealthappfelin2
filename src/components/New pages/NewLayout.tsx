@@ -244,44 +244,40 @@ export default function NewLayout({
     };
     return (
       <>
-      {/* Mobile View (up to md breakpoint) */}
-      <div className="block md:hidden h-full w-full bg-white rounded-t-3xl">
-      {currentStep >= 1 && currentStep <= 6 && (
-        <ProgressTracker
-          ref={progressTrackerRef}
-          initialStep={currentStep}
-          className="flex flex-row justify-center items-center"
-          onStepChange={handleStepChange}
-          showNavigationButtons={false}
-          disabled={false}
-        />
-        )}
-        <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
-          {renderStep()}
-        </div>
-      </div>
-      
-      {/* Tablet View (md to lg breakpoint: 768px-1023px) */}
-      <div className="hidden md:block lg:hidden h-full w-full bg-white rounded-t-3xl">
+      {/* Mobile & Tablet View (up to lg breakpoint) */}
+      <div className="block lg:hidden h-full w-full bg-white rounded-t-3xl overflow-hidden">
+        {/* Progress Tracker - Fixed at top */}
         {currentStep >= 1 && currentStep <= 6 && (
-          <ProgressTracker
-            ref={progressTrackerRef}
-            initialStep={currentStep}
-            className="flex flex-row justify-center items-center"
-            onStepChange={handleStepChange}
-            showNavigationButtons={false}
-            disabled={false}
-          />
+          <div className="flex-shrink-0 w-full">
+            <ProgressTracker
+              ref={progressTrackerRef}
+              initialStep={currentStep}
+              className="flex flex-row justify-center items-center p-2 sm:p-4"
+              onStepChange={handleStepChange}
+              showNavigationButtons={false}
+              disabled={false}
+            />
+          </div>
         )}
-        <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
-          {renderStep()}
+        {/* Content Area - Scrollable */}
+        <div className={`${
+          currentStep === 7 
+            ? 'h-full' 
+            : currentStep >= 1 && currentStep <= 6 
+              ? 'flex-1 min-h-0'
+              : 'h-full'
+        } w-full overflow-hidden flex flex-col`}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            {renderStep()}
+          </div>
         </div>
       </div>
       
       {/* Desktop View (lg and up: 1024px+) */}
-      <div className="hidden lg:block">
-        <div className="relative hidden lg:flex z-50 w-full h-[80vh] items-start justify-center gap-2 xl:gap-[24px]" style={{zIndex: 50}}>
-            <div className="flex-1 w-full h-full flex items-start justify-center min-w-0">
+      <div className="hidden lg:block h-full w-full overflow-hidden">
+        <div className="relative flex w-full h-full items-stretch justify-center gap-3 xl:gap-6 p-2 xl:p-4 min-h-0">
+            {/* Left Section - Progress Tracker */}
+            <div className="w-full max-w-xs xl:max-w-sm h-full flex items-start justify-center overflow-hidden">
                 <LeftSection 
                     currentStep={currentStep}
                     onStepChange={handleStepChange}
@@ -290,16 +286,23 @@ export default function NewLayout({
                     showNavigationButtons={false}
                 />
             </div>
-            <div className="flex-2 w-full h-full bg-white rounded-3xl min-w-0 overflow-hidden">
+            {/* Middle Section - Main Content */}
+            <div className="flex-1 h-full bg-white rounded-3xl overflow-hidden min-w-0 max-w-4xl">
                 <MiddleSection>
                     {renderStep()}
                 </MiddleSection>
             </div>
-            <div className="flex-1 w-full h-full flex-col items-center justify-center flex min-w-0">
-                    <RightSection  title={renderRightSectionData().title} description={renderRightSectionData().description} className={renderRightSectionData().className} image={renderRightSectionData().image} />
+            {/* Right Section - Video/Instructions */}
+            <div className="w-full max-w-xs xl:max-w-sm h-full flex flex-col items-center justify-center overflow-hidden">
+                <RightSection  
+                  title={renderRightSectionData().title} 
+                  description={renderRightSectionData().description} 
+                  className={renderRightSectionData().className} 
+                  image={renderRightSectionData().image} 
+                />
             </div>
         </div>
-        </div>
+      </div>
         </>
     );
 }

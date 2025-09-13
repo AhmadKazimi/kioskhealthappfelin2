@@ -319,20 +319,20 @@
     //console.log('recomend:',recommendation);
     
     return (
-      <div className="flex justify-center items-start min-h-screen p-2 sm:p-4 lg:p-6"> 
-        <div className={`border-0 ${isArabic ? 'rtl' : 'ltr'} transition-all duration-1000 ease-out overflow-x-hidden w-full max-w-7xl ${
-          isAnimating ? 'w-full' : 'w-full'
+      <div className={`flex justify-center items-start h-full p-2 sm:p-3 md:p-4 lg:p-6 overflow-hidden ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}> 
+        <div className={`border-0 transition-all duration-1000 ease-out w-full max-w-7xl h-full ${
+          isAnimating ? 'opacity-100' : 'opacity-95'
         }`}>
-          <div className={`p-2 sm:p-4 lg:p-6 h-full overflow-y-auto ${isAnimating ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="bg-white rounded-[20px] sm:rounded-[25px] lg:rounded-[30px] p-3 sm:p-4 md:p-6 lg:p-8 shadow-xl">
+          <div className={`h-full overflow-y-auto overflow-x-hidden ${isAnimating ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="bg-white rounded-[16px] sm:rounded-[20px] md:rounded-[25px] lg:rounded-[30px] p-3 sm:p-4 md:p-6 lg:p-8 shadow-xl h-full flex flex-col min-h-0">
               {/* Title */}
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-medium text-blue-500 text-center mb-3 sm:mb-4 md:mb-6">
                 {t('healthSummary.title')}
               </h1>
 
               {/* Patient Info */}
-              <div className="bg-blue-50 rounded-[15px] sm:rounded-[20px] lg:rounded-[25px] px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 mb-3 sm:mb-4 md:mb-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+              <div className="bg-blue-50 rounded-[12px] sm:rounded-[15px] md:rounded-[20px] lg:rounded-[25px] px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 mb-3 sm:mb-4 md:mb-6 flex-shrink-0">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 ${isArabic ? 'text-right' : 'text-left'}`}>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                     <span className="text-sm sm:text-base md:text-lg lg:text-xl font-normal text-gray-700">{t('healthSummary.name')}:</span>
                     <span className="text-xs sm:text-sm md:text-base lg:text-lg font-medium">{patient.name}</span>
@@ -349,8 +349,8 @@
               </div>
 
               {/* Vital Signs Table */}
-              <div className="mb-3 sm:mb-4 md:mb-6 overflow-x-auto">
-                <div className="w-full min-w-[500px] lg:min-w-full">
+              <div className="mb-3 sm:mb-4 md:mb-6 flex-1 min-h-0 overflow-hidden flex flex-col">
+                <div className="w-full overflow-x-auto overflow-y-auto flex-1">
                   <table className="w-full">
                     <thead>
                       <tr className="bg-blue-50 rounded-t-2xl">
@@ -380,8 +380,8 @@
               </div>
 
               {/* Reported Symptoms */}
-              <div className="mb-3 sm:mb-4 md:mb-6">
-                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-3">
+              <div className="mb-3 sm:mb-4 md:mb-6 flex-shrink-0">
+                <div className={`flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-3 ${isArabic ? 'sm:flex-row-reverse' : ''}`}>
                   <span className="text-base sm:text-lg md:text-xl font-normal">{t('healthSummary.reportedSymptoms')}</span>
                   <div className="flex flex-wrap gap-1 sm:gap-2 w-full sm:w-auto">
                     {symptoms.length > 0 ? symptoms.map((symptom, index) => (
@@ -398,9 +398,9 @@
               </div>
 
               {/* Bottom Section */}
-              <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 items-start">
+              <div className={`flex flex-col lg:flex-row gap-3 sm:gap-4 items-start flex-shrink-0 ${isArabic ? 'lg:flex-row-reverse' : ''}`}>
                 {/* QR Code Section */}
-                <div className="hidden sm:flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full lg:w-auto">
+                <div className={`hidden sm:flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full lg:w-auto ${isArabic ? 'sm:flex-row-reverse' : ''}`}>
                   <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
                     <QRCode value={`${hostUrl}/health-summary?clientId=${userId}`} size={56} className="sm:w-16 sm:h-16 lg:w-20 lg:h-20" />
                   </div>
@@ -424,7 +424,7 @@
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-3 sm:mt-4 md:mt-6">
+              <div className={`flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-4 sm:mt-6 flex-shrink-0 ${isArabic ? 'sm:flex-row-reverse' : ''}`}>
                 <button 
                   onClick={(e) => sendSummaryByEmail(e)}
                   disabled={sendingEmail}

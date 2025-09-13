@@ -225,7 +225,8 @@
     "questionnaire": "Questionnaire",
     "question": "Question",
     "selectOption": "Select an option",
-    "noQuestionnaireAvailable": "No questionnaire available for this condition."
+    "noQuestionnaireAvailable": "No questionnaire available for this condition.",
+    "pleaseWait": "Please wait..."
   },
   "healthSummary": {
     "title": "Health Assessment Summary",

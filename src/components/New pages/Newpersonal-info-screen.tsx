@@ -260,15 +260,16 @@ export default function NewPersonalInfoScreen({
   return (
     <> 
     
-     {/* Mobile Layout (up to 1023px) */}
+     {/* Mobile & Tablet Layout (up to lg: 1023px) */}
 <motion.div 
-    className="lg:hidden flex flex-col h-full overflow-hidden"
+    className={`lg:hidden flex flex-col h-full overflow-hidden ${i18n.language === 'ar' ? 'rtl' : 'ltr'}`}
     initial={{ opacity: 0, y: 50 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6, delay: 0.3 }}
+    dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}
 >
     <motion.div 
-        className="flex-1 flex flex-col p-4 sm:p-6 h-full min-h-0"
+        className="flex-1 flex flex-col p-3 sm:p-4 md:p-6 h-full min-h-0"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.4 }}
@@ -290,9 +291,8 @@ export default function NewPersonalInfoScreen({
         </motion.div>
 
         {/* Scrollable Form Content */}
-        <div className="flex-1 px-1 overflow-y-auto min-h-0">
-                {/* All your form fields go here - keep them as they are */}
-                <form  className="space-y-1 flex flex-col flex-1" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} onSubmit={(e) => e.preventDefault()}>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+                <form  className="space-y-3 sm:space-y-4 flex flex-col h-full" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} onSubmit={(e) => e.preventDefault()}>
         {/* Validation Error Summary */}
         {/* Full Name */}
         <div className="space-y-1">
@@ -517,7 +517,7 @@ export default function NewPersonalInfoScreen({
         </div>
 
         {/* Navigation Buttons - Fixed at bottom */}
-        <div className="flex justify-between w-full pt-2 sm:pt-4 flex-shrink-0 mt-4">
+        <div className={`flex ${i18n.language === 'ar' ? 'flex-row-reverse' : 'flex-row'} justify-between w-full pt-3 sm:pt-4 flex-shrink-0 mt-4 gap-3`}>
         <button 
                 onClick={onPrev} 
                                 className={`cursor-pointer group relative flex items-center justify-center space-x-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 
@@ -576,14 +576,15 @@ export default function NewPersonalInfoScreen({
 
       {/* Desktop Layout (1024px and above) */}
       <motion.div 
-        className="hidden lg:flex w-full h-full items-center justify-center max-w-7xl mx-auto overflow-hidden"
+        className={`hidden lg:flex w-full h-full items-center justify-center overflow-hidden ${i18n.language === 'ar' ? 'rtl' : 'ltr'}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.1 }}
+        dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}
       >
-        {/* Form */}
+        {/* Form Container */}
         <motion.div 
-          className="rounded-3xl p-4 md:p-6 h-full max-w-4xl w-full flex flex-col min-h-0"
+          className="rounded-3xl p-4 md:p-6 lg:p-8 h-full w-full max-w-5xl flex flex-col min-h-0 overflow-hidden"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
@@ -602,7 +603,7 @@ export default function NewPersonalInfoScreen({
 
           <form className="flex-1 flex flex-col min-h-0 overflow-hidden" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} onSubmit={(e) => e.preventDefault()}>
             {/* Scrollable content area */}
-            <div className="flex-1 pr-2 space-y-2 md:space-y-3 overflow-y-auto overflow-x-hidden min-h-0">
+            <div className="flex-1 pr-1 lg:pr-2 space-y-3 md:space-y-4 lg:space-y-6 overflow-y-auto overflow-x-hidden min-h-0">
               {/* Full Name */}
               <div className="group flex-shrink-0">
                 <Label htmlFor="fullName" className="text-sm  font-semibold text-gray-700  block uppercase tracking-wide">
@@ -827,7 +828,7 @@ export default function NewPersonalInfoScreen({
               </div>
             </div>
 
-            <div className="flex justify-between w-full pt-2 sm:pt-4 flex-shrink-0 mt-4">
+            <div className={`flex ${i18n.language === 'ar' ? 'flex-row-reverse' : 'flex-row'} justify-between w-full pt-4 lg:pt-6 flex-shrink-0 mt-6 gap-4`}>
         <button 
                  onClick={onPrev} 
                                 className={`cursor-pointer group relative flex items-center justify-center space-x-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 
