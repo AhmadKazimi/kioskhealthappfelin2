@@ -275,10 +275,10 @@ export default function NewLayout({
       
       {/* Desktop View (lg and up: 1024px+) */}
       <div className="hidden lg:block h-full w-full overflow-hidden">
-        <div className="relative flex w-full h-full items-stretch justify-center gap-3 xl:gap-6 p-2 xl:p-4 min-h-0">
+        <div className="relative flex w-full items-stretch justify-center gap-3 xl:gap-6 p-2 xl:p-4">
             {/* Left Section - Progress Tracker */}
-            <div className="w-full max-w-xs xl:max-w-sm h-full flex items-start justify-center overflow-hidden">
-                <LeftSection 
+            <div className="w-full max-w-xs xl:max-w-sm flex items-start justify-center">
+                <LeftSection
                     currentStep={currentStep}
                     onStepChange={handleStepChange}
                     onNext={nextStep}
@@ -286,19 +286,19 @@ export default function NewLayout({
                     showNavigationButtons={false}
                 />
             </div>
-            {/* Middle Section - Main Content */}
-            <div className="flex-1 h-full bg-white rounded-3xl overflow-hidden min-w-0 max-w-4xl">
+            {/* Middle Section - Main Content - Drives the height */}
+            <div className="flex-1 bg-white rounded-3xl min-w-0 max-w-4xl">
                 <MiddleSection>
                     {renderStep()}
                 </MiddleSection>
             </div>
             {/* Right Section - Video/Instructions */}
-            <div className="w-full max-w-xs xl:max-w-sm h-full flex flex-col items-center justify-center overflow-hidden">
-                <RightSection  
-                  title={renderRightSectionData().title} 
-                  description={renderRightSectionData().description} 
-                  className={renderRightSectionData().className} 
-                  image={renderRightSectionData().image} 
+            <div className="w-full max-w-xs xl:max-w-sm flex flex-col items-center justify-center">
+                <RightSection
+                  title={renderRightSectionData().title}
+                  description={renderRightSectionData().description}
+                  className={renderRightSectionData().className}
+                  image={renderRightSectionData().image}
                 />
             </div>
         </div>
