@@ -40,6 +40,8 @@ export default function HealthSummaryModal({
   const [latestResult, setLatestResult] = useState<HealthData | null>(null);
   const [currentDate, setCurrentDate] = useState<string>("");
   const [currentTime, setCurrentTime] = useState<string>("");
+  const [emailSent, setEmailSent] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   const hostUrl = process.env.NEXT_PUBLIC_HOST_DOMAIN;
   const userId = Cookies.get('userId');
@@ -139,12 +141,14 @@ export default function HealthSummaryModal({
     setCurrentDate(now.toLocaleDateString()); // Format as MM/DD/YYYY or based on locale
     setCurrentTime(now.toLocaleTimeString()); // Format as HH:MM:SS AM/PM or based on locale
 
-    // Debug logging
-    console.log('Modal userData:', userData);
-    console.log('Modal userData.UserName:', userData?.UserName);
-    console.log('Modal userData.FullName:', userData?.FullName);
-    console.log('Modal combineName result:', combineName(userData?.UserName, userData?.FullName));
-    console.log('Modal screen width:', window.innerWidth);
+    // Debug logging - only log once when component mounts
+    if (userData && !latestResult) {
+      console.log('Modal userData:', userData);
+      console.log('Modal userData.UserName:', userData?.UserName);
+      console.log('Modal userData.FullName:', userData?.FullName);
+      console.log('Modal combineName result:', combineName(userData?.UserName, userData?.FullName));
+      console.log('Modal screen width:', window.innerWidth);
+    }
   }, [userData]);
  
   const sendSummaryByEmail = async (event?: React.MouseEvent) => {
@@ -153,57 +157,86 @@ export default function HealthSummaryModal({
       event.preventDefault();
     }
     
-    try { 
+    setSendingEmail(true);
+
+    try {
       if (!userData?.Email) {
         await Swal.fire({
           icon: "error",
           title: t('healthSummary.emailError'),
           text: "Email is missing.",
         });
+        setSendingEmail(false);
         return;
       }
+      const requestData = {
+        receiver: userData.Email,
+        subject: "Health Assessment Report / ملخص التقييم الصحي",
+        reportData: {
+          date: currentDate,
+          time: currentTime,
+          name: combineName(userData.UserName, userData.FullName) || "N/A",
+          age: userData.Age || "N/A",
+          gender: userData.Gender || "N/A",
+          heartRate: latestResult?.HeartRate10s || "N/A",
+          bloodPressure: latestResult ? `${latestResult.SystolicBloodPressureMmhg}/${latestResult.DiastolicBloodPressureMmhg}` : "N/A",
+          heartRateVariability: latestResult?.HrvSdnnMs || "N/A",
+          respirationRate: latestResult?.BreathingRate || "N/A",
+          reportedSymptoms: translateSymptoms(userData.HealthConcern) || "No symptoms reported"
+        }
+      };
+
+      console.log("SendMedicalReport Request Data:", requestData);
+
       const response = await fetch(`${apiUrl}/email/SendMedicalReport`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          receiver: userData.Email,
-          subject: "Health Assessment Report / ملخص التقييم الصحي",
-          reportData: {
-            date: currentDate,
-            time: currentTime,
-            name: combineName(userData.UserName, userData.FullName) || "N/A",
-            age: userData.Age || "N/A",
-            gender: userData.Gender || "N/A",
-            heartRate: latestResult?.HeartRate10s || "N/A",
-            bloodPressure: latestResult ? `${latestResult.SystolicBloodPressureMmhg}/${latestResult.DiastolicBloodPressureMmhg}` : "N/A",
-            heartRateVariability: latestResult?.HrvSdnnMs || "N/A",
-            respirationRate: latestResult?.BreathingRate || "N/A",
-            reportedSymptoms: translateSymptoms(userData.HealthConcern) || "No symptoms reported"
-          }
-        }),
+        body: JSON.stringify(requestData),
       });
 
       const responseJson = await response.json();
 
       if (responseJson.IsSuccess) {
-          // Clear session storage after successful email
-          sessionStorage.removeItem('clientData');
-          
-          Swal.fire({
+          // Don't clear session storage to prevent redirect
+          // sessionStorage.removeItem('clientData');
+
+          setEmailSent(true);
+
+          await Swal.fire({
             icon: "success",
             title: t('healthSummary.emailSuccess'),
-            showConfirmButton: false,
-            timer: 1500, 
+            text: t('healthSummary.emailSuccessMessage'),
+            confirmButtonText: t('buttons.ok'),
+            confirmButtonColor: '#3085d6',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
           });
+
+          // Redirect after user clicks OK
+          window.location.href = '/';
       } else {
         console.error("Failed to send email");
-        alert(t('healthSummary.emailError'));
+        await Swal.fire({
+          icon: "error",
+          title: t('healthSummary.emailError'),
+          text: t('healthSummary.emailErrorMessage'),
+          confirmButtonText: t('buttons.ok'),
+          confirmButtonColor: '#d33',
+        });
       }
     } catch (error) {
       console.error("Error:", error);
-      alert(t('healthSummary.emailError'));
+      await Swal.fire({
+        icon: "error",
+        title: t('healthSummary.emailError'),
+        text: t('healthSummary.emailErrorMessage'),
+        confirmButtonText: t('buttons.ok'),
+        confirmButtonColor: '#d33',
+      });
+    } finally {
+      setSendingEmail(false);
     }
   };
   
@@ -402,9 +435,17 @@ export default function HealthSummaryModal({
             onClick={() => {
               sendSummaryByEmail();
             }}
-            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+            disabled={sendingEmail}
+            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
           >
-            {t('healthSummary.sendEmail')}
+            {sendingEmail ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+                {t('buttons.loading')}
+              </>
+            ) : (
+              t('healthSummary.sendEmail')
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

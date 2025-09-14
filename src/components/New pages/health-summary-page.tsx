@@ -218,48 +218,61 @@
           return;
         }
         setSendingEmail(true);
+
+        const requestData = {
+          receiver: userData.Email,
+          subject: t('healthSummary.emailSubject'),
+          reportData: {
+            date: currentDate,
+            time: currentTime,
+            name: combineName(
+              userData?.FullName,
+            ),
+            age: userData?.Age || "N/A",
+            gender: userData?.Gender || "N/A",
+            heartRate: latestResult?.HeartRate10s || "N/A",
+            bloodPressure: latestResult ? `${latestResult.SystolicBloodPressureMmhg}/${latestResult.DiastolicBloodPressureMmhg}` : "N/A",
+            heartRateVariability: latestResult?.HrvSdnnMs || "N/A",
+            respirationRate: latestResult?.BreathingRate || "N/A",
+            reportedSymptoms: translateSymptoms(userData.HealthConcern) || t('healthSummary.noSymptomsReported')
+          }
+        };
+
+        console.log("SendMedicalReport Request Data:", requestData);
+
         const response = await fetch(`${apiUrl}/email/SendMedicalReport`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            receiver: userData.Email,
-            subject: t('healthSummary.emailSubject'),
-            reportData: {
-              date: currentDate,
-              time: currentTime,
-              name: combineName(
-                userData?.FullName, 
-              ),
-              age: userData?.Age || "N/A",
-              gender: userData?.Gender || "N/A",
-              heartRate: latestResult?.HeartRate10s || "N/A",
-              bloodPressure: latestResult ? `${latestResult.SystolicBloodPressureMmhg}/${latestResult.DiastolicBloodPressureMmhg}` : "N/A",
-              heartRateVariability: latestResult?.HrvSdnnMs || "N/A",
-              respirationRate: latestResult?.BreathingRate || "N/A",
-              reportedSymptoms: translateSymptoms(userData.HealthConcern) || t('healthSummary.noSymptomsReported')
-            }
-          }),
+          body: JSON.stringify(requestData),
         });
 
         const responseJson = await response.json();
         if (responseJson.IsSuccess) {
-            // Clear session storage after successful email
-            sessionStorage.removeItem('clientData');
-            
+            // Don't clear session storage to prevent redirect
+            // sessionStorage.removeItem('clientData');
+
             await Swal.fire({
               icon: "success",
               title: t('healthSummary.emailSuccess'),
-              showConfirmButton: false,
-              timer: 1500, 
+              text: t('healthSummary.emailSuccessMessage'),
+              confirmButtonText: t('buttons.ok'),
+              confirmButtonColor: '#3085d6',
+              allowOutsideClick: false,
+              allowEscapeKey: false,
             });
+
+            // Redirect after user clicks OK
+            window.location.href = '/';
         } else {
           console.error("Failed to send email");
           await Swal.fire({
             icon: "error",
             title: t('healthSummary.emailError'),
-            showConfirmButton: true,
+            text: t('healthSummary.emailErrorMessage'),
+            confirmButtonText: t('buttons.ok'),
+            confirmButtonColor: '#d33',
           });
         }
       } catch (error) {
@@ -267,7 +280,9 @@
         await Swal.fire({
           icon: "error",
           title: t('healthSummary.emailError'),
-          showConfirmButton: true,
+          text: t('healthSummary.emailErrorMessage'),
+          confirmButtonText: t('buttons.ok'),
+          confirmButtonColor: '#d33',
         });
       } finally {
         setSendingEmail(false);
@@ -308,15 +323,18 @@
       return () => clearTimeout(timer);
     }, [apiUrl, userId]);
 
-    console.log('HealthSummaryPage Debug Info:');
-    console.log('- Screen width:', window.innerWidth);
-    console.log('- userData:', userData);
-    console.log('- userData.UserName:', userData?.UserName);
-    console.log('- userData.FullName:', userData?.FullName);
-    console.log('- Combined name result:', combineName(userData?.FullName));
-    console.log('- Patient object:', patient);
-    console.log('- Latest result:', latestResult);
-    //console.log('recomend:',recommendation);
+    // Debug logging - moved to useEffect to prevent repeated logging
+    useEffect(() => {
+      console.log('HealthSummaryPage Debug Info:');
+      console.log('- Screen width:', window.innerWidth);
+      console.log('- userData:', userData);
+      console.log('- userData.UserName:', userData?.UserName);
+      console.log('- userData.FullName:', userData?.FullName);
+      console.log('- Combined name result:', combineName(userData?.FullName));
+      console.log('- Patient object:', patient);
+      console.log('- Latest result:', latestResult);
+      //console.log('recomend:',recommendation);
+    }, []); // Empty dependency array - only log once on mount
     
     return (
       <div className="flex justify-center items-start min-h-screen p-2 sm:p-4 lg:p-6"> 

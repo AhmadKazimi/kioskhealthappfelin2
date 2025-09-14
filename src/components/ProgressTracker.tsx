@@ -37,7 +37,7 @@ const ProgressTracker = forwardRef<ProgressTrackerRef, ProgressTrackerProps>(({
   const [activeStep, setActiveStep] = useState(initialStep);
   const [isAnimating, setIsAnimating] = useState(false);
   const screenWidth = useScreenWidth();
-  const phoneStyle = screenWidth < 768;
+  const phoneStyle = screenWidth < 1024;
   
   // RTL detection
   const isRTL = i18n?.language === 'ar' || (typeof document !== 'undefined' && document.documentElement.dir === 'rtl');
@@ -205,26 +205,6 @@ const ProgressTracker = forwardRef<ProgressTrackerRef, ProgressTrackerProps>(({
               />
             )}
             
-            {/* Step Title - Only show for active step on mobile */}
-            <div className={`${isRTL ? 'text-right' : 'text-center'} mt-1 sm:mt-2 w-full absolute`} style={{ top: '100%' }}>
-              <div className={`
-                text-xs font-medium transition-all duration-300 leading-tight px-1
-                ${step.number === activeStep 
-                  ? 'text-blue-600 font-semibold opacity-100 transform translate-y-0' 
-                  : screenWidth > 480 
-                    ? 'text-gray-400 opacity-70 transform translate-y-0' 
-                    : 'opacity-0 transform -translate-y-2 pointer-events-none'
-                }
-              `}
-              style={{
-                whiteSpace: 'nowrap',
-                minWidth: step.number === activeStep ? '80px' : 'auto',
-                textAlign: isRTL ? 'right' : 'center'
-              }}
-              >
-                {screenWidth > 480 || step.number === activeStep ? step.title : ''}
-              </div>
-            </div>
           </div>
         ))}
       </div>

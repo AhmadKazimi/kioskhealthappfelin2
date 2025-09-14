@@ -172,8 +172,10 @@ export default function NewLayout({
               <HealthSummaryPage
                 isOpen={true}
                 onClose={() => {
-                  setStoredApiData(null);
-                  window.location.href = '/';
+                  // Don't redirect automatically after email is sent
+                  // setStoredApiData(null);
+                  // window.location.href = '/';
+                  console.log('Health summary closed - not redirecting');
                 }}
                 userData={finalUserData}
               />
