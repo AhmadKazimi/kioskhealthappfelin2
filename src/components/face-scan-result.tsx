@@ -3,7 +3,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
 import React from 'react';
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Cookies from 'js-cookie';
 
 import { HealthData } from "@/types/health-data";
@@ -15,6 +15,7 @@ import { ClientModel } from '@/payload-types';
 import { useTranslation } from "@/hooks/useTranslation";
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Counter from './Counter';
+import { useClientScanResults } from '@/hooks/useClientScanResults';
 
 
 interface FaceScanResultProps { 
@@ -24,7 +25,7 @@ interface FaceScanResultProps {
     onNext: () => void;
 };
 
-export default function FaceScanResult({
+const FaceScanResult = React.memo(function FaceScanResult({
   userData,
   updateUserData,
   onNext,
@@ -32,9 +33,7 @@ export default function FaceScanResult({
 }: FaceScanResultProps){
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === 'ar';
-    const [latestResult, setLatestResult] = useState<HealthData | null>(null);
-    const [isFetching, setIsFetching] = useState<Boolean>(false);
-    
+
     // Ensure language is preserved on component mount
     useEffect(() => {
         const savedLanguage = localStorage.getItem('i18nextLng');
@@ -43,42 +42,18 @@ export default function FaceScanResult({
             i18n.changeLanguage(savedLanguage);
         }
     }, [i18n]);
-     
+
+    // Use shared hook for API calls
+    const { data: latestResult, client, loading: isFetching, error } = useClientScanResults({
+        onSuccess: useCallback((data: HealthData) => {
+            console.log("FaceScan Result Data received:", data);
+        }, [])
+    });
+
+    // Update user data when client and scan results are available
     useEffect(() => {
-        console.log("FaceScan Result UserData: " + JSON.stringify(userData));
-        
-        const fetcherResults = async () => {
-            setIsFetching(true);
-            const userId = Cookies.get('userId');
-            const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL; 
-
-            if (!userId) {
-                setIsFetching(false);
-                return;
-            }
-
-            const getClientResponse = await fetch(`${apiUrl}/client/GetClient?id=${userId}`, {
-                method: "GET",
-                headers: {
-                "Content-Type": "application/json",
-                "ngrok-skip-browser-warning": "true",
-                },
-            });
-     
-            const getClientResponseJson = await getClientResponse.json(); 
-            const client: ClientModel = getClientResponseJson.Result;   
-
-            const allResults = await fetch(`${apiUrl}/ScanResult/GetClientLatestScanResult?clientId=${userId}`, {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                  "ngrok-skip-browser-warning": "true",
-                },
-              }); 
-                console.log("allResults: " + JSON.stringify(allResults));
-                
-            const jsonData = await allResults.json();
-            const data: HealthData = jsonData.Result;
+        if (client && latestResult) {
+            console.log("FaceScan Result UserData: " + JSON.stringify(userData));
 
             updateUserData({
                 id: client?.Id,
@@ -94,23 +69,18 @@ export default function FaceScanResult({
                     nationalityId: client.NationalityId
                 },
                 vitals: {
-                    heartRate: data?.RealTimeHeartRate,
-                    bloodPressure: data?.SystolicBloodPressureMmhg + "/" + data?.DiastolicBloodPressureMmhg,
-                    breathingRate: data?.BreathingRate,
-                    hrvSdnnMs: data?.HrvSdnnMs,
-                    diastolicBP: data?.DiastolicBloodPressureMmhg,
-                    systolicBP : data?.SystolicBloodPressureMmhg,
+                    heartRate: latestResult?.RealTimeHeartRate,
+                    bloodPressure: latestResult?.SystolicBloodPressureMmhg + "/" + latestResult?.DiastolicBloodPressureMmhg,
+                    breathingRate: latestResult?.BreathingRate,
+                    hrvSdnnMs: latestResult?.HrvSdnnMs,
+                    diastolicBP: latestResult?.DiastolicBloodPressureMmhg,
+                    systolicBP : latestResult?.SystolicBloodPressureMmhg,
                     oxygenSaturation: 0,
                     temperature: 0
                 }
             });
-
-            setLatestResult(data);
-            setIsFetching(false);
-        };
-
-        fetcherResults();
-    }, []);
+        }
+    }, [client, latestResult, updateUserData]);
 
     return (
           <div className="flex flex-col justify-between sm:justify-center gap-y-4 sm:gap-y-6 md:gap-y-8 lg:gap-y-12 p-3 sm:p-4 md:p-6 lg:p-10 h-[85vh] sm:h-[80vh] overflow-hidden">
@@ -266,4 +236,6 @@ export default function FaceScanResult({
         </div>
         </div>
     );
-}; 
+});
+
+export default FaceScanResult; 

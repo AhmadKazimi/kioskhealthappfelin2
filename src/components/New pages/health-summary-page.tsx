@@ -1,6 +1,7 @@
-  /* eslint-disable @typescript-eslint/no-unused-vars */ 
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   "use client";
 
+  import React from 'react';
   import { Button } from "@/components/ui/button";
   import {
     Dialog,
@@ -18,6 +19,7 @@
   import Cookies from 'js-cookie';
   import { useTranslation } from "@/hooks/useTranslation";
   import { useRouter } from "next/navigation";
+  import { useClientScanResults } from '@/hooks/useClientScanResults';
 
   // interface SuggestedCare {
   //   level?: string;
@@ -31,22 +33,28 @@
     //recommendation: SuggestedCare | null
   }
 
-  export default function HealthSummaryPage({
+  const HealthSummaryPage = React.memo(function HealthSummaryPage({
     isOpen,
     onClose,
     userData,
     //recommendation
-  }: HealthSummaryModalProps) { 
+  }: HealthSummaryModalProps) {
     const { t, i18n } = useTranslation();
     const router = useRouter();
-    const [latestResult, setLatestResult] = useState<HealthData | null>(null);
     const [isAnimating, setIsAnimating] = useState(false);
-    const [timer, setTimer] = useState(30); // 10 seconds countdown 
+    const [timer, setTimer] = useState(30); // 10 seconds countdown
     const [isTimerActive, setIsTimerActive] = useState(true);
     const [sendingEmail, setSendingEmail] = useState(false);
     const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     const hostUrl = process.env.NEXT_PUBLIC_HOST_DOMAIN;
     const userId = Cookies.get('userId');
+
+    // Use shared hook for API calls
+    const { data: latestResult, client, loading, error } = useClientScanResults({
+      onSuccess: useCallback((data: HealthData) => {
+        console.log('Health summary page: Data received:', data);
+      }, [])
+    });
 
     // Check if current language is Arabic
     const isArabic = i18n.language === 'ar';
@@ -290,27 +298,6 @@
     };
 
     useEffect(() => {
-      const fetcherResults = async () => {  
-        if (!userId) {
-          return;
-        }
-
-        const allResults = await fetch(`${apiUrl}/ScanResult/GetClientLatestScanResult?clientId=${userId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-        }); 
-
-        const jsonData = await allResults.json();
-        const data: HealthData = jsonData.Result;
-
-        setLatestResult(data); 
-      };
-
-      fetcherResults();
-
       const now = new Date();
       setCurrentDate(now.toLocaleDateString()); // Format as MM/DD/YYYY or based on locale
       setCurrentTime(now.toLocaleTimeString()); // Format as HH:MM:SS AM/PM or based on locale
@@ -321,7 +308,7 @@
       }, 100);
 
       return () => clearTimeout(timer);
-    }, [apiUrl, userId]);
+    }, []);
 
     // Debug logging - moved to useEffect to prevent repeated logging
     useEffect(() => {
@@ -479,4 +466,6 @@
         </div>
       </div>
     );
-  }
+  });
+
+  export default HealthSummaryPage;

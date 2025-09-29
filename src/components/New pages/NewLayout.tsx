@@ -190,21 +190,21 @@ export default function NewLayout({
           return {
             title: t('progress.personalInformationDescription'),
             description: "Carevision",
-            image: "/video/tell us about your self2.mp4",
+            image: "/video/tellusaboutyourself2.mp4",
             className:''
           };
         case 2:
           return {
             title: t('progress.ageAndGenderDescription'),
             description: "Carevision",
-            image: "/video/age and gender2.mp4",
+            image: "/video/ageandgender2.mp4",
             className:''
           };
         case 3:
           return {
             title: t('progress.faceScanDescription'),
             description: "Carevision",
-            image: "/video/face scan.mp4",
+            image: "/video/facescan.mp4",
             
           };
         case 4:

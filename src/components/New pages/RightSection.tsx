@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -10,25 +10,65 @@ interface RightSectionProps {
   className?: string;
 }
 
-const RightSection: React.FC<RightSectionProps> = ({
+const RightSection: React.FC<RightSectionProps> = React.memo(({
   title,
   description,
   image,
   className,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const { i18n } = useTranslation();
-  
+
   // Check if current language is English to mute audio
   const isEnglish = i18n.language === 'en';
 
+  // Video event handlers
+  const handleVideoLoadedMetadata = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = isEnglish ? 0 : 0.8;
+      setVideoLoaded(true);
+      setVideoError(false);
+    }
+  }, [isEnglish]);
+
+  const handleVideoError = useCallback((e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    console.warn('Video error:', e);
+    // Only show error after a delay to avoid premature error display
+    setTimeout(() => {
+      setVideoError(true);
+      setVideoLoaded(false);
+    }, 2000);
+  }, []);
+
+  const handleVideoLoadStart = useCallback(() => {
+    setVideoLoaded(false);
+    setVideoError(false);
+  }, []);
+
   // Update video mute state when language changes
   useEffect(() => {
-    if (videoRef.current) {
+    if (videoRef.current && videoLoaded) {
       videoRef.current.muted = isEnglish;
       videoRef.current.volume = isEnglish ? 0 : 0.8;
     }
-  }, [isEnglish]);
+  }, [isEnglish, videoLoaded]);
+
+  // Cleanup video on unmount
+  useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+    };
+  }, []);
+
+  // Reset video states when image changes
+  useEffect(() => {
+    setVideoLoaded(false);
+    setVideoError(false);
+  }, [image]);
 
   return (
     <>
@@ -93,13 +133,15 @@ const RightSection: React.FC<RightSectionProps> = ({
                     playsInline
                     preload="metadata"
                     className="h-full w-full object-cover rounded-2xl"
-                    onLoadedMetadata={() => {
-                      // Set volume to 0.8 when video loads, but only if not English
-                      if (videoRef.current) {
-                        videoRef.current.volume = isEnglish ? 0 : 0.8;
-                      }
-                    }}
+                    onLoadedMetadata={handleVideoLoadedMetadata}
+                    onError={handleVideoError}
+                    onLoadStart={handleVideoLoadStart}
                   />
+                  {!videoLoaded && !videoError && (
+                    <div className="absolute inset-0 bg-gray-200 rounded-2xl flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
                   <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/10 to-transparent rounded-2xl"></div>
                 </div>
               ) : (
@@ -131,6 +173,8 @@ const RightSection: React.FC<RightSectionProps> = ({
       </motion.div>
     </>
   );
-};
+});
+
+RightSection.displayName = 'RightSection';
 
 export default RightSection;

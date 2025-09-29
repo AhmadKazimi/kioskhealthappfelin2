@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */ 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"; 
+} from "@/components/ui/dialog";
 import QRCode from "react-qr-code";
 import { ClientModel } from "@/payload-types";
 import { useEffect, useState, useCallback } from "react";
@@ -17,6 +18,7 @@ import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import Cookies from 'js-cookie';
 import { useTranslation } from "@/hooks/useTranslation";
+import { useClientScanResults } from '@/hooks/useClientScanResults';
 
 // interface SuggestedCare {
 //   level?: string;
@@ -30,14 +32,13 @@ interface HealthSummaryModalProps {
   //recommendation: SuggestedCare | null
 }
 
-export default function HealthSummaryModal({
+const HealthSummaryModal = React.memo(function HealthSummaryModal({
   isOpen,
   onClose,
   userData,
   //recommendation
-}: HealthSummaryModalProps) { 
+}: HealthSummaryModalProps) {
   const { t, i18n } = useTranslation();
-  const [latestResult, setLatestResult] = useState<HealthData | null>(null);
   const [currentDate, setCurrentDate] = useState<string>("");
   const [currentTime, setCurrentTime] = useState<string>("");
   const [emailSent, setEmailSent] = useState(false);
@@ -45,6 +46,14 @@ export default function HealthSummaryModal({
   const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   const hostUrl = process.env.NEXT_PUBLIC_HOST_DOMAIN;
   const userId = Cookies.get('userId');
+
+  // Use shared hook for API calls
+  const { data: latestResult, client, loading, error } = useClientScanResults({
+    enabled: isOpen, // Only fetch when modal is open
+    onSuccess: useCallback((data: HealthData) => {
+      console.log('Health summary modal: Data received:', data);
+    }, [])
+  });
   
   // Check if current language is Arabic
   const isArabic = i18n.language === 'ar';
@@ -116,27 +125,6 @@ export default function HealthSummaryModal({
   };
 
   useEffect(() => {
-    const fetcherResults = async () => {  
-      if (!userId) {
-        return;
-      }
-
-      const allResults = await fetch(`${apiUrl}/ScanResult/GetClientLatestScanResult?clientId=${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-      }); 
-
-      const jsonData = await allResults.json();
-      const data: HealthData = jsonData.Result;
-
-      setLatestResult(data); 
-    };
-
-    fetcherResults();
-
     const now = new Date();
     setCurrentDate(now.toLocaleDateString()); // Format as MM/DD/YYYY or based on locale
     setCurrentTime(now.toLocaleTimeString()); // Format as HH:MM:SS AM/PM or based on locale
@@ -149,7 +137,7 @@ export default function HealthSummaryModal({
       console.log('Modal combineName result:', combineName(userData?.UserName, userData?.FullName));
       console.log('Modal screen width:', window.innerWidth);
     }
-  }, [userData]);
+  }, [userData, latestResult]);
  
   const sendSummaryByEmail = async (event?: React.MouseEvent) => {
     // Prevent the event from being passed as userData
@@ -450,5 +438,7 @@ export default function HealthSummaryModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  ); 
-}
+  );
+});
+
+export default HealthSummaryModal;
