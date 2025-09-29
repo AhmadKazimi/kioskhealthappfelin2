@@ -61,3 +61,4 @@ This is a **Next.js 15** application with **PayloadCMS** as the headless CMS and
 - Source maps enabled in development
 - Uses standalone output for deployment
 - qasdadas
+- add english videos

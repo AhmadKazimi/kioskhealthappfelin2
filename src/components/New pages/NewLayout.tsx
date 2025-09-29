@@ -11,10 +11,10 @@ import ComplaintScreen from "../complaint-screen";
 import WelcomeScreen from "../welcome-screen";
 import BeforeScanning from "./beforeScanning";
 import HealthSummaryPage from "./health-summary-page";
-import { t } from "i18next";
 import { ClientModel } from "@/payload-types";
 import React, { useState } from "react";
 import ProgressTracker, { ProgressTrackerRef } from "../ProgressTracker";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface NewLayoutProps {
     userData: UserData;
@@ -26,17 +26,18 @@ interface NewLayoutProps {
     localApiData?: ClientModel | null;
 }
 
-export default function NewLayout({ 
-    userData, 
-    updateUserData, 
-    onNext, 
-    onPrev, 
-    currentStep = 1, 
+export default function NewLayout({
+    userData,
+    updateUserData,
+    onNext,
+    onPrev,
+    currentStep = 1,
     totalSteps = 7,
     //localApiData = null
 }: NewLayoutProps) {
     const [storedApiData, setStoredApiData] = useState<ClientModel | null>(null);
     const progressTrackerRef = React.useRef<ProgressTrackerRef>(null);
+    const { t, i18n } = useTranslation();
     
     // Load client data from sessionStorage on mount or when step changes to 7
     React.useEffect(() => {
@@ -184,48 +185,50 @@ export default function NewLayout({
             return <WelcomeScreen onNext={() => nextStep()} />;
         }
     };
-    const renderRightSectionData = () => { 
+    const renderRightSectionData = () => {
+      const isEnglish = i18n.language === 'en';
+
       switch (currentStep) {
         case 1:
           return {
             title: t('progress.personalInformationDescription'),
             description: "Carevision",
-            image: "/video/tellusaboutyourself2.mp4",
+            image: isEnglish ? "/video/en_tellusaboutyourself2.mp4" : "/video/tellusaboutyourself2.mp4",
             className:''
           };
         case 2:
           return {
             title: t('progress.ageAndGenderDescription'),
             description: "Carevision",
-            image: "/video/ageandgender2.mp4",
+            image: isEnglish ? "/video/en_ageandgender2.mp4" : "/video/ageandgender2.mp4",
             className:''
           };
         case 3:
           return {
             title: t('progress.faceScanDescription'),
             description: "Carevision",
-            image: "/video/facescan.mp4",
-            
+            image: isEnglish ? "/video/en_facescan.mp4" : "/video/facescan.mp4",
+
           };
         case 4:
           return {
-            title:t('faceScan.scanCompleteSubtitle')   ,
+            title:t('faceScan.scanCompleteSubtitle'),
             description: "Carevision",
-            image: "/video/result2.mp4",
+            image: isEnglish ? "/video/en_result2.mp4" : "/video/result2.mp4",
             className:''
           };
         case 5:
           return {
-            title: t('complaint.subtitle1') ,
+            title: t('complaint.subtitle1'),
             description: "Carevision",
-            image: "/video/qastion.mp4",
+            image: isEnglish ? "/video/en_qastion.mp4" : "/video/qastion.mp4",
             className:''
           };
         case 6:
           return {
             title: t('progress.symptomsDescription'),
             description: "Carevision",
-            image: "/video/answer.mp4",
+            image: isEnglish ? "/video/en_answer.mp4" : "/video/answer.mp4",
             className:''
 
           };
@@ -233,14 +236,14 @@ export default function NewLayout({
           return {
             title: t('progress.healthAssessmentSummary'),
             description: "Carevision",
-            image: "/video/qastion.mp4",
+            image: isEnglish ? "/video/en_qastion.mp4" : "/video/qastion.mp4",
             className:''
           };
         default:
           return {
             title: t('progress.welcome'),
             description: "Carevision",
-            image: "/video/question.mp4"
+            image: isEnglish ? "/video/en_question.mp4" : "/video/question.mp4"
           };
       }
     };

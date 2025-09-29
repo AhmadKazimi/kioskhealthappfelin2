@@ -21,17 +21,14 @@ const RightSection: React.FC<RightSectionProps> = React.memo(({
   const [videoError, setVideoError] = useState(false);
   const { i18n } = useTranslation();
 
-  // Check if current language is English to mute audio
-  const isEnglish = i18n.language === 'en';
-
   // Video event handlers
   const handleVideoLoadedMetadata = useCallback(() => {
     if (videoRef.current) {
-      videoRef.current.volume = isEnglish ? 0 : 0.8;
+      videoRef.current.volume = 0.8;
       setVideoLoaded(true);
       setVideoError(false);
     }
-  }, [isEnglish]);
+  }, []);
 
   const handleVideoError = useCallback((e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     console.warn('Video error:', e);
@@ -47,13 +44,6 @@ const RightSection: React.FC<RightSectionProps> = React.memo(({
     setVideoError(false);
   }, []);
 
-  // Update video mute state when language changes
-  useEffect(() => {
-    if (videoRef.current && videoLoaded) {
-      videoRef.current.muted = isEnglish;
-      videoRef.current.volume = isEnglish ? 0 : 0.8;
-    }
-  }, [isEnglish, videoLoaded]);
 
   // Cleanup video on unmount
   useEffect(() => {
@@ -129,7 +119,7 @@ const RightSection: React.FC<RightSectionProps> = React.memo(({
                     ref={videoRef}
                     src={image}
                     autoPlay
-                    muted={isEnglish}
+                    muted={false}
                     playsInline
                     preload="metadata"
                     className="h-full w-full object-cover rounded-2xl"
