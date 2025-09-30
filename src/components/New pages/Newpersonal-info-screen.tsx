@@ -491,7 +491,7 @@ export default function NewPersonalInfoScreen({
                     className="text-sm  font-medium text-gray-700 leading-relaxed cursor-pointer block pointer-events-none"
                   >
                     {t('personalInfo.agreement')}
-                    <span 
+                    <div
                       className="text-xs text-blue-600 mt-0.5 hover:underline pointer-events-auto cursor-pointer"
                       data-view-agreement
                       onClick={(e) => {
@@ -500,7 +500,7 @@ export default function NewPersonalInfoScreen({
                       }}
                     >
                       {t('personalInfo.viewAgreement')}
-                    </span>
+                    </div>
                   </Label>
                
                 </div>
