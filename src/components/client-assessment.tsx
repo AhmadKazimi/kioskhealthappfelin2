@@ -280,7 +280,7 @@ const ClientAssessment = ({onNext, onPrev}: ClientAssessmentProps) => {
   }
 
   return (
-      <div className="py-12 px-4 sm:px-6 lg:px-8 relative">
+      <div className="h-full flex flex-col px-4 sm:px-6 lg:px-8 relative">
       {/* Saving Results Overlay */}
       {savingResults && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -295,23 +295,25 @@ const ClientAssessment = ({onNext, onPrev}: ClientAssessmentProps) => {
         <title>{t('assessment.patientAssessment')}</title>
       </Head>
 
-       <div className="max-w-7xl mx-auto">
-        <> 
-          <h1 className={`text-xl sm:text-3xl font-bold text-blue-600 mb-2 text-center ${isArabic ? 'text-right' : 'text-left'}`}>
+       <div className="max-w-7xl mx-auto flex-1 flex flex-col min-h-0 w-full">
+        <>
+          <h1 className={`text-xl sm:text-3xl font-bold text-blue-600 pt-4 sm:pt-6 lg:pt-8 mb-2 text-center flex-shrink-0 ${isArabic ? 'text-right' : 'text-left'}`}>
             {t('assessment.patientHealthAssessment')}
           </h1>
-          <ConditionQuestionnaire
-            key={`condition-${currentConditionIndex}`}
-            condition={currentCondition}
-            questionnaireData={questionnaireData as unknown as QuestionnaireData}
-            onComplete={(answers, score, calculatedRiskLevel) =>
-                handleQuestionnaireComplete(conditionIndexInOriginalArray, answers, score, calculatedRiskLevel)
-            }
-            currentConditionIndex={currentConditionIndex}
-            totalConditions={conditionsNeedingQuestionnaires.length}
-            onPrev={onPrev}
-            onNext={onNext}
-          />
+          <div className="flex-1 min-h-0">
+            <ConditionQuestionnaire
+              key={`condition-${currentConditionIndex}`}
+              condition={currentCondition}
+              questionnaireData={questionnaireData as unknown as QuestionnaireData}
+              onComplete={(answers, score, calculatedRiskLevel) =>
+                  handleQuestionnaireComplete(conditionIndexInOriginalArray, answers, score, calculatedRiskLevel)
+              }
+              currentConditionIndex={currentConditionIndex}
+              totalConditions={conditionsNeedingQuestionnaires.length}
+              onPrev={onPrev}
+              onNext={onNext}
+            />
+          </div>
         </>
       </div>
     </div>

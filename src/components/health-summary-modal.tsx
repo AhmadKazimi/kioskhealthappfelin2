@@ -65,20 +65,29 @@ const HealthSummaryModal = React.memo(function HealthSummaryModal({
     if (cleanName1 && cleanName1 !== '') {
       return cleanName1;
     }
-    
+
     // Clean and check name2 as fallback
     const cleanName2 = name2?.trim();
     if (cleanName2 && cleanName2 !== '') {
       return cleanName2;
     }
-    
+
     // Check userData directly as last resort
     const directName = userData?.UserName?.trim() || userData?.FullName?.trim();
     if (directName && directName !== '') {
       return directName;
     }
-    
+
     return "N/A";
+  };
+
+  // Function to translate gender
+  const translateGender = (gender?: string | null): string => {
+    if (!gender) return "N/A";
+    const genderLower = gender.toLowerCase().trim();
+    if (genderLower === 'male') return t('userInfo.male');
+    if (genderLower === 'female') return t('userInfo.female');
+    return gender;
   };
 
 
@@ -291,7 +300,7 @@ const HealthSummaryModal = React.memo(function HealthSummaryModal({
                  unicodeBidi: 'plaintext'
                }}
                dir={isArabic ? 'rtl' : 'ltr'}>
-              {t('healthSummary.gender')} {userData.Gender}
+              {t('healthSummary.gender')} {translateGender(userData.Gender)}
             </p>
           </div>
         </div>

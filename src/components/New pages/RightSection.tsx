@@ -27,6 +27,19 @@ const RightSection: React.FC<RightSectionProps> = React.memo(({
       videoRef.current.volume = 0.8;
       setVideoLoaded(true);
       setVideoError(false);
+
+      // Small delay before playing to ensure cleanup is complete
+      setTimeout(() => {
+        if (videoRef.current) {
+          // Manually trigger play in case autoplay was blocked
+          const playPromise = videoRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(error => {
+              console.log('Autoplay prevented, will play on user interaction:', error);
+            });
+          }
+        }
+      }, 100);
     }
   }, []);
 
@@ -45,19 +58,31 @@ const RightSection: React.FC<RightSectionProps> = React.memo(({
   }, []);
 
 
-  // Cleanup video on unmount
+  // Cleanup video on unmount and when source changes
   useEffect(() => {
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-    };
-  }, []);
-
-  // Reset video states when image changes
-  useEffect(() => {
+    // Reset states for new video immediately
     setVideoLoaded(false);
     setVideoError(false);
+
+    // Get current video element for cleanup
+    const currentVideo = videoRef.current;
+
+    // Only pause if video element exists and has a src
+    if (currentVideo && currentVideo.src) {
+      currentVideo.pause();
+      currentVideo.currentTime = 0;
+      currentVideo.volume = 0;
+    }
+
+    return () => {
+      // Cleanup on unmount - capture ref in closure
+      if (currentVideo) {
+        currentVideo.pause();
+        currentVideo.currentTime = 0;
+        currentVideo.volume = 0;
+        currentVideo.src = ''; // Clear source to force cleanup
+      }
+    };
   }, [image]);
 
   return (
@@ -116,6 +141,7 @@ const RightSection: React.FC<RightSectionProps> = React.memo(({
               {image.includes(".mp4") ? (
                 <div className="h-full w-full rounded-2xl overflow-hidden relative">
                   <video
+                    key={image}
                     ref={videoRef}
                     src={image}
                     autoPlay

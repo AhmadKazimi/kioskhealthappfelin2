@@ -243,7 +243,7 @@ export default function NewLayout({
           return {
             title: t('progress.welcome'),
             description: "Carevision",
-            image: isEnglish ? "/video/en_question.mp4" : "/video/question.mp4"
+            image: isEnglish ? "/video/en_tellusaboutyourself2.mp4" : "/video/tellusaboutyourself2.mp4"
           };
       }
     };

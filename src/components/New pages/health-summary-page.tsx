@@ -126,14 +126,23 @@
     return "N/A";
   };
 
+  // Function to translate gender
+  const translateGender = (gender?: string | null): string => {
+    if (!gender) return "N/A";
+    const genderLower = gender.toLowerCase().trim();
+    if (genderLower === 'male') return t('userInfo.male');
+    if (genderLower === 'female') return t('userInfo.female');
+    return gender;
+  };
+
   // Create patient object from userData with better fallback handling
   const patient = {
     name: combineName(
       userData?.FullName,
       userData?.UserName
     ),
-    age: userData?.Age || "N/A", 
-    gender: userData?.Gender || "N/A"
+    age: userData?.Age || "N/A",
+    gender: translateGender(userData?.Gender)
   };
 
     // Create vital signs array from latestResult
@@ -325,11 +334,11 @@
     }, []); // Empty dependency array - only log once on mount
     
     return (
-      <div className="flex justify-center items-start min-h-screen p-2 sm:p-4 lg:p-6"> 
-        <div className={`border-0 ${isArabic ? 'rtl' : 'ltr'} transition-all duration-1000 ease-out overflow-x-hidden w-full max-w-7xl ${
+      <div className="flex justify-center items-start h-screen overflow-hidden p-2 sm:p-4 lg:p-6">
+        <div className={`border-0 ${isArabic ? 'rtl' : 'ltr'} transition-all duration-1000 ease-out w-full max-w-7xl h-full flex flex-col ${
           isAnimating ? 'w-full' : 'w-full'
         }`}>
-          <div className={`p-2 sm:p-4 lg:p-6 h-full overflow-y-auto ${isAnimating ? 'opacity-100' : 'opacity-0'}`}>
+          <div className={`p-2 sm:p-4 lg:p-6 flex-1 overflow-y-auto ${isAnimating ? 'opacity-100' : 'opacity-0'}`}>
             <div className="bg-white rounded-[20px] sm:rounded-[25px] lg:rounded-[30px] p-3 sm:p-4 md:p-6 lg:p-8 shadow-xl">
               {/* Title */}
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-medium text-blue-500 text-center mb-3 sm:mb-4 md:mb-6">
