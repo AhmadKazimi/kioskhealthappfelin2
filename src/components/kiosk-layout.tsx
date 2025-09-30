@@ -94,7 +94,7 @@ export default function KioskLayout({ children }: KioskLayoutProps) {
           <p className="text-[10px] sm:text-xs md:text-sm leading-tight text-gray-600 relative z-50">
             {t('layout.footerCopyright')}
           </p>
-          <p className="text-[10px] sm:text-xs md:text-sm leading-tight text-gray-700 font-medium relative z-50">
+          <p className="text-[9px] sm:text-[10px] md:text-xs leading-tight text-gray-600 font-normal relative z-50">
             {t('layout.footerDisclaimer')}
           </p>
         </div>

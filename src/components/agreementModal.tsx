@@ -22,9 +22,9 @@ const AgreementModal: React.FC<AgreementModalProps> = ({ isOpen, onClose }) => {
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto print:shadow-none print:border-none bg-white">
         <DialogHeader className="mb-3">
-          <h3 className="text-2xl font-bold uppercase text-center">
+          <DialogTitle className="text-2xl font-bold uppercase text-center">
             {t('agreement.title')}
-          </h3>
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 text-gray-700 text-[16px]">

@@ -132,8 +132,26 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
   const isArabic = i18n.language === 'ar'
 
   return (
-    <div className="h-full flex flex-col p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto h-full flex flex-col">
+    <div className="h-full flex flex-col p-4 lg:p-6 relative">
+      {/* Compact Back Button - Top Corner */}
+      <div className={`absolute top-4 z-50 ${isArabic ? 'right-4' : 'left-4'}`}>
+        <Button
+          onClick={onPrev}
+          disabled={scanning}
+          variant="ghost"
+          size="icon"
+          className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          title={t('buttons.back')}
+        >
+          {isArabic ? (
+            <ArrowRight className="w-5 h-5 text-gray-700" />
+          ) : (
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
+          )}
+        </Button>
+      </div>
+
+      <div className="max-w-7xl mx-auto h-full flex flex-col w-full">
         {/* Scanner Camera - No Title Needed (Already shown in animation) */}
 
         {/* Scrollable Content Area */}
@@ -149,23 +167,10 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
           </div>
         </div>
 
-        {/* Sticky Buttons at Bottom */}
-        <div className="flex-shrink-0 pt-4">
-          <div className="flex justify-between items-center w-full">
-            <Button
-              onClick={onPrev}
-              disabled={scanning}
-              className="text-base lg:text-lg py-3 lg:py-4 px-6 lg:px-8 bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 flex items-center justify-center space-x-2 w-auto"
-            >
-              {isArabic ? (
-                <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5" />
-              ) : (
-                <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5" />
-              )}
-              {t('buttons.back')}
-            </Button>
-
-            {showResults && (
+        {/* Sticky Next Button at Bottom (only when results ready) */}
+        {showResults && (
+          <div className="flex-shrink-0 pt-4">
+            <div className="flex justify-end items-center w-full">
               <button
                 type="button"
                 onClick={onNext}
@@ -196,9 +201,9 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
                   </>
                 )}
               </button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
