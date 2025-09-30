@@ -411,7 +411,7 @@
       "highRiskPattern": "Potential {conditionName} pattern detected; questionnaire supports finding",
       "highRiskDescription": "The AI-based facial analysis detected RR interval patterns consistent with potential {conditionName}. The patient's responses to the targeted questionnaire indicated symptoms and risk factors that align with this finding. While this screening combines AI pattern recognition with symptom assessment, it is not diagnostic and requires clinical confirmation",
       "highRiskRecommendation": "High risk assessment (RED). Clinical evaluation recommended to assess for {conditionName} using standard diagnostic protocols.",
-      "disclaimerText": "This screening tool supplements clinical judgment only. It uses facial video analysis to detect potential RR interval patterns. A single screening provides preliminary information only. Positive findings require clinical correlation and diagnostic testing. Negative findings do not rule out cardiac conditions. Apply professional judgment when interpreting results."
+      "disclaimerText": "This is only a screening information. It uses facial video analysis to detect potential RR interval patterns. A single screening provides preliminary information only. Positive findings require clinical correlation and diagnostic testing. Negative findings do not rule out cardiac conditions. Apply professional judgment when interpreting results."
     }
   },
   "requestReading": {
@@ -440,14 +440,14 @@
         "recommendation": "RECOMMENDATION:",
         "recommendationText": "Moderate risk assessment (YELLOW). Consider repeating screening 5 additional times to establish pattern consistency.",
         "disclaimer": "DISCLAIMER:",
-        "disclaimerText": "This screening tool supplements clinical judgment only. It uses facial video analysis to detect potential RR interval patterns. A single screening provides preliminary information only. Positive findings require clinical correlation and diagnostic testing. Negative findings do not rule out cardiac conditions. Apply professional judgment when interpreting results."
+        "disclaimerText": "This is only a screening information. It uses facial video analysis to detect potential RR interval patterns. A single screening provides preliminary information only. Positive findings require clinical correlation and diagnostic testing. Negative findings do not rule out cardiac conditions. Apply professional judgment when interpreting results."
       },
       "noPatternDetected": {
         "title": "ASSESSMENT SUMMARY:",
         "subtitle": "No cardiac arrhythmia patterns detected",
         "description": "The AI-based facial analysis did not detect abnormal RR interval patterns associated with the cardiac conditions screened. This screening tool analyzes facial video for RR interval patterns and is not equivalent to diagnostic tests. A negative result does not rule out cardiac conditions.",
         "disclaimer": "DISCLAIMER:",
-        "disclaimerText": "This screening tool supplements clinical judgment only. It uses facial video analysis to detect potential RR interval patterns. A single screening provides preliminary information only. Positive findings require clinical correlation and diagnostic testing. Negative findings do not rule out cardiac conditions. Apply professional judgment when interpreting results."
+        "disclaimerText": "This is only a screening information. It uses facial video analysis to detect potential RR interval patterns. A single screening provides preliminary information only. Positive findings require clinical correlation and diagnostic testing. Negative findings do not rule out cardiac conditions. Apply professional judgment when interpreting results."
       },
       "patternDetectedSupported": {
         "title": "ASSESSMENT SUMMARY:",
@@ -456,7 +456,7 @@
         "recommendation": "RECOMMENDATION:",
         "recommendationText": "Moderate risk assessment (YELLOW). Consider repeating screening 5 additional times to establish pattern consistency.",
         "disclaimer": "DISCLAIMER:",
-        "disclaimerText": "This screening tool supplements clinical judgment only. It uses facial video analysis to detect potential RR interval patterns. A single screening provides preliminary information only. Positive findings require clinical correlation and diagnostic testing. Negative findings do not rule out cardiac conditions. Apply professional judgment when interpreting results."
+        "disclaimerText": "This is only a screening information. It uses facial video analysis to detect potential RR interval patterns. A single screening provides preliminary information only. Positive findings require clinical correlation and diagnostic testing. Negative findings do not rule out cardiac conditions. Apply professional judgment when interpreting results."
       }
     }
   },

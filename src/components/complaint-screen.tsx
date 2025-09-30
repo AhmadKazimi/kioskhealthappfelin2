@@ -302,17 +302,19 @@ export default function ComplaintScreen({
   }, [apiUrl]); // Removed setApiData from dependencies
 
   return (
-    <div className="flex flex-col space-y-2 w-full h-full justify-between items-center p-10">
-      <div className="text-center">
-        <h2 className="text-2xl sm:text-4xl font-bold text-blue-700 mb-2">
-          {t('complaint.title')}
-        </h2>
-        <p className="text-sm sm:text-xl text-gray-600 mb-2">
-        {t('complaint.subtitle1')} <span className="text-sm text-gray-600">({t('complaint.subtitle2')})</span>
-        </p>
-      </div>
+    <div className="h-full flex flex-col p-10">
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl sm:text-4xl font-bold text-blue-700 mb-2">
+            {t('complaint.title')}
+          </h2>
+          <p className="text-sm sm:text-xl text-gray-600 mb-2">
+          {t('complaint.subtitle1')} <span className="text-sm text-gray-600">({t('complaint.subtitle2')})</span>
+          </p>
+        </div>
 
-      <div>
+        <div className="pb-6">
         <div className="flex flex-wrap justify-center items-start gap-4">
           {commonComplaints.map((complaint) => (
             <div 
@@ -360,10 +362,13 @@ export default function ComplaintScreen({
               {t('complaint.other.hint')}
             </p>
           </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="flex justify-between w-full pt-2">
+      {/* Sticky Buttons at Bottom */}
+      <div className="flex-shrink-0 pt-4">
+        <div className="flex justify-between w-full">
         <button 
                 onClick={onPrev} 
                                 className={`cursor-pointer   group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3 
@@ -412,9 +417,7 @@ export default function ComplaintScreen({
                 )}
               </button>
         </div>
-                
-
-
+      </div>
     </div>
   );
 }

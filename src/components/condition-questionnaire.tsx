@@ -82,8 +82,10 @@ const ConditionQuestionnaire = ({ condition, questionnaireData, onComplete, curr
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Assessment Progress Section */}
+    <div className="max-w-4xl mx-auto h-full flex flex-col">
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Assessment Progress Section */}
       <div className="mb-8">
         <h2 className="text-sm sm:text-lg font-semibold text-gray-700 mb-4">
           {t('assessment.assessmentProgress')}
@@ -185,48 +187,51 @@ const ConditionQuestionnaire = ({ condition, questionnaireData, onComplete, curr
           </select>
         </div>
       )}
+      </div>
 
-      {/* Navigation Buttons */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => {
-              if (currentQuestionIndex > 0) {
-                setCurrentQuestionIndex(currentQuestionIndex - 1);
-              } else if (onPrev) {
-                onPrev();
-              }
-            }}
-            className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors duration-200"
-          >
-            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <span className="text-gray-600 font-medium">{t('buttons.back')}</span>
-        </div>
+      {/* Sticky Button Area */}
+      <div className="flex-shrink-0 pt-4">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => {
+                if (currentQuestionIndex > 0) {
+                  setCurrentQuestionIndex(currentQuestionIndex - 1);
+                } else if (onPrev) {
+                  onPrev();
+                }
+              }}
+              className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors duration-200"
+            >
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-gray-600 font-medium">{t('buttons.back')}</span>
+          </div>
 
-        <div className="flex items-center space-x-2">
-            <span className="text-gray-600 font-medium">{t('buttons.next')}</span>
-          <button
-            onClick={() => {
-              if (currentQuestionIndex < conditionQuestionnaire.questions.length - 1) {
-                setCurrentQuestionIndex(currentQuestionIndex + 1);
-              } else if (Object.keys(answers).length === conditionQuestionnaire.questions.length) {
-                const score = conditionQuestionnaire.questions.reduce((total, question, index) => {
-                  return total + question.scoring[answers[index]];
-                }, 0);
-                const calculatedRiskLevel = score >= conditionQuestionnaire.min_score_threshold ? 'HighRisk' : 'Suspected';
-                onComplete(answers, score, calculatedRiskLevel);
-              }
-            }}
-            disabled={!answers[currentQuestionIndex]}
-            className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+          <div className="flex items-center space-x-2">
+              <span className="text-gray-600 font-medium">{t('buttons.next')}</span>
+            <button
+              onClick={() => {
+                if (currentQuestionIndex < conditionQuestionnaire.questions.length - 1) {
+                  setCurrentQuestionIndex(currentQuestionIndex + 1);
+                } else if (Object.keys(answers).length === conditionQuestionnaire.questions.length) {
+                  const score = conditionQuestionnaire.questions.reduce((total, question, index) => {
+                    return total + question.scoring[answers[index]];
+                  }, 0);
+                  const calculatedRiskLevel = score >= conditionQuestionnaire.min_score_threshold ? 'HighRisk' : 'Suspected';
+                  onComplete(answers, score, calculatedRiskLevel);
+                }
+              }}
+              disabled={!answers[currentQuestionIndex]}
+              className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>

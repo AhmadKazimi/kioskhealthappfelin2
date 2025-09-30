@@ -83,10 +83,12 @@ const FaceScanResult = React.memo(function FaceScanResult({
     }, [client, latestResult, updateUserData]);
 
     return (
-          <div className="flex flex-col justify-between sm:justify-center gap-y-4 sm:gap-y-6 md:gap-y-8 lg:gap-y-12 p-3 sm:p-4 md:p-6 lg:p-10 h-[85vh] sm:h-[80vh] overflow-hidden">
-            <div className="text-center flex-shrink-0">
-                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-blue-700 my-3 sm:my-4 md:my-5">{t('faceScan.scanComplete')}</h2>
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 h-[90%] flex-1 min-h-0">
+          <div className="h-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-10">
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="text-center flex-shrink-0">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-blue-700 my-3 sm:my-4 md:my-5">{t('faceScan.scanComplete')}</h2>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
       {/* Heart Rate Card */}
       <Card className="bg-white flex flex-col justify-between items-start p-2 sm:p-3 md:p-4 lg:p-6 rounded-2xl sm:rounded-3xl shadow-lg border-0 h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px] lg:min-h-[180px]">
         <p className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-[#4F8EFF] mb-2 sm:mb-3 md:mb-4 lg:mb-6 flex-shrink-0">
@@ -196,10 +198,13 @@ const FaceScanResult = React.memo(function FaceScanResult({
           </div>
         </div>
       </Card>
+                  </div>
                 </div>
               </div>
 
-            <div className="flex items-center justify-center w-full pt-2 sm:pt-4 flex-shrink-0">
+            {/* Sticky Button at Bottom */}
+            <div className="flex-shrink-0 pt-4">
+              <div className="flex items-center justify-center w-full">
           <button 
                 type="button"
                 onClick={(e) => {
@@ -233,8 +238,9 @@ const FaceScanResult = React.memo(function FaceScanResult({
                   </>
                 )}
               </button>
-        </div>
-        </div>
+              </div>
+            </div>
+          </div>
     );
 });
 

@@ -61,26 +61,28 @@ export default function BeforeScanning({ onNext, onPrev }: { onNext: () => void,
 
     return (
         nextItem ? (
-        <motion.div 
+        <motion.div
         className="flex w-full items-start p-5 sm:p-10 justify-center max-w-7xl mx-auto h-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.1 }}
       >
-                    <div className="mx-auto w-full flex-grow justify-between items-center h-full flex flex-col">
-                {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: -30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="text-center flex-shrink-0"
-                >
-                    <h1 className="text-4xl font-bold text-blue-600 mb-1">{t('beforeScanning.title')}</h1>
-                    <p className="text-gray-600 text-lg">{t('beforeScanning.subtitle')}</p>
-                </motion.div>
+                    <div className="mx-auto w-full h-full flex flex-col">
+                {/* Scrollable Content Area */}
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {/* Header */}
+                  <motion.div
+                      initial={{ opacity: 0, y: -30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                      className="text-center flex-shrink-0 mb-6"
+                  >
+                      <h1 className="text-4xl font-bold text-blue-600 mb-1">{t('beforeScanning.title')}</h1>
+                      <p className="text-gray-600 text-lg">{t('beforeScanning.subtitle')}</p>
+                  </motion.div>
 
-                {/* Instructions Container */}
-                <div className="flex-1 relative justify-center flex flex-col-reverse min-h-[400px]">
+                  {/* Instructions Container */}
+                  <div className="relative justify-center flex flex-col-reverse min-h-[300px]">
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                      
                     </div>
@@ -138,15 +140,17 @@ export default function BeforeScanning({ onNext, onPrev }: { onNext: () => void,
                             ))}
                         </AnimatePresence>
                     </div>
+                  </div>
                 </div>
 
-                {/* Navigation Buttons */}
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
-                    className="flex justify-between items-center w-full mt-4 flex-shrink-0"
-                >
+                {/* Sticky Navigation Buttons at Bottom */}
+                <div className="flex-shrink-0 pt-4">
+                  <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
+                      className="flex justify-between items-center w-full"
+                  >
                     <motion.button
                         whileHover={{ scale: 1.05, y: -2 }}
                         whileTap={{ scale: 0.98 }}
@@ -177,7 +181,8 @@ export default function BeforeScanning({ onNext, onPrev }: { onNext: () => void,
                     >
                           {allInstructionsVisible ? t('beforeScanning.startButton') : t('beforeScanning.loadingButton')}
                     </motion.button>
-                </motion.div>
+                  </motion.div>
+                </div>
             </div>
         </motion.div>
         ) : (

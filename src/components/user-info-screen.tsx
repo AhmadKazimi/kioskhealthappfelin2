@@ -179,25 +179,27 @@ export default function UserInfoScreen({
   };
 
   return (
-    <motion.div 
-      className="flex w-full items-start justify-center h-full mx-auto px-2 lg:px-10"
+    <motion.div
+      className="flex w-full items-start justify-center h-full mx-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, delay: 0.1 }}
     >
-      <div className="flex  flex-col items-center justify-around space-y-4 gap-3 w-full mb-10 lg:mb-0 h-full lg:h-[80vh]">
-        {/* Title */}
-        <div className="text-center pt-8">
-          <h1 className="text-3xl lg:text-5xl font-bold text-blue-500">
-            {t('userInfo.ageAndGender')}
-          </h1>
-          <p className="text-sm text-gray-500 lg:hidden">
-            {t('userInfo.subtitle')}
-          </p>
-        </div>
+      <div className="h-full flex flex-col w-full p-3 sm:p-4 md:p-6 lg:p-10">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Title */}
+          <div className="text-center pt-8 pb-6">
+            <h1 className="text-3xl lg:text-5xl font-bold text-blue-500">
+              {t('userInfo.ageAndGender')}
+            </h1>
+            <p className="text-sm text-gray-500 lg:hidden">
+              {t('userInfo.subtitle')}
+            </p>
+          </div>
 
-        {/* Age Section */}
-        <div className="w-full ">
+          {/* Age Section */}
+          <div className="w-full mb-8">
           <h2 className="text-xl lg:text-2xl font-semibold ">  {t('userInfo.selectAge')}</h2>
           
           {/* Age Display with surrounding numbers */}
@@ -260,28 +262,30 @@ export default function UserInfoScreen({
           */}
         </div>
 
-        {/* Gender Section */}
-        <div className="w-full space-y-2">
-          <h2 className="text-lg lg:text-xl font-medium ">{t('userInfo.selectGender')}</h2>
-          <div className="grid grid-cols-2 gap-6 lg:gap-8">
-            {genderOptions.map((option) => (
-              <div
-                key={option.value}
-                className={`flex flex-col items-center cursor-pointer transition-all p-4  rounded-lg ${
-                  selectedGender === option.value
-                    ? "bg-blue-50 border-2 border-blue-500"
-                    : "hover:bg-gray-50 border-2 border-gray-200"
-                }`}
-                onClick={() => setSelectedGender(option.value)}
-              >
-                <div className="text-base lg:text-lg font-medium text-center">{option.label}</div>
-              </div>
-            ))}
+          {/* Gender Section */}
+          <div className="w-full space-y-2">
+            <h2 className="text-lg lg:text-xl font-medium ">{t('userInfo.selectGender')}</h2>
+            <div className="grid grid-cols-2 gap-6 lg:gap-8">
+              {genderOptions.map((option) => (
+                <div
+                  key={option.value}
+                  className={`flex flex-col items-center cursor-pointer transition-all p-4  rounded-lg ${
+                    selectedGender === option.value
+                      ? "bg-blue-50 border-2 border-blue-500"
+                      : "hover:bg-gray-50 border-2 border-gray-200"
+                  }`}
+                  onClick={() => setSelectedGender(option.value)}
+                >
+                  <div className="text-base lg:text-lg font-medium text-center">{option.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between w-full pt-2">
+        {/* Sticky Navigation Buttons at Bottom */}
+        <div className="flex-shrink-0 pt-4">
+          <div className="flex justify-between w-full">
           <button 
             onClick={onPrev} 
             className={`cursor-pointer group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3 
@@ -332,6 +336,7 @@ export default function UserInfoScreen({
               </>
             )}
           </button>
+          </div>
         </div>
       </div>
 

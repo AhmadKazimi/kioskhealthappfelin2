@@ -130,10 +130,10 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
 }) => {
   const { t, i18n } = useTranslation()
   const isArabic = i18n.language === 'ar'
-  
+
   return (
-    <div className="lg:min-h-screen p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto h-screen lg:h-[80vh] flex flex-col">
+    <div className="h-full flex flex-col p-4 lg:p-6">
+      <div className="max-w-7xl mx-auto h-full flex flex-col">
         {/* Header */}
         <div className="text-center space-y-2 mb-1 lg:mb-2 flex-shrink-0">
           <h2 className="text-2xl lg:text-5xl font-bold text-blue-800">
@@ -141,14 +141,26 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
           </h2>
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex flex-col lg:flex-row flex-1 items-center justify-between space-y-4 lg:space-y-0 lg:space-x-8 w-full min-h-0">
-          {/* Left Side - Back Button */}
-          <div className="w-full lg:w-1/6 flex items-center justify-center order-2 lg:order-1 flex-shrink-0">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto min-h-0 flex items-center justify-center">
+          <div className="relative w-full h-full max-h-[60vh] lg:max-h-none">
+            <div className="relative w-full h-full">
+              <div className="relative h-full">
+                <div className="relative z-10 h-full">
+                  <ShenaiScanner onScanComplete={onScanComplete} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sticky Buttons at Bottom */}
+        <div className="flex-shrink-0 pt-4">
+          <div className="flex justify-between items-center w-full">
             <Button
               onClick={onPrev}
               disabled={scanning}
-              className="text-base lg:text-lg py-3 lg:py-4 px-6 lg:px-8 bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 flex items-center justify-center space-x-2 w-full lg:w-auto"
+              className="text-base lg:text-lg py-3 lg:py-4 px-6 lg:px-8 bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 flex items-center justify-center space-x-2 w-auto"
             >
               {isArabic ? (
                 <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -156,54 +168,40 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
                 <ArrowLeft className="w-4 h-4 lg:w-5 lg:h-5" />
               )}
               {t('buttons.back')}
-            </Button> 
-          </div>
+            </Button>
 
-          {/* Center - Scanner */}
-          <div className="w-full lg:w-4/6 flex flex-col items-center justify-center order-1 lg:order-2 flex-1 min-h-0">
-            <div className="relative w-full h-full max-h-[60vh] lg:max-h-none">
-              <div className="relative w-full h-full">
-                <div className="relative h-full">
-                  <div className="relative z-10 h-full">
-                    <ShenaiScanner onScanComplete={onScanComplete} />
+            {showResults && (
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={scanning}
+                className={`cursor-pointer group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3
+                         text-sm md:text-base font-medium text-white bg-gradient-to-r from-[#407EFF] to-[#1E40AF]
+                         rounded-xl shadow-lg
+                         transition-all duration-300 ease-out
+                         hover:shadow-xl hover:scale-[1.02] hover:from-[#1E40AF] hover:to-[#407EFF]
+                         focus:outline-none focus:ring-4 focus:ring-[#407EFF]/30
+                         active:scale-[0.98]
+                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg
+                         w-auto`}
+              >
+                {scanning ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>{t('buttons.loading')}</span>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Next Button */}
-          <div className="w-full lg:w-1/6 flex items-center justify-center order-3 flex-shrink-0">
-          {showResults && (<button 
-              type="button"
-              onClick={onNext}
-              disabled={scanning}
-              className={`cursor-pointer group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3
-                       text-sm md:text-base font-medium text-white bg-gradient-to-r from-[#407EFF] to-[#1E40AF]
-                       rounded-xl shadow-lg
-                       transition-all duration-300 ease-out
-                       hover:shadow-xl hover:scale-[1.02] hover:from-[#1E40AF] hover:to-[#407EFF]
-                       focus:outline-none focus:ring-4 focus:ring-[#407EFF]/30
-                       active:scale-[0.98]
-                       disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg
-                       w-full lg:w-auto`}
-            >
-              {scanning ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>{t('buttons.loading')}</span>
-                </div>
-              ) : (
-                <>
-                  <span>{t('buttons.next')}</span>
-                  {isArabic ? (
-                    <ArrowLeft className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:-translate-x-1" />
-                  ) : (
-                    <ArrowRight className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:translate-x-1" />
-                  )}
-                </>
-              )}
-            </button>)}
+                ) : (
+                  <>
+                    <span>{t('buttons.next')}</span>
+                    {isArabic ? (
+                      <ArrowLeft className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:-translate-x-1" />
+                    ) : (
+                      <ArrowRight className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:translate-x-1" />
+                    )}
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
