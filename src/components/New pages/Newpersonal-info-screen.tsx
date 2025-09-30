@@ -261,36 +261,35 @@ export default function NewPersonalInfoScreen({
     <> 
     
      {/* Mobile Layout (up to 1023px) */}
-<motion.div 
+<motion.div
     className="lg:hidden flex flex-col h-full overflow-hidden"
     initial={{ opacity: 0, y: 50 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6, delay: 0.3 }}
 >
-    <motion.div 
+    <motion.div
         className="flex-1 flex flex-col p-4 sm:p-6 h-full min-h-0"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.4 }}
     >
-        {/* Header - Fixed at top */}
-        <motion.div 
-              className="text-center flex-shrink-0 items-center justify-center mb-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}
-        >
-            <h2 className="text-lg sm:text-xl font-bold text-[#407EFF] mb-2">
-                {t('personalInfo.title')}
-            </h2>
-            <p className="text-gray-600 text-xs">
-                {t('personalInfo.subtitle')}
-            </p>
-        </motion.div>
-
-        {/* Scrollable Form Content */}
+        {/* Scrollable Content Area with Header */}
         <div className="flex-1 px-1 overflow-y-auto min-h-0">
+            {/* Header - Scrollable with content */}
+            <motion.div
+                  className="text-center mb-4 pb-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}
+            >
+                <h2 className="text-lg sm:text-xl font-bold text-[#407EFF] mb-2">
+                    {t('personalInfo.title')}
+                </h2>
+                <p className="text-gray-600 text-xs">
+                    {t('personalInfo.subtitle')}
+                </p>
+            </motion.div>
                 {/* All your form fields go here - keep them as they are */}
                 <form  className="space-y-1 flex flex-col flex-1" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} onSubmit={(e) => e.preventDefault()}>
         {/* Validation Error Summary */}
@@ -582,27 +581,26 @@ export default function NewPersonalInfoScreen({
         transition={{ duration: 0.8, delay: 0.1 }}
       >
         {/* Form */}
-        <motion.div 
+        <motion.div
           className="rounded-3xl p-4 md:p-6 h-full max-w-4xl w-full flex flex-col min-h-0"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
         >
-          {/* Header */}
-          <motion.div 
-            className="text-center mb-2 md:mb-4 flex-shrink-0"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 1.1 }}
-          >
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#407EFF] mb-2">
-              {t('personalInfo.title')}
-            </h2>
-          </motion.div>
-
           <form className="flex-1 flex flex-col min-h-0 overflow-hidden" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} onSubmit={(e) => e.preventDefault()}>
-            {/* Scrollable content area */}
+            {/* Scrollable content area with Header */}
             <div className="flex-1 pr-2 space-y-2 md:space-y-3 overflow-y-auto overflow-x-hidden min-h-0">
+              {/* Header - Scrollable with content */}
+              <motion.div
+                className="text-center mb-2 md:mb-4 pb-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 1.1 }}
+              >
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#407EFF] mb-2">
+                  {t('personalInfo.title')}
+                </h2>
+              </motion.div>
               {/* Full Name */}
               <div className="group flex-shrink-0">
                 <Label htmlFor="fullName" className="text-sm  font-semibold text-gray-700  block uppercase tracking-wide">

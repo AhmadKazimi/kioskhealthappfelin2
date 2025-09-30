@@ -55,7 +55,7 @@
       "validPhoneNumber": "Valid phone number"
     },
     "footer": "© 2025 Health Check. Touch screen to interact.",
-    "medicalDisclaimer": "This is an automated health assessment. It does not replace professional medical advice."
+    "medicalDisclaimer": "This is a wellness solution that supports health awareness and wellness. It is not a medical device, and not intended for diagnosis, treatment, or as a replacement for professional medical evaluation."
   },
   "faceScan": {
     "title": "Face Scan",
@@ -248,7 +248,7 @@
     "noSymptoms": "Nothing",
     "scanToViewMobile": "Scan to view on mobile",
     "importantNoticeTitle": "Important Notice",
-    "importantNotice": "This is an automated health assessment summary. It is not a medical diagnosis. Please consult with a healthcare provider for proper medical evaluation and treatment.",
+    "importantNotice": "This is a wellness solution that supports health awareness and wellness. It is not a medical device, and not intended for diagnosis, treatment, or as a replacement for professional medical evaluation.",
     "sendEmail": "Send Email",
     "emailSubject": "Health Assessment Summary",
     "emailSuccess": "Summary sent via email!",
@@ -547,7 +547,7 @@
     "healthCheckKiosk": "Health Check",
     "adminPanel": "Admin Panel",
     "footerCopyright": "© 2025 Health Check. Touch screen to interact.",
-    "footerDisclaimer": "This is an automated health assessment. It does not replace professional medical advice."
+    "footerDisclaimer": "This is a wellness solution that supports health awareness and wellness. It is not a medical device, and not intended for diagnosis, treatment, or as a replacement for professional medical evaluation."
   },
   "progress": {
     "yourProgress": "Your Progress",

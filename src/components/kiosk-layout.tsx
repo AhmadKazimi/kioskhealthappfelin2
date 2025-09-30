@@ -25,32 +25,31 @@ export default function KioskLayout({ children }: KioskLayoutProps) {
   return (
     <div className="h-full overflow-hidden relative bg-gradient-to-b from-[#407EFF] to-white ">
         
-      <motion.div 
-          className="absolute top-20
-           right-0  decorative-vector-top hidden sm:block"
+      <motion.div
+          className="absolute top-20 right-0 decorative-vector-top hidden sm:block z-0"
           initial={{ height: '0%', x: 150, y: -150, scale: 0.8 }}
           animate={{ height: '100%', x: 0, y: 0, scale: 1 }}
-          transition={{ 
-            duration: 1.2, 
+          transition={{
+            duration: 1.2,
             ease: [0.25, 0.46, 0.45, 0.94],
             delay: 0.2
           }}
         >
-          <img src="/Vector.svg" alt="carevision" className="victor " />
+          <img src="/Vector.svg" alt="carevision" className="victor" />
         </motion.div>
-      
+
         {/* Bottom Left Vector - Shows second */}
-        <motion.div 
-          className=" absolute -bottom-20 left-0   decorative-vector-bottom hidden sm:block"
+        <motion.div
+          className="absolute -bottom-20 left-0 decorative-vector-bottom hidden sm:block z-0"
           initial={{ opacity: 0, x: -130, y: 130, scale: 0.8 }}
           animate={{ opacity: 1, x: -20, y: 100, scale: 1 }}
-          transition={{ 
-            duration: 1.2, 
+          transition={{
+            duration: 1.2,
             ease: [0.25, 0.46, 0.45, 0.94],
             delay: 0.6
           }}
         >
-          <img src="/Vector2.svg" alt="carevision" className="victor " />
+          <img src="/Vector2.svg" alt="carevision" className="victor" />
         </motion.div>
       
       {/* Responsive Header */}
@@ -90,12 +89,12 @@ export default function KioskLayout({ children }: KioskLayoutProps) {
       </main>
 
       {/* Responsive Footer */}
-      <footer className="bg-transparent z-50 py-2 sm:py-3 md:py-4 lg:py-6 px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12  h-[10%]  text-center text-gray-500">
-        <div className="space-y-1 sm:space-y-2">
-          <p className="text-xs sm:text-sm md:text-base lg:text-lg leading-tight">
+      <footer className="bg-transparent relative z-50 py-2 sm:py-3 md:py-4 lg:py-6 px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 h-[10%] text-center">
+        <div className="space-y-1">
+          <p className="text-[10px] sm:text-xs md:text-sm leading-tight text-gray-600 relative z-50">
             {t('layout.footerCopyright')}
           </p>
-          <p className="text-xs sm:text-sm md:text-base lg:text-lg leading-tight">
+          <p className="text-[10px] sm:text-xs md:text-sm leading-tight text-gray-700 font-medium relative z-50">
             {t('layout.footerDisclaimer')}
           </p>
         </div>

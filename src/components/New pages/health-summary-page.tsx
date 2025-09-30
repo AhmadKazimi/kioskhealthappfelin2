@@ -59,46 +59,44 @@
     // Check if current language is Arabic
     const isArabic = i18n.language === 'ar';
 
-    // Function to translate symptoms from English to Arabic
-    const translateSymptoms = (symptomsText: string): string => {
-      if (!isArabic || !symptomsText) return symptomsText;
-      
-      // Create mapping of English symptoms to direct Arabic translations
-      const symptomMap: { [key: string]: string } = {
-        'headache': t('complaint.symptoms.headache'),
-        'fever': t('complaint.symptoms.fever'), 
-        'cough': t('complaint.symptoms.cough'),
-        'sore throat': t('complaint.symptoms.soreThroat'),
-        'stomach pain': t('complaint.symptoms.stomachPain'),
-        'back pain': t('complaint.symptoms.backPain'),
-        'dizziness': t('complaint.symptoms.dizziness'),
-        'fatigue': t('complaint.symptoms.fatigue'),
-        'nausea': t('complaint.symptoms.nausea'),
-        'shortness of breath': t('complaint.symptoms.shortnessOfBreath'),
-        'chest pain': t('complaint.symptoms.chestPain'),
-        'other': t('complaint.symptoms.other'),
-        'nothing': t('complaint.symptoms.nothing')
+    // Function to translate symptom keys to current language
+    const translateSymptom = (symptomKey: string): string => {
+      if (!symptomKey) return '';
+
+      // Trim the symptom key
+      const trimmedKey = symptomKey.trim();
+
+      // Map of symptom keys to translation keys
+      const symptomKeyMap: { [key: string]: string } = {
+        'headache': 'complaint.symptoms.headache',
+        'fever': 'complaint.symptoms.fever',
+        'cough': 'complaint.symptoms.cough',
+        'soreThroat': 'complaint.symptoms.soreThroat',
+        'sore throat': 'complaint.symptoms.soreThroat',
+        'stomachPain': 'complaint.symptoms.stomachPain',
+        'stomach pain': 'complaint.symptoms.stomachPain',
+        'backPain': 'complaint.symptoms.backPain',
+        'back pain': 'complaint.symptoms.backPain',
+        'dizziness': 'complaint.symptoms.dizziness',
+        'fatigue': 'complaint.symptoms.fatigue',
+        'nausea': 'complaint.symptoms.nausea',
+        'shortnessOfBreath': 'complaint.symptoms.shortnessOfBreath',
+        'shortness of breath': 'complaint.symptoms.shortnessOfBreath',
+        'chestPain': 'complaint.symptoms.chestPain',
+        'chest pain': 'complaint.symptoms.chestPain',
+        'other': 'complaint.symptoms.other',
+        'nothing': 'complaint.symptoms.nothing'
       };
 
-      let translatedText = symptomsText;
-      
-      // Split by common separators (comma, semicolon, and/or) and translate each symptom
-      const symptoms = symptomsText.split(/[,;]|\band\b/i).map(s => s.trim());
-      
-      for (const symptom of symptoms) {
-        const lowerSymptom = symptom.toLowerCase();
-        for (const [englishSymptom, translation] of Object.entries(symptomMap)) {
-          if (lowerSymptom.includes(englishSymptom)) {
-            // Make sure we have a valid translation and it's not the same as the key
-            if (translation && translation !== `complaint.symptoms.${englishSymptom}`) {
-              translatedText = translatedText.replace(new RegExp(symptom, 'gi'), translation);
-            }
-            break;
-          }
-        }
+      // Try to find the translation key
+      const translationKey = symptomKeyMap[trimmedKey] || symptomKeyMap[trimmedKey.toLowerCase()];
+
+      if (translationKey) {
+        return t(translationKey);
       }
-      
-      return translatedText;
+
+      // If no mapping found, return the original value (might be custom text)
+      return trimmedKey;
     };
 
     // Define missing variables and functions
@@ -166,9 +164,12 @@
       }
     ] : [];
 
-    // Create symptoms array from userData.HealthConcern
-    const symptoms = userData.HealthConcern ? 
-      userData.HealthConcern.split(/[,;]|\band\b/i).map(s => s.trim()).filter(s => s && s.toLowerCase() !== 'nothing') : 
+    // Create symptoms array from userData.HealthConcern and translate each
+    const symptoms = userData.HealthConcern ?
+      userData.HealthConcern.split(/[,;]|\band\b/i)
+        .map(s => s.trim())
+        .filter(s => s && s.toLowerCase() !== 'nothing')
+        .map(s => translateSymptom(s)) :
       [];
 
     // Create timestamp object
@@ -242,7 +243,7 @@
             bloodPressure: latestResult ? `${latestResult.SystolicBloodPressureMmhg}/${latestResult.DiastolicBloodPressureMmhg}` : "N/A",
             heartRateVariability: latestResult?.HrvSdnnMs || "N/A",
             respirationRate: latestResult?.BreathingRate || "N/A",
-            reportedSymptoms: translateSymptoms(userData.HealthConcern) || t('healthSummary.noSymptomsReported')
+            reportedSymptoms: symptoms.length > 0 ? symptoms.join(', ') : t('healthSummary.noSymptomsReported')
           }
         };
 
