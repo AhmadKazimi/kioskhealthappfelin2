@@ -63,7 +63,7 @@ export default function KioskLayout({ children }: KioskLayoutProps) {
           
           {/* Center: Header Title */}
           <div className="flex-1 flex justify-center sm:justify-start px-2 sm:px-4">
-            <h1 className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-blue-700 truncate">
+            <h1 className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-white truncate">
               {t('layout.healthCheckKiosk')}
             </h1>
           </div>

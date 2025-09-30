@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
 import type { UserData } from "./home-screen";
 import Cookies from 'js-cookie';
 import { ClientModel } from "@/payload-types";
@@ -305,14 +306,19 @@ export default function ComplaintScreen({
     <div className="h-full flex flex-col p-10">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl sm:text-4xl font-bold text-blue-700 mb-2">
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-center pb-6"
+        >
+          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-[#407EFF] mb-2">
             {t('complaint.title')}
           </h2>
           <p className="text-sm sm:text-xl text-gray-600 mb-2">
           {t('complaint.subtitle1')} <span className="text-sm text-gray-600">({t('complaint.subtitle2')})</span>
           </p>
-        </div>
+        </motion.div>
 
         <div className="pb-6">
         <div className="flex flex-wrap justify-center items-start gap-4">

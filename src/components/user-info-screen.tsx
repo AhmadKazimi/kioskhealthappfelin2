@@ -189,14 +189,19 @@ export default function UserInfoScreen({
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {/* Title */}
-          <div className="text-center pt-8 pb-6">
-            <h1 className="text-3xl lg:text-5xl font-bold text-blue-500">
+          <motion.div
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-center pb-6"
+          >
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-[#407EFF]">
               {t('userInfo.ageAndGender')}
             </h1>
             <p className="text-sm text-gray-500 lg:hidden">
               {t('userInfo.subtitle')}
             </p>
-          </div>
+          </motion.div>
 
           {/* Age Section */}
           <div className="w-full mb-8">

@@ -134,12 +134,7 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
   return (
     <div className="h-full flex flex-col p-4 lg:p-6">
       <div className="max-w-7xl mx-auto h-full flex flex-col">
-        {/* Header */}
-        <div className="text-center space-y-2 mb-1 lg:mb-2 flex-shrink-0">
-          <h2 className="text-2xl lg:text-5xl font-bold text-blue-800">
-            {t('faceScan.title')}
-          </h2>
-        </div>
+        {/* Scanner Camera - No Title Needed (Already shown in animation) */}
 
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto min-h-0 flex items-center justify-center">

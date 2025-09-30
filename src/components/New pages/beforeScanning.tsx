@@ -75,9 +75,9 @@ export default function BeforeScanning({ onNext, onPrev }: { onNext: () => void,
                       initial={{ opacity: 0, y: -30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.8, ease: "easeOut" }}
-                      className="text-center flex-shrink-0 mb-6"
+                      className="text-center flex-shrink-0 pb-6"
                   >
-                      <h1 className="text-4xl font-bold text-blue-600 mb-1">{t('beforeScanning.title')}</h1>
+                      <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-[#407EFF] mb-1">{t('beforeScanning.title')}</h1>
                       <p className="text-gray-600 text-lg">{t('beforeScanning.subtitle')}</p>
                   </motion.div>
 

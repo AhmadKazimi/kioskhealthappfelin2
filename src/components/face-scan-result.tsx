@@ -5,6 +5,7 @@
 import React from 'react';
 import { useState, useEffect, useCallback } from "react"
 import Cookies from 'js-cookie';
+import { motion } from "framer-motion";
 
 import { HealthData } from "@/types/health-data";
 import type { UserData } from "./home-screen";
@@ -52,7 +53,7 @@ const FaceScanResult = React.memo(function FaceScanResult({
 
     // Update user data when client and scan results are available
     useEffect(() => {
-        if (client && latestResult) {
+        if (client && latestResult && (!userData.id || userData.id !== client.Id)) {
             console.log("FaceScan Result UserData: " + JSON.stringify(userData));
 
             updateUserData({
@@ -80,128 +81,130 @@ const FaceScanResult = React.memo(function FaceScanResult({
                 }
             });
         }
-    }, [client, latestResult, updateUserData]);
+    }, [client, latestResult, userData.id]);
 
     return (
           <div className="h-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-10">
             {/* Scrollable Content Area */}
             <div className="flex-1 overflow-y-auto min-h-0">
-              <div className="text-center flex-shrink-0">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-blue-700 my-3 sm:my-4 md:my-5">{t('faceScan.scanComplete')}</h2>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+              <motion.div
+                initial={{ opacity: 0, y: -30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="text-center flex-shrink-0 pb-6"
+              >
+                  <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-[#407EFF]">{t('faceScan.scanComplete')}</h2>
+              </motion.div>
+
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
       {/* Heart Rate Card */}
-      <Card className="bg-white flex flex-col justify-between items-start p-2 sm:p-3 md:p-4 lg:p-6 rounded-2xl sm:rounded-3xl shadow-lg border-0 h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px] lg:min-h-[180px]">
-        <p className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-[#4F8EFF] mb-2 sm:mb-3 md:mb-4 lg:mb-6 flex-shrink-0">
+      <Card className="bg-white flex flex-col p-3 sm:p-4 md:p-5 lg:p-6 rounded-2xl sm:rounded-3xl shadow-lg border-0 h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px] lg:min-h-[180px]">
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-[#4F8EFF] mb-auto">
           {t('faceScan.vitals.heartRate')}
         </p>
-        
-        <div className="flex items-center justify-between w-full flex-1">
-          {/* Heart Icon */}
-          <div className="flex items-center justify-center flex-shrink-0">
-          <img src="/heart.png" alt="heart" className="w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20" />
 
+        <div className="flex items-end justify-between gap-3 sm:gap-4 mt-3">
+          {/* Heart Icon */}
+          <div className="flex-shrink-0">
+            <img src="/heart.png" alt="heart" className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16" />
           </div>
 
-          <div className="text-right flex-1 min-w-0">
-            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-5xl font-black text-black leading-none mb-1">
-              <Counter 
-                value={latestResult?.RealTimeHeartRate || 99} 
+          <div className="flex flex-col items-end min-w-0">
+            <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black leading-tight whitespace-nowrap">
+              <Counter
+                value={latestResult?.RealTimeHeartRate || 99}
                 duration={1500}
-                className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-5xl font-black text-black leading-none"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black"
               />
             </p>
-            <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-700"> 
-              <span className="text-xs sm:text-sm md:text-base lg:text-lg">BPM</span>
-            </p>
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-700 mt-0.5">BPM</p>
           </div>
         </div>
       </Card>
 
       {/* Heart Rate Variability Card */}
-      <Card className="bg-white flex flex-col justify-between items-start p-2 sm:p-3 md:p-4 lg:p-6 rounded-2xl sm:rounded-3xl shadow-lg border-0 h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px] lg:min-h-[180px]">
-        <p className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-[#4F8EFF] mb-2 sm:mb-3 md:mb-4 lg:mb-6 flex-shrink-0">
+      <Card className="bg-white flex flex-col p-3 sm:p-4 md:p-5 lg:p-6 rounded-2xl sm:rounded-3xl shadow-lg border-0 h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px] lg:min-h-[180px]">
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-[#4F8EFF] mb-auto">
           {t('faceScan.vitals.heartRateVariability')}
         </p>
-        
-        <div className="flex items-center justify-between w-full flex-1">
+
+        <div className="flex items-end justify-between gap-3 sm:gap-4 mt-3">
           {/* Monitor Icon */}
-          <div className="flex items-center justify-center flex-shrink-0">
-            <img src="/variabilty.png" alt="heart" className="w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20" />
+          <div className="flex-shrink-0">
+            <img src="/variabilty.png" alt="heart" className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16" />
           </div>
 
-          <div className="text-right flex-1 min-w-0">
-            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-5xl font-black text-black leading-none mb-1">
-              <Counter 
-                value={latestResult?.HrvSdnnMs || 0} 
+          <div className="flex flex-col items-end min-w-0">
+            <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black leading-tight whitespace-nowrap">
+              <Counter
+                value={latestResult?.HrvSdnnMs || 0}
                 duration={1500}
-                className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-5xl font-black text-black leading-none"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black"
               />
             </p>
-            <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-700">ms</p>
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-700 mt-0.5">ms</p>
           </div>
         </div>
       </Card>
 
       {/* Respiration Rate Card */}
-      <Card className="bg-white flex flex-col justify-between items-start p-2 sm:p-3 md:p-4 lg:p-6 rounded-2xl sm:rounded-3xl shadow-lg border-0 h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px] lg:min-h-[180px]">
-        <p className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-[#4F8EFF] mb-2 sm:mb-3 md:mb-4 lg:mb-6 flex-shrink-0">
+      <Card className="bg-white flex flex-col p-3 sm:p-4 md:p-5 lg:p-6 rounded-2xl sm:rounded-3xl shadow-lg border-0 h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px] lg:min-h-[180px]">
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-[#4F8EFF] mb-auto">
           {t('faceScan.vitals.respirationRate')}
         </p>
-        
-        <div className="flex items-center justify-between w-full flex-1">
+
+        <div className="flex items-end justify-between gap-3 sm:gap-4 mt-3">
           {/* Lungs Icon */}
-          <div className="flex items-center justify-center flex-shrink-0">
-            <img src="/lungs.png" alt="lungs" className="w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20" />
+          <div className="flex-shrink-0">
+            <img src="/lungs.png" alt="lungs" className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16" />
           </div>
 
-          <div className="text-right flex-1 min-w-0">
-            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-5xl font-black text-black leading-none mb-1">
-              <Counter 
-                value={latestResult?.BreathingRate || 0} 
+          <div className="flex flex-col items-end min-w-0">
+            <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black leading-tight whitespace-nowrap">
+              <Counter
+                value={latestResult?.BreathingRate || 0}
                 duration={1500}
-                className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-5xl font-black text-black leading-none"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black"
               />
             </p>
-            <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-700">BPM</p>
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-700 mt-0.5">BPM</p>
           </div>
         </div>
       </Card>
 
       {/* Blood Pressure Card */}
-      <Card className="bg-white flex flex-col justify-between items-start p-2 sm:p-3 md:p-4 lg:p-6 rounded-2xl sm:rounded-3xl shadow-lg border-0 h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px] lg:min-h-[180px]">
-        <p className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-[#4F8EFF] mb-2 sm:mb-3 md:mb-4 lg:mb-6 flex-shrink-0">
+      <Card className="bg-white flex flex-col p-3 sm:p-4 md:p-5 lg:p-6 rounded-2xl sm:rounded-3xl shadow-lg border-0 h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px] lg:min-h-[180px]">
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-[#4F8EFF] mb-auto">
           {t('faceScan.vitals.bloodPressure')}
         </p>
-        
-        <div className="flex items-center justify-between w-full flex-1">
+
+        <div className="flex items-end justify-between gap-3 sm:gap-4 mt-3">
           {/* Blood Pressure Monitor Icon */}
-          <div className="flex items-center justify-center flex-shrink-0">
-            <img src="/bloodPressure.png" alt="bloodPressure" className="w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20" />
+          <div className="flex-shrink-0">
+            <img src="/bloodPressure.png" alt="bloodPressure" className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16" />
           </div>
 
-          <div className="text-right flex-1 min-w-0">
-            <p className="text-sm sm:text-base md:text-lg lg:text-2xl xl:text-3xl font-black text-black leading-none mb-1">
-              <Counter 
-                value={latestResult?.SystolicBloodPressureMmhg || 0} 
+          <div className="flex flex-col items-end min-w-0">
+            <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-black leading-tight whitespace-nowrap">
+              <Counter
+                value={latestResult?.SystolicBloodPressureMmhg || 0}
                 duration={1500}
-                className="text-sm sm:text-base md:text-lg lg:text-2xl xl:text-3xl font-black text-black leading-none"
+                className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-black"
               />
-              <span className="text-sm sm:text-base md:text-lg lg:text-2xl xl:text-3xl">/
-                <Counter 
-                  value={latestResult?.DiastolicBloodPressureMmhg || 0} 
-                  duration={1500}
-                  className="text-sm sm:text-base md:text-lg lg:text-2xl xl:text-3xl font-black text-black leading-none"
-                />
-              </span>
+              <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl">/</span>
+              <Counter
+                value={latestResult?.DiastolicBloodPressureMmhg || 0}
+                duration={1500}
+                className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-black"
+              />
             </p>
-            <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-700">mm Hg</p>
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold text-gray-700 mt-0.5">mm Hg</p>
           </div>
         </div>
       </Card>
                   </div>
                 </div>
-              </div>
-
+    
             {/* Sticky Button at Bottom */}
             <div className="flex-shrink-0 pt-4">
               <div className="flex items-center justify-center w-full">
@@ -240,8 +243,9 @@ const FaceScanResult = React.memo(function FaceScanResult({
               </button>
               </div>
             </div>
-          </div>
-    );
-});
+            </div>
+  )
+}
+)
 
 export default FaceScanResult; 
