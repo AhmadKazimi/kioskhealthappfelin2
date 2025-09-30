@@ -261,26 +261,16 @@ export default function NewPersonalInfoScreen({
     <> 
     
      {/* Mobile Layout (up to 1023px) */}
-<motion.div
-    className="lg:hidden flex flex-col h-full overflow-hidden"
-    initial={{ opacity: 0, y: 50 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6, delay: 0.3 }}
->
-    <motion.div
-        className="flex-1 flex flex-col p-4 sm:p-6 h-full min-h-0"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-    >
+<div className="lg:hidden flex flex-col h-full overflow-hidden">
+    <div className="flex-1 flex flex-col p-4 sm:p-6 h-full min-h-0">
         {/* Scrollable Content Area with Header */}
         <div className="flex-1 px-1 overflow-y-auto min-h-0">
             {/* Header - Scrollable with content */}
             <motion.div
                   className="text-center mb-4 pb-4"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
                 dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}
             >
                 <h2 className="text-lg sm:text-xl font-bold text-[#407EFF] mb-2">
@@ -568,34 +558,24 @@ export default function NewPersonalInfoScreen({
                 )}
               </button>
         </div>
-    </motion.div>
-</motion.div>
+    </div>
+</div>
 
   
 
       {/* Desktop Layout (1024px and above) */}
-      <motion.div 
-        className="hidden lg:flex w-full h-full items-center justify-center max-w-7xl mx-auto overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.1 }}
-      >
+      <div className="hidden lg:flex w-full h-full items-center justify-center max-w-7xl mx-auto overflow-hidden">
         {/* Form */}
-        <motion.div
-          className="rounded-3xl p-4 md:p-6 h-full max-w-4xl w-full flex flex-col min-h-0"
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-        >
+        <div className="rounded-3xl p-4 md:p-6 h-full max-w-4xl w-full flex flex-col min-h-0">
           <form className="flex-1 flex flex-col min-h-0 overflow-hidden" dir={i18n.language === 'ar' ? 'rtl' : 'ltr'} onSubmit={(e) => e.preventDefault()}>
             {/* Scrollable content area with Header */}
             <div className="flex-1 pr-2 space-y-2 md:space-y-3 overflow-y-auto overflow-x-hidden min-h-0">
               {/* Header - Scrollable with content */}
               <motion.div
                 className="text-center mb-2 md:mb-4 pb-4"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 1.1 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
               >
                 <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#407EFF] mb-2">
                   {t('personalInfo.title')}
@@ -878,10 +858,8 @@ export default function NewPersonalInfoScreen({
               </button>
         </div>
           </form>
-        </motion.div>
-
-      
-      </motion.div>
+        </div>
+      </div>
   
       {/* Agreement Modal */}
       <AgreementModal isOpen={isModalOpen} onClose={closeModal} />

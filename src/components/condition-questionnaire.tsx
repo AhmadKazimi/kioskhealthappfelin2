@@ -82,14 +82,15 @@ const ConditionQuestionnaire = ({ condition, questionnaireData, onComplete, curr
   };
 
   return (
-    <div className="max-w-4xl mx-auto h-full flex flex-col">
+    <div className="h-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-10">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        {/* Assessment Progress Section */}
-      <div className="mb-8">
-        <h2 className="text-sm sm:text-lg font-semibold text-gray-700 mb-4">
-          {t('assessment.assessmentProgress')}
-        </h2>
+        <div className="max-w-4xl mx-auto">
+          {/* Assessment Progress Section */}
+          <div className="mb-8">
+            <h2 className="text-sm sm:text-lg font-semibold text-gray-700 mb-4">
+              {t('assessment.assessmentProgress')}
+            </h2>
         <div className="mb-4">
           <span className="text-gray-600 text-sm sm:text-lg font-medium">
             {t('assessment.condition')} {currentConditionIndex + 1} {t('assessment.of')} {totalConditions} ({getProgressPercentage()}%)
@@ -187,6 +188,7 @@ const ConditionQuestionnaire = ({ condition, questionnaireData, onComplete, curr
           </select>
         </div>
       )}
+        </div>
       </div>
 
       {/* Sticky Button Area */}
