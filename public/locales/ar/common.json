@@ -731,8 +731,8 @@
     "title": "مسح الوجه",
     "subtitle": "يرجى اتباع التعليمات لمسح الوجه",
     "backButton": "← رجوع",
-    "startButton": "🚀 بدء",
-    "loadingButton": "⏳ جاري التحميل..."
+    "startButton": "بدء",
+    "loadingButton": "جاري التحميل..."
   },
   "questionnaireSummary": {
     "title": "مراجعة إجاباتك",

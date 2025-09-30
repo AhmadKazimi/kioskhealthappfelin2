@@ -734,8 +734,8 @@
     "title": "Face Scan",
     "subtitle": "Please follow the instructions for face scanning",
     "backButton": "← Back",
-    "startButton": "🚀 Start",
-    "loadingButton": "⏳ Loading..."
+    "startButton": "Start",
+    "loadingButton": "Loading..."
   },
   "questionnaireSummary": {
     "title": "Review Your Answers",
