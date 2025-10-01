@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation";
 import Select, { SingleValue } from "react-select";
-import { ArrowDown, ArrowUp, Minus, Plus, ChevronLeft } from "lucide-react"
+import { ArrowDown, ArrowUp, Minus, Plus, ChevronLeft, ArrowRight } from "lucide-react"
 import Swal from "sweetalert2";
 import { debounce } from 'lodash'; 
 import Cookies from 'js-cookie'; 
@@ -646,11 +646,24 @@ return (
 
     <header className="admin-header bg-white shadow-md py-4 px-4 sm:px-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" onClick={onExit} className="rounded-full">
-            <ChevronLeft className="h-6 w-6" />
-            <span className="sr-only">{t('admin.backToKiosk')}</span>
-          </Button>
+        <div className={`flex items-center gap-4 ${i18n.language === 'ar' ? 'flex-row-reverse' : ''}`}>
+          <button
+            onClick={onExit}
+            className="cursor-pointer group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3
+                       text-sm md:text-base font-medium text-gray-600 bg-white/80 backdrop-blur-sm
+                       border-2 border-gray-300 rounded-xl shadow-sm
+                       transition-all duration-300 ease-out
+                       hover:border-[#407EFF] hover:text-[#407EFF] hover:bg-white hover:shadow-md
+                       focus:outline-none focus:ring-4 focus:ring-[#407EFF]/20
+                       active:scale-[0.98]"
+          >
+            {i18n.language === 'ar' ? (
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+            )}
+            <span>{t('admin.backToKiosk')}</span>
+          </button>
           <h1 className="text-xl sm:text-3xl font-bold text-blue-700">{t('admin.title')}</h1>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">

@@ -349,15 +349,15 @@
               <div className="bg-blue-50 rounded-[15px] sm:rounded-[20px] lg:rounded-[25px] px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 mb-3 sm:mb-4 md:mb-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <span className="text-sm sm:text-base md:text-lg lg:text-xl font-normal text-gray-700">{t('healthSummary.name')}:</span>
+                    <span className="text-sm sm:text-base md:text-lg lg:text-xl font-normal text-gray-700">{t('healthSummary.name')}</span>
                     <span className="text-xs sm:text-sm md:text-base lg:text-lg font-medium">{patient.name}</span>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <span className="text-sm sm:text-base md:text-lg lg:text-xl font-normal text-gray-700">{t('healthSummary.age')}:</span>
+                    <span className="text-sm sm:text-base md:text-lg lg:text-xl font-normal text-gray-700">{t('healthSummary.age')}</span>
                     <span className="text-xs sm:text-sm md:text-base lg:text-lg font-medium">{patient.age}</span>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <span className="text-sm sm:text-base md:text-lg lg:text-xl font-normal text-gray-700">{t('healthSummary.gender')}:</span>
+                    <span className="text-sm sm:text-base md:text-lg lg:text-xl font-normal text-gray-700">{t('healthSummary.gender')}</span>
                     <span className="text-xs sm:text-sm md:text-base lg:text-lg font-medium">{patient.gender}</span>
                   </div>
                 </div>
