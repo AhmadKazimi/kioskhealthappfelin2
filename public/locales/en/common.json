@@ -781,7 +781,9 @@
     },
     "errors": {
       "timeout": "Scan timed out. Please try again.",
-      "noFinger": "No finger detected. Please cover the camera completely."
+      "noFinger": "No finger detected. Please cover the camera completely.",
+      "connectionFailed": "Failed to connect to vitals server. Please check your internet connection and try again.",
+      "cameraFailed": "Failed to access camera. Please allow camera permissions and try again."
     }
   },
   "vitals": {

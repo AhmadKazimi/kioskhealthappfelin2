@@ -56,6 +56,11 @@ export interface BloodPressureResult {
 export class FingerprintSocketService {
   private socket: Socket | null = null;
   private startTime: number = 0;
+  private connectCallback: (() => void) | null = null;
+
+  onConnect(callback: () => void): void {
+    this.connectCallback = callback;
+  }
 
   connect(
     params: SocketConnectionParams,
@@ -81,7 +86,10 @@ export class FingerprintSocketService {
 
     // Event listeners
     this.socket.on('connect', () => {
-      console.log('SocketIO connected');
+      console.log('SocketIO connected successfully');
+      if (this.connectCallback) {
+        this.connectCallback();
+      }
     });
 
     this.socket.on('result', (data: VitalsResult) => {
@@ -111,7 +119,7 @@ export class FingerprintSocketService {
 
   sendFrame(frameData: FrameData): void {
     if (!this.socket || !this.socket.connected) {
-      console.error('Socket not connected');
+      // Don't log error - this is expected during connection phase
       return;
     }
 

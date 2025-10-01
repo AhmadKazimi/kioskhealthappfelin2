@@ -48,62 +48,83 @@ export const FingerprintScanScreen = ({
 
     const initializeScan = async () => {
       try {
-        // Initialize frame capture
+        // Initialize socket connection FIRST
+        socketServiceRef.current = new FingerprintSocketService()
+
+        // Wait for socket to connect before starting frame capture
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Socket connection timeout after 10 seconds'));
+          }, 10000);
+
+          socketServiceRef.current!.connect(
+            {
+              bpCalibrated: false,
+              checkArrhythmias: false,
+              checkStroke: false,
+              client: 'health-kiosk',
+              longMeasurement: false,
+              party: userId,
+              sampleTime: 30,
+              storeResult: false, // We handle storage ourselves
+              user_age: userAge,
+              user_sex: userGender
+            },
+            // onVitals
+            (vitalsData) => {
+              setVitals(vitalsData)
+              setFingerDetected(vitalsData.calculation_parameters.finger_detected)
+            },
+            // onBloodPressure
+            (bpData) => {
+              setBloodPressure(bpData)
+            },
+            // onStableReadings
+            async () => {
+              setIsScanning(false)
+              setScanComplete(true)
+
+              // Save to backend
+              if (vitals && bloodPressure) {
+                const result = await saveFingerprintScan(userId, vitals, bloodPressure)
+                if (!result.success) {
+                  setError(result.message)
+                }
+              }
+            },
+            // onTimeout
+            () => {
+              setError(t('fingerprintScan.errors.timeout'))
+              setIsScanning(false)
+              clearTimeout(timeout)
+              reject(new Error('Scan timeout'))
+            },
+            // onError
+            (errorMsg) => {
+              setError(errorMsg)
+              setIsScanning(false)
+              clearTimeout(timeout)
+              reject(new Error(errorMsg))
+            }
+          )
+
+          // Wait for socket to actually connect
+          socketServiceRef.current!.onConnect(() => {
+            console.log('Socket connected successfully')
+            clearTimeout(timeout)
+            resolve()
+          })
+        })
+
+        console.log('Socket connected, initializing camera...')
+
+        // NOW initialize frame capture
         frameCaptureRef.current = new FrameCaptureService()
         await frameCaptureRef.current.initialize(videoRef.current!, {
           width: 640,
           height: 480,
           fps: 6
         })
-
-        // Initialize socket connection
-        socketServiceRef.current = new FingerprintSocketService()
-        socketServiceRef.current.connect(
-          {
-            bpCalibrated: false,
-            checkArrhythmias: false,
-            checkStroke: false,
-            client: 'health-kiosk',
-            longMeasurement: false,
-            party: userId,
-            sampleTime: 30,
-            storeResult: false, // We handle storage ourselves
-            user_age: userAge,
-            user_sex: userGender
-          },
-          // onVitals
-          (vitalsData) => {
-            setVitals(vitalsData)
-            setFingerDetected(vitalsData.calculation_parameters.finger_detected)
-          },
-          // onBloodPressure
-          (bpData) => {
-            setBloodPressure(bpData)
-          },
-          // onStableReadings
-          async () => {
-            setIsScanning(false)
-            setScanComplete(true)
-
-            // Save to backend
-            if (vitals && bloodPressure) {
-              const result = await saveFingerprintScan(userId, vitals, bloodPressure)
-              if (!result.success) {
-                setError(result.message)
-              }
-            }
-          },
-          // onTimeout
-          () => {
-            setError(t('fingerprintScan.errors.timeout'))
-            setIsScanning(false)
-          },
-          // onError
-          (errorMsg) => {
-            setError(errorMsg)
-            setIsScanning(false)
-          }
-        )
 
         // Start frame capture
         let currentFrame = 0
@@ -129,7 +150,18 @@ export const FingerprintScanScreen = ({
         setIsScanning(true)
 
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to initialize scan')
+        console.error('Fingerprint scan initialization error:', err)
+        if (err instanceof Error) {
+          if (err.message.includes('Socket connection timeout') || err.message.includes('Connection error')) {
+            setError(t('fingerprintScan.errors.connectionFailed'))
+          } else if (err.message.includes('camera') || err.message.includes('Camera')) {
+            setError(t('fingerprintScan.errors.cameraFailed'))
+          } else {
+            setError(err.message)
+          }
+        } else {
+          setError('Failed to initialize scan')
+        }
       }
     }
 
