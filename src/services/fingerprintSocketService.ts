@@ -64,6 +64,7 @@ export class FingerprintSocketService {
 
   connect(
     params: SocketConnectionParams,
+    accessToken: string,
     onVitals: (vitals: VitalsResult) => void,
     onBloodPressure: (bp: BloodPressureResult) => void,
     onStableReadings: () => void,
@@ -76,10 +77,10 @@ export class FingerprintSocketService {
       transports: ['websocket'],
       forceNew: true,
       withCredentials: true,
-      auth: {
-        Authorization: `Bearer ${params.client}` // Use actual JWT if available
-      },
-      query: params as any
+      query: {
+        access_token: accessToken,
+        ...params
+      } as any
     });
 
     this.startTime = Date.now();

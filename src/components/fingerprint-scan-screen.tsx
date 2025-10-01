@@ -57,6 +57,14 @@ export const FingerprintScanScreen = ({
             reject(new Error('Socket connection timeout after 10 seconds'));
           }, 10000);
 
+          // Get access token from environment
+          const accessToken = process.env.NEXT_PUBLIC_VITALS_ACCESS_TOKEN || '';
+
+          if (!accessToken) {
+            reject(new Error('Missing NEXT_PUBLIC_VITALS_ACCESS_TOKEN environment variable'));
+            return;
+          }
+
           socketServiceRef.current!.connect(
             {
               bpCalibrated: false,
@@ -70,6 +78,7 @@ export const FingerprintScanScreen = ({
               user_age: userAge,
               user_sex: userGender
             },
+            accessToken,
             // onVitals
             (vitalsData) => {
               setVitals(vitalsData)
