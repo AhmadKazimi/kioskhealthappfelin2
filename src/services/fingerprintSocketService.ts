@@ -70,7 +70,7 @@ export class FingerprintSocketService {
     onTimeout: () => void,
     onError: (error: string) => void
   ): void {
-    const SOCKET_URL = 'wss://vitals.miavitals.com/v1/process_frame';
+    const SOCKET_URL = 'https://amal.miavitals.com/process_frame';
 
     this.socket = io(SOCKET_URL, {
       transports: ['websocket'],
