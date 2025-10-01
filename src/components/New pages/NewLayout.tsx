@@ -10,6 +10,9 @@ import ClientAssessment from "../client-assessment";
 import ComplaintScreen from "../complaint-screen";
 import WelcomeScreen from "../welcome-screen";
 import BeforeScanning from "./beforeScanning";
+import { BeforeFingerprintScanning } from "./beforeFingerprintScanning";
+import { ScanTypeSelection } from "../scan-type-selection";
+import { FingerprintScanScreen } from "../fingerprint-scan-screen";
 import HealthSummaryPage from "./health-summary-page";
 import { ClientModel } from "@/payload-types";
 import React, { useState } from "react";
@@ -36,12 +39,13 @@ export default function NewLayout({
     //localApiData = null
 }: NewLayoutProps) {
     const [storedApiData, setStoredApiData] = useState<ClientModel | null>(null);
+    const [scanType, setScanType] = useState<'face' | 'fingerprint' | null>(null);
     const progressTrackerRef = React.useRef<ProgressTrackerRef>(null);
     const { t, i18n } = useTranslation();
     
-    // Load client data from sessionStorage on mount or when step changes to 7
+    // Load client data from sessionStorage on mount or when step changes to 8
     React.useEffect(() => {
-        if (currentStep === 7 && !storedApiData) {
+        if (currentStep === 8 && !storedApiData) {
             const sessionClientData = sessionStorage.getItem('clientData');
             console.log('NewLayout - sessionStorage clientData:', sessionClientData);
             if (sessionClientData) {
@@ -92,7 +96,7 @@ export default function NewLayout({
         }
     };
 
-    const renderStep = () => { 
+    const renderStep = () => {
         switch (currentStep) {
           case 1:
             return (
@@ -101,7 +105,7 @@ export default function NewLayout({
                 updateUserData={updateUserData}
                 onNext={nextStep}
                 onPrev={prevStep}
-              /> 
+              />
             );
           case 2:
             return (
@@ -113,42 +117,77 @@ export default function NewLayout({
               />
             );
           case 3:
+            // NEW: Scan Type Selection
             return (
-              <BeforeScanning 
-                onNext={nextStep}
-                onPrev={prevStep}
+              <ScanTypeSelection
+                onSelectScanType={(type) => {
+                  setScanType(type);
+                  nextStep();
+                }}
               />
             );
-           
-             
-            case 4:
-            return (
-              <FaceScanResult 
-                userData={userData}
-                updateUserData={updateUserData}
-                onNext={nextStep}
-                onPrev={prevStep}
-              />
-            );
-            case 5:
+          case 4:
+            // Branch based on scan type
+            if (scanType === 'fingerprint') {
+              return (
+                <BeforeFingerprintScanning
+                  onStart={nextStep}
+                  onBack={prevStep}
+                />
+              );
+            } else {
+              // Default to face scan
+              return (
+                <BeforeScanning
+                  onNext={nextStep}
+                  onPrev={prevStep}
+                />
+              );
+            }
+
+          case 5:
+            // Scanner screen (face or fingerprint)
+            if (scanType === 'fingerprint') {
+              return (
+                <FingerprintScanScreen
+                  userId={String(userData.id || Date.now())}
+                  userAge={parseInt(userData.age) || 25}
+                  userGender={(userData.gender?.toLowerCase() as 'male' | 'female') || 'male'}
+                  onNext={nextStep}
+                  onBack={prevStep}
+                />
+              );
+            } else {
+              // Face scan (existing)
+              return (
+                <FaceScanResult
+                  userData={userData}
+                  updateUserData={updateUserData}
+                  onNext={nextStep}
+                  onPrev={prevStep}
+                />
+              );
+            }
+          case 6:
+            // Paths merge here - continue normal flow
             return (
               <ComplaintScreen
                 userData={userData}
                 updateUserData={updateUserData}
                 onNext={nextStep}
                 onPrev={prevStep}
-              />  
+              />
             );
-            case 6:
+          case 7:
             return (
               <ClientAssessment onNext={nextStep} onPrev={prevStep}/>
             );
-            case 7:
-            console.log('NewLayout - Step 7 Debug:');
+          case 8:
+            console.log('NewLayout - Step 8 Debug:');
             console.log('- storedApiData:', storedApiData);
             console.log('- userData:', userData);
             console.log('- Screen width:', window.innerWidth);
-            
+
             // Use sessionStorage data if available, otherwise fall back to userData
             const finalUserData = storedApiData || {
               Id: userData.id || 0,
@@ -166,9 +205,9 @@ export default function NewLayout({
               OxygonSaturation: String(userData.vitals?.oxygenSaturation || ""),
               ReportedSymptoms: userData.complaint || "",
             };
-            
+
             console.log('- finalUserData:', finalUserData);
-            
+
             return (
               <HealthSummaryPage
                 isOpen={true}
@@ -205,34 +244,40 @@ export default function NewLayout({
           };
         case 3:
           return {
-            title: t('progress.faceScanDescription'),
+            title: t('scanType.subtitle'),
             description: "Carevision",
             image: isEnglish ? "/video/en_facescan.mp4" : "/video/facescan.mp4",
-
+            className:''
           };
         case 4:
           return {
-            title:t('faceScan.scanCompleteSubtitle'),
+            title: scanType === 'fingerprint' ? t('fingerprintScan.instructions.subtitle') : t('progress.faceScanDescription'),
+            description: "Carevision",
+            image: isEnglish ? "/video/en_facescan.mp4" : "/video/facescan.mp4",
+            className:''
+          };
+        case 5:
+          return {
+            title: scanType === 'fingerprint' ? t('fingerprintScan.title') : t('faceScan.scanCompleteSubtitle'),
             description: "Carevision",
             image: isEnglish ? "/video/en_result2.mp4" : "/video/result2.mp4",
             className:''
           };
-        case 5:
+        case 6:
           return {
             title: t('complaint.subtitle1'),
             description: "Carevision",
             image: isEnglish ? "/video/en_qastion.mp4" : "/video/qastion.mp4",
             className:''
           };
-        case 6:
+        case 7:
           return {
             title: t('progress.symptomsDescription'),
             description: "Carevision",
             image: isEnglish ? "/video/en_answer.mp4" : "/video/answer.mp4",
             className:''
-
           };
-        case 7:
+        case 8:
           return {
             title: t('progress.healthAssessmentSummary'),
             description: "Carevision",
@@ -251,7 +296,7 @@ export default function NewLayout({
       <>
       {/* Mobile View (up to md breakpoint) */}
       <div className="block md:hidden h-full w-full bg-white rounded-t-3xl">
-      {currentStep >= 1 && currentStep <= 6 && (
+      {currentStep >= 1 && currentStep <= 7 && (
         <ProgressTracker
           ref={progressTrackerRef}
           initialStep={currentStep}
@@ -261,14 +306,14 @@ export default function NewLayout({
           disabled={false}
         />
         )}
-        <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
+        <div className={`${currentStep === 8 ? 'h-full' : ''} w-full`}>
           {renderStep()}
         </div>
       </div>
-      
+
       {/* Tablet View (md to lg breakpoint: 768px-1023px) */}
       <div className="hidden md:block lg:hidden h-full w-full bg-white rounded-t-3xl">
-        {currentStep >= 1 && currentStep <= 6 && (
+        {currentStep >= 1 && currentStep <= 7 && (
           <ProgressTracker
             ref={progressTrackerRef}
             initialStep={currentStep}
@@ -278,7 +323,7 @@ export default function NewLayout({
             disabled={false}
           />
         )}
-        <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
+        <div className={`${currentStep === 8 ? 'h-full' : ''} w-full`}>
           {renderStep()}
         </div>
       </div>

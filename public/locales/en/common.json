@@ -746,5 +746,49 @@
     "answer": "Answer",
     "editAnswers": "Edit Answers",
     "submitAllAnswers": "Submit All Answers"
+  },
+  "scanType": {
+    "title": "Choose Scan Type",
+    "subtitle": "Select how you would like to measure your vitals",
+    "faceScan": "Face Scan",
+    "faceScanDesc": "Scan your face using AI technology",
+    "fingerprintScan": "Fingerprint Scan",
+    "fingerprintScanDesc": "Place your finger on the camera"
+  },
+  "fingerprintScan": {
+    "title": "Fingerprint Scan",
+    "placeFinger": "Place your finger over the camera",
+    "fingerDetected": "Finger detected",
+    "instructions": {
+      "title": "Fingerprint Scan Instructions",
+      "subtitle": "Follow these steps for accurate results",
+      "step1": {
+        "title": "Clean Your Finger",
+        "desc": "Make sure your finger is clean and dry"
+      },
+      "step2": {
+        "title": "Cover Camera",
+        "desc": "Place your finger completely over the rear camera"
+      },
+      "step3": {
+        "title": "Hold Still",
+        "desc": "Keep your finger steady for 30 seconds"
+      },
+      "step4": {
+        "title": "Stay Relaxed",
+        "desc": "Breathe normally and stay calm during the scan"
+      }
+    },
+    "errors": {
+      "timeout": "Scan timed out. Please try again.",
+      "noFinger": "No finger detected. Please cover the camera completely."
+    }
+  },
+  "vitals": {
+    "heartRate": "Heart Rate",
+    "hrv": "HRV",
+    "spo2": "SpO2",
+    "respRate": "Breathing Rate",
+    "bloodPressure": "Blood Pressure"
   }
 } 
