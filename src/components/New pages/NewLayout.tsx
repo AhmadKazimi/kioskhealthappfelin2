@@ -4,7 +4,7 @@ import LeftSection from "./LeftSection";
 import MiddleSection from "./MiddleSection";
 import RightSection from "./RightSection";
 import UserInfoScreen from "../user-info-screen";
-// import FaceScanScreen from "../face-scan-screen";
+import FaceScanScreen from "../face-scan-screen";
 import FaceScanResult from "../face-scan-result";
 import ClientAssessment from "../client-assessment";
 import ComplaintScreen from "../complaint-screen";
@@ -151,6 +151,7 @@ export default function NewLayout({
               return (
                 <FingerprintScanScreen
                   userId={String(userData.id || Date.now())}
+                  userEmail={userData.personalInfo?.email || 'unknown@example.com'}
                   userAge={parseInt(userData.age) || 25}
                   userGender={(userData.gender?.toLowerCase() as 'male' | 'female') || 'male'}
                   onNext={nextStep}
@@ -158,11 +159,9 @@ export default function NewLayout({
                 />
               );
             } else {
-              // Face scan (existing)
+              // Face scan (actual scanning component, not results)
               return (
-                <FaceScanResult
-                  userData={userData}
-                  updateUserData={updateUserData}
+                <FaceScanScreen
                   onNext={nextStep}
                   onPrev={prevStep}
                 />

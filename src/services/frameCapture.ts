@@ -12,9 +12,14 @@ export class FrameCaptureService {
   private captureInterval: NodeJS.Timeout | null = null;
 
   async initialize(
-    videoElement: HTMLVideoElement,
+    videoElement: HTMLVideoElement | null,
     options: FrameCaptureOptions = { width: 640, height: 480, fps: 6 }
   ): Promise<void> {
+    // Validate video element
+    if (!videoElement) {
+      throw new Error('Video element is null. Ensure the video element is rendered before initializing camera.');
+    }
+
     this.videoElement = videoElement;
 
     // Get camera stream
@@ -28,14 +33,55 @@ export class FrameCaptureService {
         audio: false
       });
 
+      if (!this.videoElement) {
+        throw new Error('Video element became null during initialization');
+      }
+
       this.videoElement.srcObject = this.stream;
+
+      // Wait for video metadata to load before playing
+      // This prevents AbortError: "play() interrupted by new load request"
+      await new Promise<void>((resolve, reject) => {
+        if (!this.videoElement) {
+          reject(new Error('Video element is null'));
+          return;
+        }
+
+        const handleLoadedMetadata = () => {
+          console.log('✅ Video metadata loaded');
+          resolve();
+        };
+
+        const handleError = (err: Event) => {
+          console.error('❌ Video loading error:', err);
+          reject(new Error('Failed to load video'));
+        };
+
+        this.videoElement.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+        this.videoElement.addEventListener('error', handleError, { once: true });
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          this.videoElement?.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          this.videoElement?.removeEventListener('error', handleError);
+          reject(new Error('Video metadata loading timeout'));
+        }, 5000);
+      });
+
+      // Now play the video
+      console.log('▶️ Starting video playback...');
       await this.videoElement.play();
+      console.log('✅ Video playback started successfully');
+      console.log('📹 Video dimensions:', this.videoElement.videoWidth, 'x', this.videoElement.videoHeight);
+      console.log('📹 Video readyState:', this.videoElement.readyState);
+      console.log('📹 Video paused:', this.videoElement.paused);
 
       // Setup canvas for frame capture
       this.canvas = document.createElement('canvas');
       this.canvas.width = options.width;
       this.canvas.height = options.height;
       this.context = this.canvas.getContext('2d');
+      console.log('🎨 Canvas created:', options.width, 'x', options.height);
 
     } catch (error) {
       throw new Error(`Failed to access camera: ${error}`);
@@ -76,8 +122,16 @@ export class FrameCaptureService {
 
   stopCapture(): void {
     if (this.captureInterval) {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🛑 STOPPING FRAME CAPTURE');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
       clearInterval(this.captureInterval);
       this.captureInterval = null;
+
+      console.log('✅ Frame capture interval cleared');
+      console.log('✅ No more frames will be sent');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }
   }
 

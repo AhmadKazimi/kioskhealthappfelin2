@@ -110,5 +110,36 @@ Container (h-full flex flex-col)
 - ✅ Consistent user experience across all steps
 - ✅ Responsive design maintained for mobile/tablet/desktop
 - ✅ No more hidden buttons or cut-off content
-- add to memeroy what we did now
-- add to memeroy all changes and the app documentation @PROJECT_DOCUMENTATION.md
+
+### Fingerprint Scanner Integration
+
+The application includes a fingerprint scanning feature that communicates with the Mia Vitals API for biometric authentication and vital signs capture.
+
+**Authentication Flow**:
+1. Login to `https://vitals.miavitals.com/api/v1/login` to get access token
+2. Connect to WebSocket at `wss://amal.miavitals.com/process_frame` with bearer token
+3. Stream camera frames via socket connection
+4. Receive vitals results from biometric analysis
+
+**Key Services**:
+- `src/services/fingerprintAuthService.ts` - Handles vitals API authentication
+- `src/services/fingerprintSocketService.ts` - WebSocket connection for frame streaming
+- `src/services/frameCapture.ts` - Camera frame capture and processing
+- `src/components/fingerprint-scan-screen.tsx` - Main fingerprint scanning UI
+
+**Important Notes**:
+- WebSocket uses `auth: { Authorization: "Bearer <token>" }` header (not query params)
+- Access tokens expire after 3600 seconds
+- Current implementation has hardcoded credentials (should be moved to env vars for production)
+- Socket connection must be established before starting frame capture
+
+### Services Architecture
+
+**AI/Scanning Services**:
+- `shenai-sdk/` - WebAssembly-based face scanning SDK (local processing)
+- `src/services/fingerprintSocketService.ts` - Fingerprint scanning via external API
+- `src/hooks/useShenaiSdk.ts` - Hook for Shenai SDK initialization
+
+**Data Flow**:
+- Face scan: Client-side processing with Shenai SDK → Local vitals extraction → PayloadCMS storage
+- Fingerprint scan: Camera frames → WebSocket to Mia Vitals API → Vitals results → PayloadCMS storage

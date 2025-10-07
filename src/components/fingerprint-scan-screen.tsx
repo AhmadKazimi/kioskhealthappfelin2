@@ -8,9 +8,11 @@ import { Heart, Activity, Droplet, Wind } from "lucide-react"
 import { FingerprintSocketService, VitalsResult, BloodPressureResult } from "@/services/fingerprintSocketService"
 import { FrameCaptureService } from "@/services/frameCapture"
 import { saveFingerprintScan } from "@/services/saveFingerprintScan"
+import { getAuthToken, clearAuthToken } from "@/services/fingerprintAuthService"
 
 interface FingerprintScanScreenProps {
   userId: string
+  userEmail: string
   userAge: number
   userGender: 'male' | 'female'
   onBack: () => void
@@ -19,6 +21,7 @@ interface FingerprintScanScreenProps {
 
 export const FingerprintScanScreen = ({
   userId,
+  userEmail,
   userAge,
   userGender,
   onBack,
@@ -31,10 +34,15 @@ export const FingerprintScanScreen = ({
   const socketServiceRef = useRef<FingerprintSocketService | null>(null)
   const frameCaptureRef = useRef<FrameCaptureService | null>(null)
 
+  // Initialization guards
+  const isInitializingRef = useRef(false)
+  const hasInitializedRef = useRef(false)
+
   const [isScanning, setIsScanning] = useState(false)
   const [scanProgress, setScanProgress] = useState(0)
   const [frameNumber, setFrameNumber] = useState(0)
   const [fingerDetected, setFingerDetected] = useState(false)
+  const [cameraActive, setCameraActive] = useState(false)
 
   // Vitals state
   const [vitals, setVitals] = useState<VitalsResult | null>(null)
@@ -42,28 +50,51 @@ export const FingerprintScanScreen = ({
   const [scanComplete, setScanComplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Flag to track if we're waiting for final results before sending stop
+  const waitingForFinalResultsRef = useRef(false)
+
   // Initialize and start scan
   useEffect(() => {
-    if (!videoRef.current) return
-
     const initializeScan = async () => {
+      // LOCAL guard: Component-specific check
+      if (isInitializingRef.current || hasInitializedRef.current) {
+        console.log('⏭️ Component already initializing or initialized, skipping...')
+        return
+      }
+
+      // Set initialization flag
+      isInitializingRef.current = true
+      console.log('🚀 Starting fingerprint scan initialization...')
+
       try {
-        // Initialize socket connection FIRST
+        // Cleanup any existing connections first
+        console.log('🧹 Cleaning up existing connections...')
+        frameCaptureRef.current?.cleanup()
+        socketServiceRef.current?.disconnect()
+        frameCaptureRef.current = null
+        socketServiceRef.current = null
+
+        // Wait for DOM to be ready
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // Check if video element is available
+        if (!videoRef.current) {
+          throw new Error('Video element not available. DOM may not be ready.')
+        }
+
+        // Step 1: Login to get access token (uses cached token if available)
+        console.log('🔐 Getting authentication token...')
+        const accessToken = await getAuthToken()
+        console.log('✅ Access token obtained')
+
+        // Step 2: Initialize socket connection
         socketServiceRef.current = new FingerprintSocketService()
 
-        // Wait for socket to connect before starting frame capture
+        // Step 3: Wait for socket to connect before starting frame capture
         await new Promise<void>((resolve, reject) => {
           const timeout = setTimeout(() => {
             reject(new Error('Socket connection timeout after 10 seconds'));
           }, 10000);
-
-          // Get access token from environment
-          const accessToken = process.env.NEXT_PUBLIC_VITALS_ACCESS_TOKEN || '';
-
-          if (!accessToken) {
-            reject(new Error('Missing NEXT_PUBLIC_VITALS_ACCESS_TOKEN environment variable'));
-            return;
-          }
 
           socketServiceRef.current!.connect(
             {
@@ -86,23 +117,83 @@ export const FingerprintScanScreen = ({
             },
             // onBloodPressure
             (bpData) => {
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+              console.log('🩺 Blood pressure result received')
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
               setBloodPressure(bpData)
+
+              // If we're waiting for final results, NOW send stop signal
+              if (waitingForFinalResultsRef.current) {
+                console.log('✅ All results received, sending stop signal...')
+
+                // Send stop signal to server (server will disconnect)
+                socketServiceRef.current?.sendStopSignal()
+
+                // Complete the scan
+                setScanComplete(true)
+
+                // Save to backend
+                setTimeout(async () => {
+                  if (vitals && bpData) {
+                    console.log('💾 Saving scan results to backend...')
+                    const result = await saveFingerprintScan(userId, vitals, bpData)
+                    if (!result.success) {
+                      setError(result.message)
+                    } else {
+                      console.log('✅ Scan results saved successfully')
+                    }
+                  }
+                }, 100)
+              }
             },
             // onStableReadings
             async () => {
-              setIsScanning(false)
-              setScanComplete(true)
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+              console.log('🎉 STABLE READINGS ACHIEVED!')
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
-              // Save to backend
-              if (vitals && bloodPressure) {
-                const result = await saveFingerprintScan(userId, vitals, bloodPressure)
-                if (!result.success) {
-                  setError(result.message)
+              // STOP frame capture (no more frames needed)
+              console.log('🛑 Stopping frame capture...')
+              frameCaptureRef.current?.stopCapture()
+
+              // Set flag to wait for blood pressure result
+              waitingForFinalResultsRef.current = true
+              console.log('⏳ Waiting for blood_pressure_result before sending stop...')
+
+              // Update UI state
+              setIsScanning(false)
+
+              // Timeout fallback: if blood pressure doesn't arrive in 5 seconds, send stop anyway
+              setTimeout(() => {
+                if (waitingForFinalResultsRef.current) {
+                  console.log('⚠️ Timeout waiting for blood pressure, sending stop signal anyway...')
+                  waitingForFinalResultsRef.current = false
+                  socketServiceRef.current?.sendStopSignal()
+                  setScanComplete(true)
                 }
-              }
+              }, 5000)
             },
             // onTimeout
             () => {
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+              console.log('⏱️ SCAN TIMEOUT - Measurement incomplete')
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+              // Reset waiting flag
+              waitingForFinalResultsRef.current = false
+
+              // STOP frame capture immediately
+              console.log('🛑 Stopping frame capture...')
+              frameCaptureRef.current?.stopCapture()
+
+              // Send stop signal to server (server will disconnect)
+              console.log('📤 Sending stop signal to server...')
+              socketServiceRef.current?.sendStopSignal()
+
+              console.log('✅ Frame sending stopped')
+
+              // Update UI state
               setError(t('fingerprintScan.errors.timeout'))
               setIsScanning(false)
               clearTimeout(timeout)
@@ -110,6 +201,24 @@ export const FingerprintScanScreen = ({
             },
             // onError
             (errorMsg) => {
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+              console.log('❌ SCAN ERROR:', errorMsg)
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+              // Reset waiting flag
+              waitingForFinalResultsRef.current = false
+
+              // STOP frame capture immediately
+              console.log('🛑 Stopping frame capture...')
+              frameCaptureRef.current?.stopCapture()
+
+              // Send stop signal to server (server will disconnect)
+              console.log('📤 Sending stop signal to server...')
+              socketServiceRef.current?.sendStopSignal()
+
+              console.log('✅ Frame sending stopped')
+
+              // Update UI state
               setError(errorMsg)
               setIsScanning(false)
               clearTimeout(timeout)
@@ -127,13 +236,22 @@ export const FingerprintScanScreen = ({
 
         console.log('Socket connected, initializing camera...')
 
+        // Verify video element is still available
+        if (!videoRef.current) {
+          throw new Error('Video element lost during socket connection')
+        }
+
         // NOW initialize frame capture
         frameCaptureRef.current = new FrameCaptureService()
-        await frameCaptureRef.current.initialize(videoRef.current!, {
+        await frameCaptureRef.current.initialize(videoRef.current, {
           width: 640,
           height: 480,
           fps: 6
         })
+
+        // Camera is now active
+        setCameraActive(true)
+        console.log('📹 Camera is now active and displaying')
 
         // Start frame capture
         let currentFrame = 0
@@ -142,13 +260,30 @@ export const FingerprintScanScreen = ({
 
           const timeLapse = socketServiceRef.current.getTimeLapse()
 
+          // Log first frame for verification
+          if (currentFrame === 0) {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('🎬 SENDING FIRST FRAME');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('Frame metadata structure (matches API spec):');
+            console.log({
+              frameNumber: currentFrame,
+              imageDataLength: base64Image.length,
+              remoteVitals: false,
+              stop: false,
+              timeLapse: timeLapse,
+              userEmail: userEmail
+            });
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          }
+
           socketServiceRef.current.sendFrame({
             frameNumber: currentFrame,
             imageData: base64Image,
             remoteVitals: false,
             stop: false,
             timeLapse: timeLapse,
-            userEmail: userId
+            userEmail: userEmail
           })
 
           setFrameNumber(currentFrame)
@@ -158,10 +293,21 @@ export const FingerprintScanScreen = ({
 
         setIsScanning(true)
 
+        // Mark as successfully initialized
+        hasInitializedRef.current = true
+        console.log('✅ Fingerprint scan initialized successfully')
+
       } catch (err) {
-        console.error('Fingerprint scan initialization error:', err)
+        console.error('❌ Fingerprint scan initialization error:', err)
+
+        // Reset initialization flags on error so user can retry
+        isInitializingRef.current = false
+        hasInitializedRef.current = false
+
         if (err instanceof Error) {
-          if (err.message.includes('Socket connection timeout') || err.message.includes('Connection error')) {
+          if (err.message.includes('Authentication') || err.message.includes('Login') || err.message.includes('cancelled')) {
+            setError(t('fingerprintScan.errors.authenticationFailed'))
+          } else if (err.message.includes('Socket connection timeout') || err.message.includes('Connection error')) {
             setError(t('fingerprintScan.errors.connectionFailed'))
           } else if (err.message.includes('camera') || err.message.includes('Camera')) {
             setError(t('fingerprintScan.errors.cameraFailed'))
@@ -171,17 +317,32 @@ export const FingerprintScanScreen = ({
         } else {
           setError('Failed to initialize scan')
         }
+      } finally {
+        // Always reset initializing flag
+        isInitializingRef.current = false
       }
     }
 
     initializeScan()
 
-    // Cleanup
+    // Cleanup on unmount
     return () => {
+      console.log('🧹 Component unmounting, cleaning up...')
       frameCaptureRef.current?.cleanup()
       socketServiceRef.current?.disconnect()
+
+      // Reset states
+      setCameraActive(false)
+      setIsScanning(false)
+
+      // Reset flags to allow re-initialization on next mount
+      isInitializingRef.current = false
+      hasInitializedRef.current = false
+
+      // Clear auth token on unmount (optional - remove if you want to keep token cached)
+      // clearAuthToken()
     }
-  }, [userId, userAge, userGender, t])
+  }, [userId, userAge, userGender])  // Removed 't' from dependencies
 
   return (
     <div className="h-full flex flex-col" dir={isArabic ? 'rtl' : 'ltr'}>
@@ -197,12 +358,23 @@ export const FingerprintScanScreen = ({
             <video
               ref={videoRef}
               className="w-full h-full object-cover"
+              autoPlay
               playsInline
               muted
             />
 
+            {/* Camera Initializing Overlay */}
+            {!cameraActive && !error && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                <div className="text-center text-white">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                  <p className="text-lg">{t('fingerprintScan.initializingCamera') || 'Initializing camera...'}</p>
+                </div>
+              </div>
+            )}
+
             {/* Finger Detection Overlay */}
-            {isScanning && (
+            {isScanning && cameraActive && (
               <div className="absolute top-4 left-4 bg-black/50 text-white px-4 py-2 rounded">
                 {fingerDetected ? (
                   <span className="text-green-400">✓ {t('fingerprintScan.fingerDetected')}</span>
@@ -212,8 +384,19 @@ export const FingerprintScanScreen = ({
               </div>
             )}
 
+            {/* Scan Complete Overlay */}
+            {scanComplete && (
+              <div className="absolute inset-0 flex items-center justify-center bg-green-600/90">
+                <div className="text-center text-white">
+                  <div className="text-6xl mb-4">✓</div>
+                  <p className="text-2xl font-bold">{t('fingerprintScan.scanComplete') || 'Scan Complete!'}</p>
+                  <p className="text-sm mt-2">{t('fingerprintScan.processingResults') || 'Processing results...'}</p>
+                </div>
+              </div>
+            )}
+
             {/* Progress Bar */}
-            {isScanning && (
+            {isScanning && !scanComplete && (
               <div className="absolute bottom-0 left-0 right-0 h-2 bg-gray-700">
                 <div
                   className="h-full bg-green-500 transition-all duration-300"
@@ -223,6 +406,52 @@ export const FingerprintScanScreen = ({
             )}
           </div>
         </div>
+
+        {/* Diagnostic Info Display */}
+        {vitals && isScanning && !scanComplete && (
+          <div className="max-w-2xl mx-auto mb-4">
+            <Card className="p-4 bg-blue-50">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-600">FPS</p>
+                  <p className="font-bold text-lg">{vitals.calculation_parameters.fps.toFixed(1)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Confidence</p>
+                  <p className="font-bold text-lg">{vitals.vitals_results.confidence.toFixed(0)}%</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Frame #</p>
+                  <p className="font-bold text-lg">{vitals.calculation_parameters.frame_number || frameNumber}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Status</p>
+                  <p className="font-bold text-lg">
+                    {vitals.calculation_parameters.stable_readings ? '✓ Stable' : '⏳ Processing'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Warnings */}
+              {(vitals.calculation_parameters.face_moved ||
+                vitals.calculation_parameters.motion_detected_count ||
+                vitals.calculation_parameters.illumination_changed_count) && (
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <p className="text-xs text-gray-600 font-semibold mb-1">Warnings:</p>
+                  {vitals.calculation_parameters.face_moved && (
+                    <p className="text-xs text-orange-600">⚠️ Movement detected</p>
+                  )}
+                  {vitals.calculation_parameters.motion_detected_count && (
+                    <p className="text-xs text-orange-600">⚠️ Motion count: {vitals.calculation_parameters.motion_detected_count}</p>
+                  )}
+                  {vitals.calculation_parameters.illumination_changed_count && (
+                    <p className="text-xs text-orange-600">⚠️ Light changes: {vitals.calculation_parameters.illumination_changed_count}</p>
+                  )}
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
 
         {/* Error Display */}
         {error && (

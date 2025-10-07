@@ -759,6 +759,9 @@
     "title": "Fingerprint Scan",
     "placeFinger": "Place your finger over the camera",
     "fingerDetected": "Finger detected",
+    "initializingCamera": "Initializing camera...",
+    "scanComplete": "Scan Complete!",
+    "processingResults": "Processing results...",
     "instructions": {
       "title": "Fingerprint Scan Instructions",
       "subtitle": "Follow these steps for accurate results",
@@ -783,7 +786,8 @@
       "timeout": "Scan timed out. Please try again.",
       "noFinger": "No finger detected. Please cover the camera completely.",
       "connectionFailed": "Failed to connect to vitals server. Please check your internet connection and try again.",
-      "cameraFailed": "Failed to access camera. Please allow camera permissions and try again."
+      "cameraFailed": "Failed to access camera. Please allow camera permissions and try again.",
+      "authenticationFailed": "Authentication failed. Please contact support."
     }
   },
   "vitals": {
