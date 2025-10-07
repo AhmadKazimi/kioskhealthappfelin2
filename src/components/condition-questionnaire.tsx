@@ -114,32 +114,38 @@ const ConditionQuestionnaire = ({ condition, questionnaireData, onComplete, curr
       </div>
 
   
-
       {/* Question Steps */}
-      <div className="mb-8">
-        <div className="flex items-center justify-center sm:space-x-2 px-6 md:px-2 space-x-0">
-          {conditionQuestionnaire.questions.map((_, index) => (
-            <div key={index} className="flex items-center w-full">
+           <div className="mb-8">
+            <div className="flex items-center justify-center sm:space-x-2 px-6 md:px-2 space-x-0">
+            {conditionQuestionnaire.questions.map((_, index) => (
               <div 
-                className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all duration-300 ${
-                  index <= currentQuestionIndex 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-300 text-gray-600'
-                }`}
+                key={index} 
+                className="flex items-center w-full"
+                onClick={(e) => e.stopPropagation()}  
               >
-                Q{index + 1}
-              </div>
-              {index < conditionQuestionnaire.questions.length - 1 && (
                 <div 
-                  className={`w-5 sm:w-16 h-0.5  sm:mx-2 transition-all duration-300 ${
-                    index < currentQuestionIndex ? 'bg-blue-600' : 'bg-gray-300'
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+                    index <= currentQuestionIndex 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-300 text-gray-600'
                   }`}
-                ></div>
-              )}
-            </div>
-          ))}
+                  onClick={(e) => e.preventDefault()} 
+                >
+                  Q{index + 1}
+                </div>
+
+                {index < conditionQuestionnaire.questions.length - 1 && (
+                  <div 
+                    className={`w-5 sm:w-16 h-0.5 sm:mx-2 transition-all duration-300 ${
+                      index < currentQuestionIndex ? 'bg-blue-600' : 'bg-gray-300'
+                    }`}
+                  ></div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+
 
       {/* Question Box */}
       <div className="bg-blue-50 p-2 sm:p-4 rounded-lg mb-2 sm:mb-3">
