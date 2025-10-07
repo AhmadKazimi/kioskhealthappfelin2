@@ -213,19 +213,23 @@ export default function UserInfoScreen({
           </div> */}
 
           {/* Age Input Box */}
-          <div className="relative w-full">
+         <div className="relative w-full">
             <input
               type="number"
-              min="0"
-              max="100"
+              min="1"
+              max="99"
               value={age || ''}
               onChange={(e) => {
                 const value = e.target.value;
+
+                // منع أكثر من رقمين
+                if (value.length > 2) return;
+
                 if (value === '') {
                   setAge('');
                 } else {
                   const parsedValue = Number.parseInt(value);
-                  if (!isNaN(parsedValue)) {
+                  if (!isNaN(parsedValue) && parsedValue >= 1 && parsedValue <= 99) {
                     setAge(parsedValue);
                   }
                 }
@@ -235,14 +239,13 @@ export default function UserInfoScreen({
               autoComplete="off"
             />
             <div className="flex justify-between mt-2 text-sm text-gray-600">
-              <span>{t('userInfo.minAge')}</span>
-              <span>{t('userInfo.maxAge')}</span>
+              <span>1</span>
+              <span>99</span>
             </div>
             <p className="text-xs text-gray-500 mt-1 text-center">
-                {t('userInfo.tapToEnterAge')}
+              {t('userInfo.tapToEnterAge')}
             </p>
-          </div>
-
+         </div>
           {/* Age Slider - Commented Out */}
           {/*
           <div className="relative w-full">
