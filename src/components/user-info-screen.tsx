@@ -30,8 +30,8 @@ export default function UserInfoScreen({
   const [isLoading, setIsLoading] = useState(false);
 
   const [age, setAge] = useState<number | ''>(
-    userData.age ? Number.parseInt(userData.age) : 22
-  );
+  userData.age ? parseInt(userData.age) : ''
+);
   
   const [screenWidth, setScreenWidth] = useState(0);
   
@@ -214,15 +214,19 @@ export default function UserInfoScreen({
 
           {/* Age Input Box */}
          <div className="relative w-full">
-                  <input
+            <input
               type="number"
               min="1"
               max="99"
+              autoComplete="new-age"
               defaultValue=""
+              value={age || ''}
               onChange={(e) => {
                 const value = e.target.value;
+
+                // منع أكثر من رقمين
                 if (value.length > 2) return;
-                
+
                 if (value === '') {
                   setAge('');
                 } else {
@@ -235,7 +239,7 @@ export default function UserInfoScreen({
               className="w-full px-4 py-3 text-center text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
               placeholder={t('userInfo.enterAge')}
               autoComplete="off"
-                  />
+            />
             <div className="flex justify-between mt-2 text-sm text-gray-600">
               <span>1</span>
               <span>99</span>
