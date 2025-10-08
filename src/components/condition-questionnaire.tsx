@@ -82,15 +82,12 @@ const ConditionQuestionnaire = ({ condition, questionnaireData, onComplete, curr
   };
 
   return (
-    <div className="h-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-10">
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-4xl mx-auto">
-          {/* Assessment Progress Section */}
-          <div className="mb-8">
-            <h2 className="text-sm sm:text-lg font-semibold text-gray-700 mb-4">
-              {t('assessment.assessmentProgress')}
-            </h2>
+    <div className="max-w-4xl mx-auto">
+      {/* Assessment Progress Section */}
+      <div className="mb-8">
+        <h2 className="text-sm sm:text-lg font-semibold text-gray-700 mb-4">
+          {t('assessment.assessmentProgress')}
+        </h2>
         <div className="mb-4">
           <span className="text-gray-600 text-sm sm:text-lg font-medium">
             {t('assessment.condition')} {currentConditionIndex + 1} {t('assessment.of')} {totalConditions} ({getProgressPercentage()}%)
@@ -114,38 +111,32 @@ const ConditionQuestionnaire = ({ condition, questionnaireData, onComplete, curr
       </div>
 
   
+
       {/* Question Steps */}
-           <div className="mb-8">
-            <div className="flex items-center justify-center sm:space-x-2 px-6 md:px-2 space-x-0">
-            {conditionQuestionnaire.questions.map((_, index) => (
+      <div className="mb-8">
+        <div className="flex items-center justify-center sm:space-x-2 px-6 md:px-2 space-x-0">
+          {conditionQuestionnaire.questions.map((_, index) => (
+            <div key={index} className="flex items-center w-full">
               <div 
-                key={index} 
-                className="flex items-center w-full"
-                onClick={(e) => e.stopPropagation()}  
+                className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+                  index <= currentQuestionIndex 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-300 text-gray-600'
+                }`}
               >
-                <div 
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all duration-300 ${
-                    index <= currentQuestionIndex 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-300 text-gray-600'
-                  }`}
-                  onClick={(e) => e.preventDefault()} 
-                >
-                  Q{index + 1}
-                </div>
-
-                {index < conditionQuestionnaire.questions.length - 1 && (
-                  <div 
-                    className={`w-5 sm:w-16 h-0.5 sm:mx-2 transition-all duration-300 ${
-                      index < currentQuestionIndex ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
-                  ></div>
-                )}
+                Q{index + 1}
               </div>
-            ))}
-          </div>
+              {index < conditionQuestionnaire.questions.length - 1 && (
+                <div 
+                  className={`w-5 sm:w-16 h-0.5  sm:mx-2 transition-all duration-300 ${
+                    index < currentQuestionIndex ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                ></div>
+              )}
+            </div>
+          ))}
         </div>
-
+      </div>
 
       {/* Question Box */}
       <div className="bg-blue-50 p-2 sm:p-4 rounded-lg mb-2 sm:mb-3">
@@ -194,12 +185,10 @@ const ConditionQuestionnaire = ({ condition, questionnaireData, onComplete, curr
           </select>
         </div>
       )}
-        </div>
-      </div>
 
-      {/* Sticky Button Area */}
-      <div className="flex-shrink-0 pt-4">
-        <div className="flex justify-between items-center w-full">
+      {/* Navigation Buttons */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-2">
           <button
             onClick={() => {
               if (currentQuestionIndex > 0) {
@@ -208,26 +197,17 @@ const ConditionQuestionnaire = ({ condition, questionnaireData, onComplete, curr
                 onPrev();
               }
             }}
-            className="cursor-pointer group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3
-                       text-sm md:text-base font-medium text-gray-600 bg-white/80 backdrop-blur-sm
-                       border-2 border-gray-300 rounded-xl shadow-sm
-                       transition-all duration-300 ease-out
-                       hover:border-[#407EFF] hover:text-[#407EFF] hover:bg-white hover:shadow-md
-                       focus:outline-none focus:ring-4 focus:ring-[#407EFF]/20
-                       active:scale-[0.98]"
+            className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors duration-200"
           >
-            {isArabic ? (
-              <svg className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            ) : (
-              <svg className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            )}
-            <span>{t('buttons.back')}</span>
+            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
+          <span className="text-gray-600 font-medium">{t('buttons.back')}</span>
+        </div>
 
+        <div className="flex items-center space-x-2">
+            <span className="text-gray-600 font-medium">{t('buttons.next')}</span>
           <button
             onClick={() => {
               if (currentQuestionIndex < conditionQuestionnaire.questions.length - 1) {
@@ -241,25 +221,11 @@ const ConditionQuestionnaire = ({ condition, questionnaireData, onComplete, curr
               }
             }}
             disabled={!answers[currentQuestionIndex]}
-            className="cursor-pointer group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3
-                       text-sm md:text-base font-medium text-white bg-gradient-to-r from-[#407EFF] to-[#1E40AF]
-                       rounded-xl shadow-lg
-                       transition-all duration-300 ease-out
-                       hover:shadow-xl hover:scale-[1.02] hover:from-[#1E40AF] hover:to-[#407EFF]
-                       focus:outline-none focus:ring-4 focus:ring-[#407EFF]/30
-                       active:scale-[0.98]
-                       disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg"
+            className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span>{t('buttons.next')}</span>
-            {isArabic ? (
-              <svg className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            ) : (
-              <svg className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            )}
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
       </div>

@@ -99,29 +99,29 @@ const ProgressTracker = forwardRef<ProgressTrackerRef, ProgressTrackerProps>(({
     }
   }));
 
-  const handleStepClick = (stepNumber: number) => {
-    if (stepNumber !== activeStep && stepNumber >= 1 && stepNumber <= steps.length && !isAnimating) {
-      // Store the previous step for direction logic
-      const previousStep = activeStep;
+  // const handleStepClick = (stepNumber: number) => {
+  //   if (stepNumber !== activeStep && stepNumber >= 1 && stepNumber <= steps.length && !isAnimating) {
+  //     // Store the previous step for direction logic
+  //     const previousStep = activeStep;
       
-      // Update step immediately for better visual feedback
-      setActiveStep(stepNumber);
-      onStepChange?.(stepNumber);
+  //     // Update step immediately for better visual feedback
+  //     setActiveStep(stepNumber);
+  //     onStepChange?.(stepNumber);
       
-      setIsAnimating(true);
+  //     setIsAnimating(true);
       
-      // Reduced timeout for better responsiveness
-      setTimeout(() => {
-        setIsAnimating(false);
-        // Call onNext or onPrev based on direction
-        if (stepNumber > previousStep) {
-          onNext?.();
-        } else if (stepNumber < previousStep) {
-          onPrev?.();
-        }
-      }, 150);
-    }
-  };
+  //     // Reduced timeout for better responsiveness
+  //     setTimeout(() => {
+  //       setIsAnimating(false);
+  //       // Call onNext or onPrev based on direction
+  //       if (stepNumber > previousStep) {
+  //         onNext?.();
+  //       } else if (stepNumber < previousStep) {
+  //         onPrev?.();
+  //       }
+  //     }, 150);
+  //   }
+  // };
 
   const handleNext = () => {
     if (activeStep < steps.length && !isAnimating && !disabled) {
