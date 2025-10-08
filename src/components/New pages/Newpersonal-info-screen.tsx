@@ -71,7 +71,7 @@ export default function NewPersonalInfoScreen({
 
   const validateEmail = (email: string) => {
     if (!email) return { isValid: true, error: "" }; // Empty is valid since it's optional
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-z0-9._-]+@(gmail|yahoo|hotmail|outlook)\.(com|net|org)$/;
     if (!emailRegex.test(email)) {
       return { isValid: false, error: t('personalInfo.errors.invalidEmailFormat') };
     }
