@@ -515,7 +515,8 @@
     "capsLock": "الحروف الكبيرة",
     "enter": "إدخال",
     "shift": "عالي",
-    "scanAgain": "مسح مرة أخرى"
+    "scanAgain": "مسح مرة أخرى",
+    "startScan": "بدء المسح"
   },
   "common": {
     "loading": "جاري التحميل...",
@@ -556,6 +557,8 @@
     "personalInformation": "المعلومات الشخصية",
     "ageAndGender": "العمر والجنس",
     "faceScan": "مسح الوجه",
+    "healthScan": "المسح الصحي",
+    "healthScanDescription": "مسح الوجه أو بصمة الإصبع",
     "scanCompleted": "مسح مكتمل",
     "symptoms": "الأعراض",
     "personalInformationDescription": " أخبرنا عن نفسك للبدء",
@@ -754,11 +757,24 @@
   },
   "fingerprintScan": {
     "title": "مسح بصمة الإصبع",
+    "preparing": "جارٍ التحضير...",
+    "clickToStart": "انقر على 'بدء المسح' عندما تكون جاهزاً",
+    "keepStill": "حافظ على ثبات إصبعك",
+    "instruction": "ضع إصبعك على الكاميرا",
+    "readyToScan": "جاهز لبدء المسح",
+    "placeFingerAndStart": "ضع إصبعك على الكاميرا وانقر على ابدأ",
+    "startButton": "بدء المسح",
     "placeFinger": "ضع إصبعك على الكاميرا",
     "fingerDetected": "تم اكتشاف الإصبع",
     "initializingCamera": "جارٍ تهيئة الكاميرا...",
+    "allowCameraAccess": "يرجى السماح بالوصول إلى الكاميرا",
     "scanComplete": "اكتمل المسح!",
     "processingResults": "جارٍ معالجة النتائج...",
+    "scanProgress": "تقدم المسح",
+    "startTime": "0 ثانية",
+    "endTime": "30 ثانية",
+    "calibrated": "معاير",
+    "oxygen": "الأكسجين",
     "instructions": {
       "title": "تعليمات مسح بصمة الإصبع",
       "subtitle": "اتبع هذه الخطوات للحصول على نتائج دقيقة",
