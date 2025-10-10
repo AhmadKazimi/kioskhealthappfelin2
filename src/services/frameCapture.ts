@@ -100,48 +100,61 @@ export class FrameCaptureService {
 
     this.isCapturing = true;
     this.frameCount = 0; // Reset frame counter
-    const FPS = fps; // Match working implementation constant naming
+    const FPS = fps;
+    const targetInterval = 1000 / FPS; // Target milliseconds between frames
+    let lastFrameTime = performance.now();
     
-    console.log(`📹 Starting frame capture at ${FPS} FPS`);
+    console.log(`📹 Starting frame capture at ${FPS} FPS (${targetInterval.toFixed(2)}ms interval)`);
 
     const captureFrame = () => {
       if (!this.isCapturing || !this.videoElement || !this.canvas || !this.context) {
         return;
       }
 
-      // Capture timestamp BEFORE processing (matching working implementation)
-      const timeStamp = Date.now();
+      const now = performance.now();
+      const elapsed = now - lastFrameTime;
 
-      // Flip the image horizontally (mirror) to match working implementation
-      this.context.save();
-      this.context.scale(-1, 1); // Flip horizontally
-      this.context.drawImage(
-        this.videoElement,
-        -this.canvas.width, // Move to compensate for flip
-        0,
-        this.canvas.width,
-        this.canvas.height
-      );
-      this.context.restore();
+      // Only capture if enough time has elapsed (maintain target FPS)
+      if (elapsed >= targetInterval) {
+        // Capture timestamp BEFORE processing
+        const timeStamp = Date.now();
 
-      // Convert canvas to base64 WITH data URI prefix
-      // API expects: "data:image/jpeg;base64,iVBORw0KGgo..."
-      const base64Image = this.canvas.toDataURL('image/jpeg', 0.8);
+        // Flip the image horizontally (mirror)
+        this.context.save();
+        this.context.scale(-1, 1); // Flip horizontally
+        this.context.drawImage(
+          this.videoElement,
+          -this.canvas.width, // Compensate for flip
+          0,
+          this.canvas.width,
+          this.canvas.height
+        );
+        this.context.restore();
 
-      // Send frame WITH data URI prefix (API requirement)
-      // onFrame now returns the processing time INCLUDING socket emission
-      const processingTime = onFrame(base64Image, timeStamp) ?? 0;
-      this.frameCount++; // Increment frame counter
+        // Convert canvas to base64 WITH data URI prefix
+        // Use JPEG quality 0.7 for faster encoding (balance quality vs speed)
+        const base64Image = this.canvas.toDataURL('image/jpeg', 0.7);
 
-      // Match timing model of reference implementation: target constant cadence
-      const idealInterval = 1000 / FPS;
-      const delay = Math.max(0, idealInterval - processingTime);
+        // Send frame and get processing time
+        const processingTime = onFrame(base64Image, timeStamp) ?? 0;
+        this.frameCount++;
 
-      // Schedule next frame with calculated delay
-      this.captureTimeout = setTimeout(captureFrame, delay);
+        // Track actual FPS every 30 frames
+        if (this.frameCount % 30 === 0) {
+          const actualFPS = 1000 / elapsed;
+          console.log(`📊 Frame #${this.frameCount} | Target: ${FPS} FPS | Actual: ${actualFPS.toFixed(1)} FPS | Processing: ${processingTime.toFixed(1)}ms`);
+        }
+
+        // Update last frame time (account for any overshoot)
+        lastFrameTime = now - (elapsed % targetInterval);
+      }
+
+      // Use setTimeout with 0 delay for maximum frame rate
+      // The elapsed time check above controls actual FPS
+      this.captureTimeout = setTimeout(captureFrame, 0);
     };
 
-    // Start capturing (matching working implementation)
+    // Start capturing immediately
     setTimeout(captureFrame, 0);
   }
 

@@ -426,6 +426,12 @@ export class FingerprintSocketService {
   onConnect(callback: () => void): void {
     console.log('📞 onConnect callback registered');
     this.connectCallback = callback;
+    
+    // If socket is already connected, call the callback immediately
+    if (this.socket && this.socket.connected) {
+      console.log('⚡ Socket already connected - calling callback immediately');
+      callback();
+    }
   }
 
   connect(
@@ -509,6 +515,24 @@ export class FingerprintSocketService {
 
     // Attach all other event handlers
     this.attachEventHandlers(onVitals, onBloodPressure, onStableReadings, onTimeout, onError);
+    
+    // IMPORTANT: Check if socket is already connected (can happen with fast connections)
+    // Use setTimeout(0) to check on next tick after all event handlers are registered
+    setTimeout(() => {
+      if (this.socket && this.socket.connected) {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('⚡ Socket already connected on next tick');
+        console.log('Has callback?', !!this.connectCallback);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        if (this.connectCallback) {
+          console.log('🔔 Manually triggering connect callback');
+          this.connectCallback();
+          this.scheduleMeasurementTimer(params.sampleTime || 30);
+        }
+      } else {
+        console.log('⏳ Socket not yet connected, waiting for connect event...');
+      }
+    }, 0); // Check on next tick
   }
 
   sendFrame(frameData: FrameData): void {
