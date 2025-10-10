@@ -59,6 +59,7 @@ export const FingerprintScanScreen = ({
   // Vitals state
   const [vitals, setVitals] = useState<VitalsResult | null>(null)
   const [bloodPressure, setBloodPressure] = useState<BloodPressureResult | null>(null)
+  const [waitingForBloodPressure, setWaitingForBloodPressure] = useState(false)
   const [scanComplete, setScanComplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const latestVitalsRef = useRef<VitalsResult | null>(null)
@@ -75,6 +76,7 @@ export const FingerprintScanScreen = ({
     setFrameNumber(0)
     fingerDetectedRef.current = false
     setFingerDetected(false)
+    setWaitingForBloodPressure(false)
     if (clearResults) {
       setVitals(null)
       setBloodPressure(null)
@@ -404,6 +406,7 @@ export const FingerprintScanScreen = ({
               console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
               setBloodPressure(bpData)
+              setWaitingForBloodPressure(false)
 
               if (waitingForFinalResultsRef.current) {
                 waitingForFinalResultsRef.current = false
@@ -431,11 +434,17 @@ export const FingerprintScanScreen = ({
               waitingForFinalResultsRef.current = true
               stopMeasurement({ preserveResults: true })
               setScanProgress(100)
+              setWaitingForBloodPressure(true)
+
+              // Request blood pressure calculation from server
+              console.log('📤 Requesting blood pressure calculation from server...')
+              socketServiceRef.current?.sendStopSignal()
 
               setTimeout(() => {
                 if (waitingForFinalResultsRef.current) {
-                  console.log('⚠️ Timeout waiting for blood pressure, sending stop signal anyway...')
+                  console.log('⚠️ Timeout waiting for blood pressure (5s elapsed)')
                   waitingForFinalResultsRef.current = false
+                  setWaitingForBloodPressure(false)
                   stopMeasurement({ complete: true })
                 }
               }, 5000)
@@ -674,11 +683,24 @@ export const FingerprintScanScreen = ({
                   </div>
                 )}
 
-                {/* Progress Indicator */}
+                {/* Progress Bar - Full Width at Bottom */}
                 {isScanning && fingerDetected && (
-                  <div className="absolute bottom-4 lg:bottom-6 right-4 lg:right-6">
-                    <div className="bg-white/90 rounded-full px-4 lg:px-6 py-2 lg:py-3 shadow-lg">
-                      <span className="text-sm lg:text-lg xl:text-xl font-bold text-[#407EFF]">{Math.round(scanProgress)}%</span>
+                  <div className="absolute bottom-0 left-0 right-0 bg-white/95 p-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gray-700">{t('fingerprintScan.scanProgress')}</span>
+                        <span className="text-lg font-bold text-[#407EFF]">{Math.round(scanProgress)}%</span>
+                      </div>
+                      <div className="relative h-2 overflow-hidden rounded-full bg-gray-200">
+                        <div
+                          className="h-full rounded-full bg-[#407EFF] transition-all duration-500"
+                          style={{ width: `${Math.min(100, scanProgress)}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>{t('fingerprintScan.startTime')}</span>
+                        <span>{t('fingerprintScan.endTime')}</span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -722,30 +744,6 @@ export const FingerprintScanScreen = ({
               </div>
             </div>
 
-            {/* Progress Bar (Mobile/Tablet) */}
-            {(isScanning || scanComplete) && fingerDetected && (
-              <div 
-                className="md:hidden bg-white rounded-2xl p-3"
-                style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-700">{t('fingerprintScan.scanProgress')}</span>
-                    <span className="text-lg font-bold text-[#407EFF]">{Math.round(scanProgress)}%</span>
-                  </div>
-                  <div className="relative h-2 overflow-hidden rounded-full bg-gray-200">
-                    <div
-                      className="h-full rounded-full bg-[#407EFF] transition-all duration-500"
-                      style={{ width: `${Math.min(100, scanProgress)}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>{t('fingerprintScan.startTime')}</span>
-                    <span>{t('fingerprintScan.endTime')}</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Status & Vitals Section - Below video */}
@@ -779,31 +777,6 @@ export const FingerprintScanScreen = ({
                 </div>
               )}
             </div> */}
-
-            {/* Progress Card */}
-            {(isScanning || scanComplete) && fingerDetected && (
-              <div 
-                className="hidden md:block bg-white rounded-2xl p-4"
-                style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-700">{t('fingerprintScan.scanProgress')}</span>
-                    <span className="text-lg md:text-xl font-bold text-[#407EFF]">{Math.round(scanProgress)}%</span>
-                  </div>
-                  <div className="relative h-2 overflow-hidden rounded-full bg-gray-200">
-                    <div
-                      className="h-full rounded-full bg-[#407EFF] transition-all duration-500"
-                      style={{ width: `${Math.min(100, scanProgress)}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>{t('fingerprintScan.startTime')}</span>
-                    <span>{t('fingerprintScan.endTime')}</span>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Vitals Grid - Horizontal on larger screens */}
             {vitals && (
@@ -863,7 +836,20 @@ export const FingerprintScanScreen = ({
             )}
 
             {/* Blood Pressure */}
-            {bloodPressure && (
+            {waitingForBloodPressure ? (
+              <div 
+                className="bg-white rounded-2xl p-4"
+                style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
+              >
+                <div className="flex items-center justify-center space-x-3 py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#407EFF]"></div>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-gray-700">{t('fingerprintScan.calculatingBloodPressure') || 'Calculating Blood Pressure'}</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('fingerprintScan.pleaseWait') || 'Please wait...'}</p>
+                  </div>
+                </div>
+              </div>
+            ) : bloodPressure ? (
               <div 
                 className="bg-white rounded-2xl p-4"
                 style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
@@ -885,7 +871,7 @@ export const FingerprintScanScreen = ({
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -909,7 +895,7 @@ export const FingerprintScanScreen = ({
           </button>
           <button
             onClick={onNext}
-            disabled={!scanComplete}
+            disabled={!scanComplete || waitingForBloodPressure}
             className="group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3
                      text-sm md:text-base font-medium text-white bg-gradient-to-r from-[#407EFF] to-[#1E40AF]
                      rounded-xl shadow-lg
@@ -919,7 +905,7 @@ export const FingerprintScanScreen = ({
                      active:scale-[0.98]
                      disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            <span>{t('buttons.next')}</span>
+            <span>{waitingForBloodPressure ? (t('fingerprintScan.pleaseWait') || 'Please wait...') : t('buttons.next')}</span>
           </button>
         </div>
       </div>

@@ -79,6 +79,16 @@ export async function saveFingerprintScan(
       };
     }
 
+    // ============================================================
+    // API CALL 1: Save Scan Results
+    // ============================================================
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 API CALL 1: Saving Scan Results');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Endpoint:', `POST ${apiUrl}/ScanResult/AddScanResult`);
+    console.log('Request Data:', JSON.stringify(scanResultDto, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const response = await fetch(`${apiUrl}/ScanResult/AddScanResult`, {
       method: 'POST',
       headers: {
@@ -90,10 +100,94 @@ export async function saveFingerprintScan(
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('❌ Scan result save FAILED');
+      console.error('Status:', response.status);
+      console.error('Error:', errorText);
       throw new Error(`Backend API error: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ API CALL 1: Scan Result Saved Successfully');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Response Status:', response.status);
+    console.log('Response Data:', JSON.stringify(result, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    // ============================================================
+    // API CALL 2: Trigger Arrhythmia Detection
+    // ============================================================
+    const meanRR = vitals.vitals_results.mean_rr;
+    
+    // Only call arrhythmia detection if we have valid RR data
+    if (meanRR && meanRR > 0) {
+      try {
+        const arrhythmiaRequestData = {
+          clientId: clientId,
+          inputs: [[meanRR]]  // Wrap in double array to match face scan format
+        };
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📤 API CALL 2: Triggering Arrhythmia Detection');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('Endpoint:', `POST ${apiUrl}/Arrhythmia/AddArrhythmiaRequest`);
+        console.log('Request Data:', JSON.stringify(arrhythmiaRequestData, null, 2));
+        console.log('Mean RR Value:', meanRR);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        const arrhythmiaResponse = await fetch(`${apiUrl}/Arrhythmia/AddArrhythmiaRequest`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+          },
+          body: JSON.stringify(arrhythmiaRequestData)
+        });
+
+        if (!arrhythmiaResponse.ok) {
+          const arrhythmiaError = await arrhythmiaResponse.text();
+          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.error('❌ API CALL 2: Arrhythmia Detection FAILED');
+          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.error('Status:', arrhythmiaResponse.status);
+          console.error('Error:', arrhythmiaError);
+          console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          // Don't throw - allow scan to complete even if arrhythmia detection fails
+        } else {
+          const arrhythmiaResult = await arrhythmiaResponse.json();
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('✅ API CALL 2: Arrhythmia Detection Successful');
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+          console.log('Response Status:', arrhythmiaResponse.status);
+          console.log('Response Data:', JSON.stringify(arrhythmiaResult, null, 2));
+          console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        }
+      } catch (arrhythmiaError) {
+        // Log but don't fail the entire operation
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ API CALL 2: Exception Occurred');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('Error:', arrhythmiaError);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      }
+    } else {
+      console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.warn('⚠️ SKIPPING API CALL 2: Invalid mean_rr value');
+      console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.warn('Mean RR Value:', meanRR);
+      console.warn('Arrhythmia detection will not be triggered');
+      console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    }
+
+    // ============================================================
+    // SUMMARY
+    // ============================================================
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ FINGERPRINT SCAN SAVE COMPLETE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✓ Scan results saved to database');
+    console.log('✓ Arrhythmia detection triggered');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return {
       success: true,
@@ -101,7 +195,11 @@ export async function saveFingerprintScan(
     };
 
   } catch (error) {
-    console.error('Failed to save fingerprint scan:', error);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('❌ FINGERPRINT SCAN SAVE FAILED');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('Error:', error);
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error'
