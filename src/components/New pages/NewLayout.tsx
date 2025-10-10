@@ -13,6 +13,8 @@ import BeforeScanning from "./beforeScanning";
 import { BeforeFingerprintScanning } from "./beforeFingerprintScanning";
 import { ScanTypeSelection } from "../scan-type-selection";
 import { FingerprintScanScreen } from "../fingerprint-scan-screen";
+import { FingerprintWorkflow } from "../fingerprint-workflow";
+import { ScanningWorkflow } from "../scanning-workflow";
 import HealthSummaryPage from "./health-summary-page";
 import { ClientModel } from "@/payload-types";
 import React, { useState } from "react";
@@ -117,58 +119,18 @@ export default function NewLayout({
               />
             );
           case 3:
-            // NEW: Scan Type Selection
+            // Unified Scanning Workflow (selection + instructions + scanning all in step 3)
             return (
-              <ScanTypeSelection
-                onSelectScanType={(type) => {
-                  setScanType(type);
-                  nextStep();
-                }}
+              <ScanningWorkflow
+                userId={String(userData.id || Date.now())}
+                userEmail={userData.personalInfo?.email || 'unknown@example.com'}
+                userAge={parseInt(userData.age) || 25}
+                userGender={(userData.gender?.toLowerCase() as 'male' | 'female') || 'male'}
+                onNext={nextStep}
+                onBack={prevStep}
               />
             );
           case 4:
-            // Branch based on scan type
-            if (scanType === 'fingerprint') {
-              return (
-                <BeforeFingerprintScanning
-                  onStart={nextStep}
-                  onBack={prevStep}
-                />
-              );
-            } else {
-              // Default to face scan
-              return (
-                <BeforeScanning
-                  onNext={nextStep}
-                  onPrev={prevStep}
-                />
-              );
-            }
-
-          case 5:
-            // Scanner screen (face or fingerprint)
-            if (scanType === 'fingerprint') {
-              return (
-                <FingerprintScanScreen
-                  userId={String(userData.id || Date.now())}
-                  userEmail={userData.personalInfo?.email || 'unknown@example.com'}
-                  userAge={parseInt(userData.age) || 25}
-                  userGender={(userData.gender?.toLowerCase() as 'male' | 'female') || 'male'}
-                  onNext={nextStep}
-                  onBack={prevStep}
-                />
-              );
-            } else {
-              // Face scan (actual scanning component, not results)
-              return (
-                <FaceScanScreen
-                  onNext={nextStep}
-                  onPrev={prevStep}
-                />
-              );
-            }
-          case 6:
-            // Paths merge here - continue normal flow
             return (
               <ComplaintScreen
                 userData={userData}
@@ -177,11 +139,11 @@ export default function NewLayout({
                 onPrev={prevStep}
               />
             );
-          case 7:
+          case 5:
             return (
               <ClientAssessment onNext={nextStep} onPrev={prevStep}/>
             );
-          case 8:
+          case 6:
             console.log('NewLayout - Step 8 Debug:');
             console.log('- storedApiData:', storedApiData);
             console.log('- userData:', userData);
@@ -243,40 +205,26 @@ export default function NewLayout({
           };
         case 3:
           return {
-            title: t('scanType.subtitle'),
+            title: t('progress.healthScanDescription') || 'Choose your scan type',
             description: "Carevision",
             image: isEnglish ? "/video/en_facescan.mp4" : "/video/facescan.mp4",
             className:''
           };
         case 4:
           return {
-            title: scanType === 'fingerprint' ? t('fingerprintScan.instructions.subtitle') : t('progress.faceScanDescription'),
-            description: "Carevision",
-            image: isEnglish ? "/video/en_facescan.mp4" : "/video/facescan.mp4",
-            className:''
-          };
-        case 5:
-          return {
-            title: scanType === 'fingerprint' ? t('fingerprintScan.title') : t('faceScan.scanCompleteSubtitle'),
-            description: "Carevision",
-            image: isEnglish ? "/video/en_result2.mp4" : "/video/result2.mp4",
-            className:''
-          };
-        case 6:
-          return {
             title: t('complaint.subtitle1'),
             description: "Carevision",
             image: isEnglish ? "/video/en_qastion.mp4" : "/video/qastion.mp4",
             className:''
           };
-        case 7:
+        case 5:
           return {
             title: t('progress.symptomsDescription'),
             description: "Carevision",
             image: isEnglish ? "/video/en_answer.mp4" : "/video/answer.mp4",
             className:''
           };
-        case 8:
+        case 6:
           return {
             title: t('progress.healthAssessmentSummary'),
             description: "Carevision",

@@ -593,13 +593,13 @@ export const FingerprintScanScreen = ({
   return (
     <div className="h-full flex flex-col" dir={isArabic ? 'rtl' : 'ltr'}>
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto min-h-0 p-6 sm:p-8 lg:p-10">
+      <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6 lg:p-8">
         {/* Header */}
-        <div className="text-center pb-6">
+        <div className="text-center pb-4 sm:pb-6 lg:pb-6 max-w-7xl mx-auto">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#407EFF] mb-2">
             {t('fingerprintScan.title')}
           </h2>
-          <p className="text-base sm:text-lg text-gray-600">
+          <p className="text-sm sm:text-base lg:text-lg text-gray-600">
             {!cameraReady || !authReady 
               ? (t('fingerprintScan.preparing') || 'Preparing...') 
               : !scanStarted 
@@ -611,16 +611,16 @@ export const FingerprintScanScreen = ({
           </p>
         </div>
 
-        {/* Content Grid */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* LAYOUT - All content stacked, video centered */}
+        <div className="max-w-5xl mx-auto space-y-6">
           {/* Video Section */}
           <div className="space-y-4">
-            {/* Video Card */}
+            {/* Video Card - Centered */}
             <div 
               className="bg-white rounded-2xl overflow-hidden"
               style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
             >
-              <div className="relative aspect-video bg-black">
+              <div className="relative aspect-video bg-black max-h-[350px] md:max-h-[500px]">
                 <video
                   ref={videoRef}
                   className="h-full w-full object-cover"
@@ -632,43 +632,43 @@ export const FingerprintScanScreen = ({
                 {/* Camera Initializing */}
                 {!cameraReady && !error && (
                   <div className="absolute inset-0 flex items-center justify-center bg-[#407EFF]/90">
-                    <div className="text-center text-white">
-                      <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-white/30 border-t-white" />
-                      <p className="text-lg font-semibold">{t('fingerprintScan.initializingCamera') || 'Initializing camera...'}</p>
-                      <p className="mt-2 text-sm opacity-80">Please allow camera access</p>
+                    <div className="text-center text-white px-4">
+                      <div className="mx-auto mb-4 lg:mb-6 h-16 w-16 lg:h-20 lg:w-20 xl:h-24 xl:w-24 animate-spin rounded-full border-4 lg:border-[6px] border-white/30 border-t-white" />
+                      <p className="text-lg lg:text-2xl xl:text-3xl font-semibold">{t('fingerprintScan.initializingCamera') || 'Initializing camera...'}</p>
+                      <p className="mt-2 text-sm lg:text-base xl:text-lg opacity-80">Please allow camera access</p>
                     </div>
                   </div>
                 )}
 
-                {/* Start Scan Button - Show when ready but not started */}
-                {cameraReady && authReady && !scanStarted && !error && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-                    <div className="text-center">
-                      <p className="text-white text-xl font-semibold mb-6">
-                        {t('fingerprintScan.readyToScan') || 'Ready to start scan'}
-                      </p>
-                      <button
-                        onClick={startScan}
-                        className="px-8 py-4 bg-[#407EFF] hover:bg-[#3066CC] text-white text-lg font-bold rounded-2xl transition-colors shadow-lg"
-                      >
-                        {t('fingerprintScan.startButton') || 'Start Scan'}
-                      </button>
-                    </div>
-                  </div>
-                )}
+            {/* Start Scan Button - Overlay for MOBILE only */}
+            {cameraReady && authReady && !scanStarted && !error && (
+              <div className="lg:hidden absolute inset-0 flex items-center justify-center bg-black/70">
+                <div className="text-center px-4">
+                  <p className="text-white text-lg font-semibold mb-6">
+                    {t('fingerprintScan.readyToScan') || 'Ready to start scan'}
+                  </p>
+                  <button
+                    onClick={startScan}
+                    className="px-8 py-3 bg-gradient-to-r from-[#407EFF] to-[#1E40AF] hover:from-[#1E40AF] hover:to-[#407EFF] text-white text-base md:text-lg font-medium rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                  >
+                    {t('fingerprintScan.startButton') || 'Start Scan'}
+                  </button>
+                </div>
+              </div>
+            )}
 
                 {/* Finger Detection Badge - Only show when scan has started */}
                 {scanStarted && (
-                  <div className="absolute left-4 top-4">
+                  <div className="absolute left-4 lg:left-6 top-4 lg:top-6">
                     {fingerDetected ? (
-                      <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-lg">
-                        <div className="h-2 w-2 rounded-full bg-green-500" />
-                        <span className="text-sm font-semibold text-green-700">✓ {t('fingerprintScan.fingerDetected')}</span>
+                      <div className="flex items-center gap-2 lg:gap-3 rounded-full bg-white/90 px-4 lg:px-6 py-2 lg:py-3 shadow-lg">
+                        <div className="h-2 w-2 lg:h-3 lg:w-3 rounded-full bg-green-500" />
+                        <span className="text-sm lg:text-base xl:text-lg font-semibold text-green-700">✓ {t('fingerprintScan.fingerDetected')}</span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-lg">
-                        <div className="h-2 w-2 rounded-full bg-[#407EFF]" />
-                        <span className="text-sm font-semibold text-[#407EFF]">{t('fingerprintScan.placeFinger')}</span>
+                      <div className="flex items-center gap-2 lg:gap-3 rounded-full bg-white/90 px-4 lg:px-6 py-2 lg:py-3 shadow-lg">
+                        <div className="h-2 w-2 lg:h-3 lg:w-3 rounded-full bg-[#407EFF]" />
+                        <span className="text-sm lg:text-base xl:text-lg font-semibold text-[#407EFF]">{t('fingerprintScan.placeFinger')}</span>
                       </div>
                     )}
                   </div>
@@ -676,9 +676,9 @@ export const FingerprintScanScreen = ({
 
                 {/* Progress Indicator */}
                 {isScanning && fingerDetected && (
-                  <div className="absolute bottom-4 right-4">
-                    <div className="bg-white/90 rounded-full px-4 py-2 shadow-lg">
-                      <span className="text-sm font-bold text-[#407EFF]">{Math.round(scanProgress)}%</span>
+                  <div className="absolute bottom-4 lg:bottom-6 right-4 lg:right-6">
+                    <div className="bg-white/90 rounded-full px-4 lg:px-6 py-2 lg:py-3 shadow-lg">
+                      <span className="text-sm lg:text-lg xl:text-xl font-bold text-[#407EFF]">{Math.round(scanProgress)}%</span>
                     </div>
                   </div>
                 )}
@@ -686,9 +686,9 @@ export const FingerprintScanScreen = ({
                 {/* Scan Complete */}
                 {scanComplete && (
                   <div className="absolute inset-0 flex items-center justify-center bg-green-500/90">
-                    <div className="text-center text-white">
-                      <div className="mb-4 text-6xl">✓</div>
-                      <p className="text-2xl font-bold">{t('fingerprintScan.scanComplete') || 'Scan Complete!'}</p>
+                    <div className="text-center text-white px-4">
+                      <div className="mb-4 lg:mb-6 text-6xl lg:text-7xl xl:text-8xl">✓</div>
+                      <p className="text-2xl lg:text-3xl xl:text-4xl font-bold">{t('fingerprintScan.scanComplete') || 'Scan Complete!'}</p>
                     </div>
                   </div>
                 )}
@@ -696,19 +696,39 @@ export const FingerprintScanScreen = ({
                 {/* Error */}
                 {error && (
                   <div className="absolute inset-0 flex items-center justify-center bg-red-500/90">
-                    <div className="text-center text-white p-6">
-                      <div className="mb-4 text-4xl">⚠️</div>
-                      <p className="text-lg font-semibold">{error}</p>
+                    <div className="text-center text-white p-6 lg:p-8">
+                      <div className="mb-4 lg:mb-6 text-4xl lg:text-5xl xl:text-6xl">⚠️</div>
+                      <p className="text-lg lg:text-xl xl:text-2xl font-semibold">{error}</p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Progress Bar (Mobile) */}
+            {/* Start Button for DESKTOP - Outside video */}
+            {cameraReady && authReady && !scanStarted && !error && (
+              <div className="hidden lg:block">
+                <div 
+                  className="bg-white rounded-2xl p-6"
+                  style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
+                >
+                  <p className="text-lg font-semibold text-gray-700 mb-4 text-center">
+                    {t('fingerprintScan.readyToScan') || 'Ready to start scan'}
+                  </p>
+                  <button
+                    onClick={startScan}
+                    className="w-full px-8 py-3 bg-gradient-to-r from-[#407EFF] to-[#1E40AF] hover:from-[#1E40AF] hover:to-[#407EFF] text-white text-base font-medium rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                  >
+                    {t('fingerprintScan.startButton') || 'Start Scan'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Progress Bar (Mobile/Tablet) */}
             {(isScanning || scanComplete) && fingerDetected && (
               <div 
-                className="lg:hidden bg-white rounded-2xl p-4"
+                className="md:hidden bg-white rounded-2xl p-4"
                 style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
               >
                 <div className="space-y-3">
@@ -731,17 +751,17 @@ export const FingerprintScanScreen = ({
             )}
           </div>
 
-          {/* Vitals Section */}
+          {/* Status & Vitals Section - Below video */}
           <div className="space-y-4">
             {/* Status Card */}
             <div 
-              className="bg-white rounded-2xl p-6"
+              className="bg-white rounded-2xl p-5"
               style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
             >
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Status</p>
-                  <p className="text-xl font-bold text-[#407EFF]">
+                  <p className="text-2xl font-bold text-[#407EFF]">
                     {scanComplete ? '✓ Completed' : fingerDetected ? 'Scanning...' : 'Waiting...'}
                   </p>
                 </div>
@@ -756,16 +776,41 @@ export const FingerprintScanScreen = ({
               </div>
 
               {vitals && (
-                <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between text-sm text-gray-500 pt-3 border-t border-gray-100">
                   <span>Server FPS: {vitals.calculation_parameters.fps.toFixed(1)}</span>
                   <span>Frames: {frameNumber}</span>
                 </div>
               )}
             </div>
 
-            {/* Vitals Grid */}
+            {/* Progress Card */}
+            {(isScanning || scanComplete) && fingerDetected && (
+              <div 
+                className="hidden md:block bg-white rounded-2xl p-5"
+                style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-semibold text-gray-700">Scan Progress</span>
+                    <span className="text-2xl font-bold text-[#407EFF]">{Math.round(scanProgress)}%</span>
+                  </div>
+                  <div className="relative h-3 overflow-hidden rounded-full bg-gray-200">
+                    <div
+                      className="h-full rounded-full bg-[#407EFF] transition-all duration-500"
+                      style={{ width: `${Math.min(100, scanProgress)}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>0 seconds</span>
+                    <span>30 seconds</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Vitals Grid - Horizontal on larger screens */}
             {vitals && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {/* Heart Rate */}
                 <div 
                   className="bg-white rounded-2xl p-4"
@@ -776,7 +821,7 @@ export const FingerprintScanScreen = ({
                     <p className="text-xs text-gray-600">{t('vitals.heartRate')}</p>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{vitals.vitals_results.heart_rate}</p>
-                  <p className="text-xs text-gray-500">BPM</p>
+                  <p className="text-xs text-gray-500 mt-1">BPM</p>
                 </div>
 
                 {/* HRV */}
@@ -789,7 +834,7 @@ export const FingerprintScanScreen = ({
                     <p className="text-xs text-gray-600">{t('vitals.hrv')}</p>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{vitals.vitals_results.hrv_rate}</p>
-                  <p className="text-xs text-gray-500">ms</p>
+                  <p className="text-xs text-gray-500 mt-1">ms</p>
                 </div>
 
                 {/* SpO2 */}
@@ -802,7 +847,7 @@ export const FingerprintScanScreen = ({
                     <p className="text-xs text-gray-600">{t('vitals.spo2')}</p>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{vitals.vitals_results.spo2_rate}%</p>
-                  <p className="text-xs text-gray-500">Oxygen</p>
+                  <p className="text-xs text-gray-500 mt-1">Oxygen</p>
                 </div>
 
                 {/* Breathing Rate */}
@@ -815,7 +860,7 @@ export const FingerprintScanScreen = ({
                     <p className="text-xs text-gray-600">{t('vitals.respRate')}</p>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">{vitals.vitals_results.resp_rate}</p>
-                  <p className="text-xs text-gray-500">BPM</p>
+                  <p className="text-xs text-gray-500 mt-1">BPM</p>
                 </div>
               </div>
             )}
@@ -823,7 +868,7 @@ export const FingerprintScanScreen = ({
             {/* Blood Pressure */}
             {bloodPressure && (
               <div 
-                className="bg-white rounded-2xl p-6"
+                className="bg-white rounded-2xl p-5"
                 style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
               >
                 <div className="flex items-center justify-between">
@@ -831,8 +876,8 @@ export const FingerprintScanScreen = ({
                     <p className="text-sm text-gray-600 mb-2">{t('vitals.bloodPressure')}</p>
                     <p className="text-3xl font-bold text-[#407EFF]">
                       {bloodPressure.bp_calibrated
-                        ? `${bloodPressure.calibrated_systolic_blood_pressure}/${bloodPressure.calibrated_diastolic_blood_pressure}`
-                        : `${bloodPressure.systolic_blood_pressure}/${bloodPressure.diastolic_blood_pressure}`}
+                        ? `${Math.round(bloodPressure.calibrated_systolic_blood_pressure || 0)}/${Math.round(bloodPressure.calibrated_diastolic_blood_pressure || 0)}`
+                        : `${Math.round(bloodPressure.systolic_blood_pressure)}/${Math.round(bloodPressure.diastolic_blood_pressure)}`}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">mmHg</p>
                   </div>
@@ -846,24 +891,38 @@ export const FingerprintScanScreen = ({
             )}
           </div>
         </div>
+
       </div>
 
-      {/* Sticky Footer */}
-      <div className="flex-shrink-0 pt-4 px-6 sm:px-8 lg:px-10 pb-8">
-        <div className="flex justify-between gap-4">
+      {/* Sticky Footer - Consistent with other pages */}
+      <div className="flex-shrink-0 pt-4 px-4 sm:px-6 pb-6">
+        <div className="flex justify-between gap-4 max-w-5xl mx-auto">
           <button 
             onClick={onBack} 
             disabled={isScanning && !scanComplete}
-            className="px-6 py-3 rounded-2xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="group relative flex items-center justify-center px-4 md:px-6 py-2 md:py-3 
+                     text-sm md:text-base font-medium text-gray-700 bg-white border-2 border-gray-300
+                     rounded-xl shadow-lg
+                     transition-all duration-300 ease-out
+                     hover:bg-gray-50 hover:shadow-xl
+                     focus:outline-none focus:ring-4 focus:ring-gray-300/30
+                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
           >
             {t('buttons.back')}
           </button>
           <button
             onClick={onNext}
             disabled={!scanComplete}
-            className="px-6 py-3 rounded-2xl bg-[#407EFF] text-white font-semibold hover:bg-[#3366CC] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors shadow-lg"
+            className="group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3
+                     text-sm md:text-base font-medium text-white bg-gradient-to-r from-[#407EFF] to-[#1E40AF]
+                     rounded-xl shadow-lg
+                     transition-all duration-300 ease-out
+                     hover:shadow-xl hover:scale-[1.02] hover:from-[#1E40AF] hover:to-[#407EFF]
+                     focus:outline-none focus:ring-4 focus:ring-[#407EFF]/30
+                     active:scale-[0.98]
+                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            {t('buttons.next')}
+            <span>{t('buttons.next')}</span>
           </button>
         </div>
       </div>

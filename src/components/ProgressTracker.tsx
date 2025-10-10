@@ -60,18 +60,23 @@ const ProgressTracker = forwardRef<ProgressTrackerRef, ProgressTrackerProps>(({
     },
     { 
       number: 3, 
-      title: t('progress.faceScan'), 
-      description: t('progress.faceScanDescription'),
+      title: t('progress.healthScan') || 'Health Scan', 
+      description: t('progress.healthScanDescription') || 'Face or Fingerprint Scanning',
     },
     { 
       number: 4, 
-      title: t('progress.scanCompleted'), 
-      description: t('progress.scanCompletedDescription'),
+      title: t('progress.symptoms'), 
+      description: t('progress.symptomsDescription'),
     },
     { 
       number: 5, 
-      title: t('progress.symptoms'), 
-      description: t('progress.symptomsDescription'),
+      title: t('progress.assessment') || 'Assessment', 
+      description: t('progress.assessmentDescription') || 'Health Assessment',
+    },
+    { 
+      number: 6, 
+      title: t('progress.results') || 'Results', 
+      description: t('progress.resultsDescription') || 'Summary & Results',
     }
   ];
   useImperativeHandle(ref, () => ({

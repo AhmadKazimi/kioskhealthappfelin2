@@ -328,7 +328,7 @@ const HealthSummaryModal = React.memo(function HealthSummaryModal({
                 • {t('faceScan.vitals.bloodPressure')}:{" "}
                 {!latestResult
                   ? "..."
-                  : `${latestResult.SystolicBloodPressureMmhg}/${latestResult.DiastolicBloodPressureMmhg}`} {t('userProfile.vitals.mmHg')}
+                  : `${Math.round(latestResult.SystolicBloodPressureMmhg)}/${Math.round(latestResult.DiastolicBloodPressureMmhg)}`} {t('userProfile.vitals.mmHg')}
               </p>
               <p className={`text-sm sm:text-base mb-2 ${isArabic ? 'text-right health-summary-content' : 'text-left'} break-words whitespace-pre-wrap`}
                  style={{

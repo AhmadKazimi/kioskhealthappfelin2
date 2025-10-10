@@ -304,18 +304,38 @@ const FastScanScanner: React.FC<FastScanScannerProps> = ({ onScanComplete, onErr
              // Mark SDK as initialized to prevent re-initialization
              window.fastScanSdkInitialized = true;
              
-             // Attach to canvas
-             shenaiSDK.attachToCanvas("#fast-scan-canvas");
+             // Wait for canvas to be ready before attaching
+             const waitForCanvas = () => {
+               const canvas = document.getElementById('fast-scan-canvas');
+               if (!canvas) {
+                 console.log('Waiting for canvas element...');
+                 setTimeout(waitForCanvas, 100);
+                 return;
+               }
+               
+               console.log('Canvas found, attaching SDK...');
+               try {
+                 shenaiSDK.attachToCanvas("#fast-scan-canvas");
+                 
+                 // Camera workaround for better initialization
+                 setTimeout(() => {
+                   console.log("Applying camera workaround...");
+                   shenaiSDK.setCameraMode(shenaiSDK.CameraMode.OFF);
+                   setTimeout(() => {
+                     shenaiSDK.setCameraMode(shenaiSDK.CameraMode.FACING_USER);
+                     console.log("Camera workaround applied - permission prompt should now appear");
+                   }, 100);
+                 }, 500);
+               } catch (error) {
+                 console.error('Error attaching to canvas:', error);
+                 if (window.onFastScanError) {
+                   window.onFastScanError('Failed to attach to canvas: ' + error.message);
+                 }
+               }
+             };
              
-             // Camera workaround for better initialization
-             setTimeout(() => {
-               console.log("Applying camera workaround...");
-               shenaiSDK.setCameraMode(shenaiSDK.CameraMode.OFF);
-               setTimeout(() => {
-                 shenaiSDK.setCameraMode(shenaiSDK.CameraMode.FACING_USER);
-                 console.log("Camera workaround applied - permission prompt should now appear");
-               }, 100);
-             }, 500);
+             // Start waiting for canvas
+             waitForCanvas();
            }
         }
       );

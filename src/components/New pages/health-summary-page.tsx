@@ -155,7 +155,7 @@
       },
       {
         name: t('faceScan.vitals.bloodPressure'),
-        value: `${latestResult.SystolicBloodPressureMmhg || "N/A"}/${latestResult.DiastolicBloodPressureMmhg || "N/A"} ${t('fastScan.units.mmhg')}`,
+        value: `${latestResult.SystolicBloodPressureMmhg ? Math.round(latestResult.SystolicBloodPressureMmhg) : "N/A"}/${latestResult.DiastolicBloodPressureMmhg ? Math.round(latestResult.DiastolicBloodPressureMmhg) : "N/A"} ${t('fastScan.units.mmhg')}`,
         normalRange: `<120/<80 ${t('fastScan.units.mmhg')}`,
         status: latestResult.SystolicBloodPressureMmhg && latestResult.SystolicBloodPressureMmhg < 120 && latestResult.DiastolicBloodPressureMmhg && latestResult.DiastolicBloodPressureMmhg < 80 ? t('healthSummary.normal') : t('healthSummary.abnormal')
       },

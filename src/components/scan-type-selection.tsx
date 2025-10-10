@@ -6,14 +6,16 @@ import { Camera, Fingerprint } from "lucide-react"
 
 interface ScanTypeSelectionProps {
   onSelectScanType: (type: 'face' | 'fingerprint') => void
+  onBack?: () => void
 }
 
-export const ScanTypeSelection = ({ onSelectScanType }: ScanTypeSelectionProps) => {
+export const ScanTypeSelection = ({ onSelectScanType, onBack }: ScanTypeSelectionProps) => {
   const { t, i18n } = useTranslation()
   const isArabic = i18n.language === 'ar'
 
   return (
-    <div className="h-full flex flex-col items-center justify-center p-8" dir={isArabic ? 'rtl' : 'ltr'}>
+    <div className="h-full flex flex-col" dir={isArabic ? 'rtl' : 'ltr'}>
+      <div className="flex-1 flex flex-col items-center justify-center p-8">
       <h1 className="text-3xl font-bold mb-8 text-center">
         {t('scanType.title')}
       </h1>
@@ -50,6 +52,21 @@ export const ScanTypeSelection = ({ onSelectScanType }: ScanTypeSelectionProps) 
           </div>
         </Card>
       </div>
+      </div>
+
+      {/* Sticky Footer with Back Button */}
+      {onBack && (
+        <div className="flex-shrink-0 pt-4 px-8 pb-8">
+          <div className="flex justify-start max-w-4xl mx-auto">
+            <button
+              onClick={onBack}
+              className="px-6 py-3 rounded-2xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+            >
+              {t('buttons.back')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

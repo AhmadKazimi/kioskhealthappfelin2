@@ -92,8 +92,6 @@ export default function HomeScreen() {
       case 4:
       case 5:
       case 6:
-      case 7:
-      case 8:
         return (
 
           <NewLayout
@@ -102,7 +100,7 @@ export default function HomeScreen() {
             onNext={nextStep}
             onPrev={prevStep}
             currentStep={step}
-            totalSteps={8}
+            totalSteps={6}
           />
 
         );
@@ -114,7 +112,7 @@ export default function HomeScreen() {
   };
  
   return (
-    <KioskLayout currentStep={step} totalSteps={8}>
+    <KioskLayout currentStep={step} totalSteps={6}>
       <div className="hidden md:block">
         {renderStepForDesktop()}
       </div>
