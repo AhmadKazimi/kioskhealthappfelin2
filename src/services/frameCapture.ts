@@ -9,11 +9,13 @@ export class FrameCaptureService {
   private videoElement: HTMLVideoElement | null = null;
   private canvas: HTMLCanvasElement | null = null;
   private context: CanvasRenderingContext2D | null = null;
-  private captureInterval: NodeJS.Timeout | null = null;
+  private captureTimeout: NodeJS.Timeout | null = null;
+  private isCapturing: boolean = false;
+  private frameCount: number = 0; // Track total frames sent
 
   async initialize(
     videoElement: HTMLVideoElement | null,
-    options: FrameCaptureOptions = { width: 640, height: 480, fps: 6 }
+    options: FrameCaptureOptions = { width: 640, height: 480, fps: 30 }
   ): Promise<void> {
     // Validate video element
     if (!videoElement) {
@@ -89,47 +91,75 @@ export class FrameCaptureService {
   }
 
   startCapture(
-    onFrame: (base64Image: string) => void,
-    fps: number = 6
+    onFrame: (base64Image: string, timeStamp: number) => number,
+    fps: number = 30
   ): void {
     if (!this.videoElement || !this.canvas || !this.context) {
       throw new Error('Frame capture not initialized');
     }
 
-    const interval = 1000 / fps; // milliseconds between frames
+    this.isCapturing = true;
+    this.frameCount = 0; // Reset frame counter
+    const FPS = fps; // Match working implementation constant naming
+    
+    console.log(`📹 Starting frame capture at ${FPS} FPS`);
 
-    this.captureInterval = setInterval(() => {
-      if (!this.videoElement || !this.canvas || !this.context) return;
+    const captureFrame = () => {
+      if (!this.isCapturing || !this.videoElement || !this.canvas || !this.context) {
+        return;
+      }
 
-      // Draw current video frame to canvas
+      // Capture timestamp BEFORE processing (matching working implementation)
+      const timeStamp = Date.now();
+
+      // Flip the image horizontally (mirror) to match working implementation
+      this.context.save();
+      this.context.scale(-1, 1); // Flip horizontally
       this.context.drawImage(
         this.videoElement,
-        0,
+        -this.canvas.width, // Move to compensate for flip
         0,
         this.canvas.width,
         this.canvas.height
       );
+      this.context.restore();
 
-      // Convert canvas to base64
+      // Convert canvas to base64 WITH data URI prefix
+      // API expects: "data:image/jpeg;base64,iVBORw0KGgo..."
       const base64Image = this.canvas.toDataURL('image/jpeg', 0.8);
 
-      // Remove data URL prefix to get pure base64
-      const base64Data = base64Image.split(',')[1];
+      // Send frame WITH data URI prefix (API requirement)
+      // onFrame now returns the processing time INCLUDING socket emission
+      const processingTime = onFrame(base64Image, timeStamp) ?? 0;
+      this.frameCount++; // Increment frame counter
 
-      onFrame(base64Data);
-    }, interval);
+      // Match timing model of reference implementation: target constant cadence
+      const idealInterval = 1000 / FPS;
+      const delay = Math.max(0, idealInterval - processingTime);
+
+      // Schedule next frame with calculated delay
+      this.captureTimeout = setTimeout(captureFrame, delay);
+    };
+
+    // Start capturing (matching working implementation)
+    setTimeout(captureFrame, 0);
   }
 
   stopCapture(): void {
-    if (this.captureInterval) {
+    if (this.isCapturing || this.captureTimeout) {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('🛑 STOPPING FRAME CAPTURE');
+      console.log(`📊 Total frames sent: ${this.frameCount}`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      clearInterval(this.captureInterval);
-      this.captureInterval = null;
+      this.isCapturing = false;
+      
+      if (this.captureTimeout) {
+        clearTimeout(this.captureTimeout);
+        this.captureTimeout = null;
+      }
 
-      console.log('✅ Frame capture interval cleared');
+      console.log('✅ Frame capture stopped');
       console.log('✅ No more frames will be sent');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }

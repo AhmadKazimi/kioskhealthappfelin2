@@ -12,7 +12,7 @@ Updated the fingerprint scanning feature to include authentication with the vita
 - Created new service to handle login to vitals API
 - Endpoint: `https://vitals.miavitals.com/api/v1/login`
 - Credentials:
-  - Username: `info@carevisionai.com`
+  - Username: `info@carevisionai.com` 
   - Password: `Carevision@2263`
 - Returns access token with 3600 second expiry
 
@@ -20,7 +20,6 @@ Updated the fingerprint scanning feature to include authentication with the vita
 **File**: `src/services/fingerprintSocketService.ts`
 
 **Changes**:
-- Updated socket URL from `https://` to `wss://` (WebSocket protocol)
 - Changed authentication method from query parameter to auth header
 - Now uses: `auth: { Authorization: "Bearer <access_token>" }`
 - Removed access_token from query parameters

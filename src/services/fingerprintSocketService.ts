@@ -6,11 +6,14 @@ export interface SocketConnectionParams {
   checkArrhythmias: boolean;
   checkStroke: boolean;
   client: string;
+  engageCarolChat: boolean;
   diastolicAdj?: number;
   longMeasurement: boolean;
   party: string;
   sampleTime: number;
   storeResult: boolean;
+  suspectedHypertensive: boolean;
+  suspectedHypotensive: boolean;
   systolicAdj?: number;
   user_age: number;
   user_sex: 'female' | 'male';
@@ -69,7 +72,7 @@ export interface VitalsResult {
     mean_rr: number;
 
     // Additional fields from API spec
-    confidence: number;  // Confidence level (moved from calculation_parameters)
+    confidence: number; // Confidence level (moved from calculation_parameters)
     raw_rr_intervals?: number[];
     resp_rate_motion?: number;
     rr_intervals?: number[];
@@ -91,66 +94,101 @@ export class FingerprintSocketService {
   private socket: Socket | null = null;
   private startTime: number = 0;
   private connectCallback: (() => void) | null = null;
+  private measurementTimer: ReturnType<typeof setTimeout> | null = null;
+  private stopRequested = false;
+  private timeoutCallback: (() => void) | null = null;
+  
+  // Frame buffering to ensure at least 6 frames sent before processing responses
+  private framesSent: number = 0;
+  private responsesQueue: Array<{type: string, data: any}> = [];
+  private isProcessingResponses: boolean = false;
+  private MIN_FRAMES_BEFORE_RESPONSE = 6; // Minimum frames to send before processing responses
+  
+  // Store callbacks for later processing
+  private onVitalsCallback: ((vitals: VitalsResult) => void) | null = null;
+  private onBloodPressureCallback: ((bp: BloodPressureResult) => void) | null = null;
+  private onStableReadingsCallback: (() => void) | null = null;
+  private onTimeoutCallback: (() => void) | null = null;
+  private onErrorCallback: ((error: string) => void) | null = null;
 
-  onConnect(callback: () => void): void {
-    this.connectCallback = callback;
+  private clearMeasurementTimer(): void {
+    if (this.measurementTimer) {
+      clearTimeout(this.measurementTimer);
+      this.measurementTimer = null;
+    }
   }
 
-  connect(
-    params: SocketConnectionParams,
-    accessToken: string,
+  private processQueuedResponses(): void {
+    if (this.isProcessingResponses || this.responsesQueue.length === 0) {
+      return;
+    }
+    
+    this.isProcessingResponses = true;
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`🔄 PROCESSING ${this.responsesQueue.length} QUEUED RESPONSES (after ${this.framesSent} frames sent)`);
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    
+    // Process all queued responses
+    while (this.responsesQueue.length > 0) {
+      const response = this.responsesQueue.shift();
+      if (response) {
+        // Trigger the actual callback based on response type
+        if (response.type === 'vitals' && this.onVitalsCallback) {
+          this.onVitalsCallback(response.data);
+        } else if (response.type === 'blood_pressure' && this.onBloodPressureCallback) {
+          this.onBloodPressureCallback(response.data);
+        } else if (response.type === 'stable_readings' && this.onStableReadingsCallback) {
+          this.onStableReadingsCallback();
+        } else if (response.type === 'timeout' && this.onTimeoutCallback) {
+          this.onTimeoutCallback();
+        }
+      }
+    }
+    
+    this.isProcessingResponses = false;
+  }
+
+  private scheduleMeasurementTimer(sampleTimeSeconds: number): void {
+    this.clearMeasurementTimer();
+    const safetyBufferSeconds = 5;
+    const timeoutSeconds = Math.max(sampleTimeSeconds, 1) + safetyBufferSeconds;
+
+    this.measurementTimer = setTimeout(() => {
+      if (!this.stopRequested) {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('⏳ AUTO STOP TRIGGERED (no stable readings within expected window)');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        this.sendStopSignal();
+        if (this.timeoutCallback) {
+          console.log('⏳ Invoking timeout callback due to auto stop');
+          this.timeoutCallback();
+        }
+      }
+    }, timeoutSeconds * 1000);
+  }
+
+  private attachEventHandlers(
     onVitals: (vitals: VitalsResult) => void,
     onBloodPressure: (bp: BloodPressureResult) => void,
     onStableReadings: () => void,
     onTimeout: () => void,
     onError: (error: string) => void
   ): void {
-    // WebSocket URL for frame processing
-    const SOCKET_URL = 'https://vitals.miavitals.com/api/v1/process_frame';
+    if (!this.socket) return;
 
-    // Full request configuration
-    const socketConfig = {
-      transports: ['websocket'], // Use websocket transport
-      forceNew: true,
-      withCredentials: true,
-      auth: {
-        Authorization: `Bearer ${accessToken}`
-      },
-      query: {
-        ...params,
-        EIO: '5' // Engine.IO v5 (Socket.IO v5+ protocol)
+    // Store callbacks for later use
+    this.onVitalsCallback = onVitals;
+    this.onBloodPressureCallback = onBloodPressure;
+    this.onStableReadingsCallback = onStableReadings;
+    this.onTimeoutCallback = onTimeout;
+    this.onErrorCallback = onError;
+
+    const handleVitalsResult = (data: VitalsResult) => {
+      if (!data || !data.calculation_parameters || !data.vitals_results) {
+        console.log('⚠️ Ignoring malformed vitals payload:', data);
+        return;
       }
-    };
 
-    // Log complete connection details
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔌 SOCKET CONNECTION ATTEMPT');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('URL:', SOCKET_URL);
-    console.log('Full Access Token:', accessToken);
-    console.log('Connection Config:', JSON.stringify(socketConfig, null, 2));
-    console.log('Query Parameters:', socketConfig.query);
-    console.log('Auth:', socketConfig.auth);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    this.socket = io(SOCKET_URL, socketConfig);
-
-    this.startTime = Date.now();
-
-    // Event listeners
-    this.socket.on('connect', () => {
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('✅ SOCKET CONNECTED SUCCESSFULLY');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('Socket ID:', this.socket?.id);
-      console.log('Connected:', this.socket?.connected);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      if (this.connectCallback) {
-        this.connectCallback();
-      }
-    });
-
-    this.socket.on('result', (data: VitalsResult) => {
       // Log EVERY response with frame number for tracking
       const frameNum = data.calculation_parameters.frame_number || 'unknown';
       const isStable = data.calculation_parameters.stable_readings;
@@ -159,6 +197,17 @@ export class FingerprintSocketService {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log(`📊 RESPONSE FOR FRAME #${frameNum} ${isStable ? '✅ STABLE' : ''} ${isTimeout ? '⏱️ TIMEOUT' : ''}`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+      // Check if we should buffer or process immediately
+      if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(`🔄 QUEUING VITALS RESPONSE - Frame #${frameNum}`);
+        console.log(`   Only ${this.framesSent} frames sent, need ${this.MIN_FRAMES_BEFORE_RESPONSE}`);
+        console.log(`   Queue size: ${this.responsesQueue.length + 1}`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        this.responsesQueue.push({ type: 'vitals', data });
+        return;
+      }
 
       // Calculation Parameters (compact format for every frame)
       console.log('📐 Calculation:');
@@ -181,7 +230,10 @@ export class FingerprintSocketService {
 
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      // Pass vitals to callback
+      // Process any queued responses first
+      this.processQueuedResponses();
+      
+      // Then pass current vitals to callback
       onVitals(data);
 
       // CHECK FOR COMPLETION FLAGS IN THE RESULT
@@ -189,6 +241,7 @@ export class FingerprintSocketService {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('✅ STABLE READINGS ACHIEVED - SCAN COMPLETE!');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        this.clearMeasurementTimer();
         onStableReadings();
       }
 
@@ -196,19 +249,95 @@ export class FingerprintSocketService {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('⏱️ MEASUREMENT TIMEOUT - INCOMPLETE');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        this.clearMeasurementTimer();
         onTimeout();
       }
+    };
+
+    this.socket.on('result', handleVitalsResult);
+
+    // Some environments send everything back on "message" with a subject field.
+    this.socket.on('message', (payload: any) => {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📩 MESSAGE EVENT RECEIVED FROM SERVER');
+      console.log('Payload:', JSON.stringify(payload, null, 2));
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+      if (!payload) {
+        return;
+      }
+
+      // Format 1: { subject: "result", data: {...} }
+      if (payload.subject === 'result' && payload.data) {
+        handleVitalsResult(payload.data as VitalsResult);
+        return;
+      }
+
+      // Format 2: VitalsResult payload sent directly on "message"
+      if (payload.calculation_parameters && payload.vitals_results) {
+        handleVitalsResult(payload as VitalsResult);
+        return;
+      }
+
+      // Format 3: blood pressure / stable / timeout forwarded on "message"
+      if (payload.subject === 'blood_pressure_result' && payload.data) {
+        if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
+          console.log(`🔄 QUEUING BLOOD PRESSURE RESPONSE (only ${this.framesSent} frames sent)`);
+          this.responsesQueue.push({ type: 'blood_pressure', data: payload.data });
+        } else {
+          this.processQueuedResponses();
+          onBloodPressure(payload.data as BloodPressureResult);
+        }
+        return;
+      }
+
+      if (payload.subject === 'stable_readings') {
+        this.clearMeasurementTimer();
+        if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
+          console.log(`🔄 QUEUING STABLE READINGS (only ${this.framesSent} frames sent)`);
+          this.responsesQueue.push({ type: 'stable_readings', data: null });
+        } else {
+          this.processQueuedResponses();
+          onStableReadings();
+        }
+        console.log('📨 MESSAGE PAYLOAD INDICATED STABLE READINGS');
+        return;
+      }
+
+      if (payload.subject === 'timeout') {
+        this.clearMeasurementTimer();
+        if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
+          console.log(`🔄 QUEUING TIMEOUT (only ${this.framesSent} frames sent)`);
+          this.responsesQueue.push({ type: 'timeout', data: null });
+        } else {
+          this.processQueuedResponses();
+          onTimeout();
+        }
+        console.log('📨 MESSAGE PAYLOAD INDICATED TIMEOUT');
+        return;
+      }
+
+      console.log('📨 MESSAGE PAYLOAD DID NOT MATCH EXPECTED STRUCTURE');
     });
 
     this.socket.on('blood_pressure_result', (data: BloodPressureResult) => {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('🩺 BLOOD PRESSURE RESULT RECEIVED');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
+        console.log(`🔄 QUEUING BLOOD PRESSURE (only ${this.framesSent} frames sent, need ${this.MIN_FRAMES_BEFORE_RESPONSE})`);
+        this.responsesQueue.push({ type: 'blood_pressure', data });
+        return;
+      }
+      
       console.log('Raw Data:', JSON.stringify(data, null, 2));
       console.log('Systolic:', data.systolic_blood_pressure);
       console.log('Diastolic:', data.diastolic_blood_pressure);
       console.log('Calibrated:', data.bp_calibrated);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      this.processQueuedResponses();
       onBloodPressure(data);
     });
 
@@ -216,6 +345,16 @@ export class FingerprintSocketService {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('✓ STABLE READINGS ACHIEVED');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      this.clearMeasurementTimer();
+      
+      if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
+        console.log(`🔄 QUEUING STABLE READINGS (only ${this.framesSent} frames sent, need ${this.MIN_FRAMES_BEFORE_RESPONSE})`);
+        this.responsesQueue.push({ type: 'stable_readings', data: null });
+        return;
+      }
+      
+      this.processQueuedResponses();
       onStableReadings();
     });
 
@@ -223,6 +362,16 @@ export class FingerprintSocketService {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('⏱️ SCAN TIMEOUT');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      this.clearMeasurementTimer();
+      
+      if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
+        console.log(`🔄 QUEUING TIMEOUT (only ${this.framesSent} frames sent, need ${this.MIN_FRAMES_BEFORE_RESPONSE})`);
+        this.responsesQueue.push({ type: 'timeout', data: null });
+        return;
+      }
+      
+      this.processQueuedResponses();
       onTimeout();
     });
 
@@ -231,7 +380,7 @@ export class FingerprintSocketService {
       console.error('❌ CONNECTION ERROR');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.error('Error Message:', error.message);
- 
+
       console.error('Full Error Object:', JSON.stringify(error, null, 2));
       console.error('Error Stack:', error.stack);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -246,6 +395,7 @@ export class FingerprintSocketService {
       console.error('Error Type:', typeof error);
       console.error('Error JSON:', JSON.stringify(error, null, 2));
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.clearMeasurementTimer();
       onError(`Socket error: ${error}`);
     });
 
@@ -255,6 +405,8 @@ export class FingerprintSocketService {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('Reason:', reason);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      this.clearMeasurementTimer();
+      this.stopRequested = true;
     });
 
     // Debug: Log all events (catch-all for any event we might miss)
@@ -271,14 +423,112 @@ export class FingerprintSocketService {
     });
   }
 
+  onConnect(callback: () => void): void {
+    console.log('📞 onConnect callback registered');
+    this.connectCallback = callback;
+  }
+
+  connect(
+    params: SocketConnectionParams,
+    accessToken: string,
+    onVitals: (vitals: VitalsResult) => void,
+    onBloodPressure: (bp: BloodPressureResult) => void,
+    onStableReadings: () => void,
+    onTimeout: () => void,
+    onError: (error: string) => void
+  ): void {
+    // Clean up any existing socket
+    if (this.socket) {
+      console.log('🧹 Cleaning up existing socket');
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+      this.socket = null;
+    }
+
+    // WebSocket URL for frame processing
+    const SOCKET_URL = 'wss://vitals.miavitals.com/api/v1/process_frame';
+
+    // Full request configuration - forceNew: true creates fresh socket per measurement
+    const socketConfig = {
+      transports: ['websocket'],
+      forceNew: true,  // ← Create NEW socket for each measurement (matches working implementation)
+      withCredentials: true,
+      auth: {
+        Authorization: `Bearer ${accessToken}`
+      },
+      query: {
+        ...params,
+        access_token: accessToken
+      }
+    };
+
+    // Create NEW socket connection for this measurement
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔌 CREATING NEW SOCKET FOR MEASUREMENT');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('URL:', SOCKET_URL);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    this.socket = io(SOCKET_URL, socketConfig);
+    this.stopRequested = false;
+    this.clearMeasurementTimer();
+    this.timeoutCallback = onTimeout;
+
+    this.startTime = Date.now();
+    
+    // Reset frame buffering state for new measurement
+    this.framesSent = 0;
+    this.responsesQueue = [];
+    this.isProcessingResponses = false;
+    
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🎯 FRAME BUFFERING ENABLED');
+    console.log(`   Will queue responses until ${this.MIN_FRAMES_BEFORE_RESPONSE} frames are sent`);
+    console.log(`   This ensures accurate measurements by sending frames rapidly first`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    // Handle connect event separately (not in attachEventHandlers since it needs params)
+    this.socket.on('connect', () => {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('✅ SOCKET CONNECTED SUCCESSFULLY');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Socket ID:', this.socket?.id);
+      console.log('Connected:', this.socket?.connected);
+      console.log('Has connectCallback?', !!this.connectCallback);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      if (this.connectCallback) {
+        console.log('🔔 Calling connectCallback to resolve promise');
+        this.connectCallback();
+      } else {
+        console.warn('⚠️ No connectCallback registered!');
+      }
+
+      this.scheduleMeasurementTimer(params.sampleTime || 30);
+    });
+
+    // Attach all other event handlers
+    this.attachEventHandlers(onVitals, onBloodPressure, onStableReadings, onTimeout, onError);
+  }
+
   sendFrame(frameData: FrameData): void {
+    if (this.stopRequested) {
+      return;
+    }
+
     if (!this.socket || !this.socket.connected) {
       // Don't log error - this is expected during connection phase
       return;
     }
 
-    // Log EVERY frame sent (brief format) for response tracking
-    console.log(`📤 SENT Frame #${frameData.frameNumber} | Time: ${frameData.timeLapse.toFixed(1)}s | Email: ${frameData.userEmail}`);
+    // Increment frame counter BEFORE sending to ensure buffering check is correct
+    this.framesSent++;
+
+    // Log EVERY frame sent with buffering status
+    const bufferingStatus = this.framesSent <= this.MIN_FRAMES_BEFORE_RESPONSE 
+      ? `🔄 BUFFERING (${this.framesSent}/${this.MIN_FRAMES_BEFORE_RESPONSE})` 
+      : '✅ PROCESSING';
+    console.log(`📤 SENDING Frame #${frameData.frameNumber} | Time: ${frameData.timeLapse.toFixed(1)}s | ${bufferingStatus} | Queued: ${this.responsesQueue.length}`);
 
     // Detailed log every 30th frame
     if (frameData.frameNumber % 30 === 0) {
@@ -293,7 +543,7 @@ export class FingerprintSocketService {
       console.log('  timeLapse [float]:', frameData.timeLapse.toFixed(3), 'seconds');
       console.log('  userEmail [str]:', frameData.userEmail);
       console.log('\nValidation:');
-      console.log('  ✓ Base64 has no data URI prefix:', !frameData.imageData.includes('data:image'));
+      console.log('  ✓ Base64 HAS data URI prefix:', frameData.imageData.startsWith('data:image'));
       console.log('  ✓ All required fields present:', !!(
         typeof frameData.frameNumber === 'number' &&
         typeof frameData.imageData === 'string' &&
@@ -305,7 +555,22 @@ export class FingerprintSocketService {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }
 
-    this.socket.emit('message', frameData);
+    // Emit the frame AFTER incrementing counter
+    this.socket.emit('message', frameData, (ack: any) => {
+      if (ack !== undefined) {
+        console.log('📨 ACK FROM SERVER FOR FRAME', frameData.frameNumber, ':', JSON.stringify(ack));
+      }
+    });
+
+    // Check if we've reached the minimum frames threshold
+    if (this.framesSent === this.MIN_FRAMES_BEFORE_RESPONSE) {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`✅ REACHED ${this.MIN_FRAMES_BEFORE_RESPONSE} FRAMES - RESPONSES WILL NOW BE PROCESSED`);
+      console.log(`📊 Queued responses to process: ${this.responsesQueue.length}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      // Process any responses that were queued while we were buffering
+      setTimeout(() => this.processQueuedResponses(), 0);
+    }
   }
 
   sendStopSignal(): void {
@@ -314,11 +579,14 @@ export class FingerprintSocketService {
       console.log('🛑 SENDING STOP SIGNAL TO SERVER');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
+      this.stopRequested = true;
+      this.clearMeasurementTimer();
+
       const stopMessage = {
         frameNumber: 0,
         imageData: '',
         remoteVitals: false,
-        stop: true,  // ← This tells server to stop measurement and disconnect
+        stop: true, // ← This tells server to stop measurement and disconnect
         timeLapse: (Date.now() - this.startTime) / 1000,
         userEmail: ''
       };
@@ -332,7 +600,11 @@ export class FingerprintSocketService {
       console.log('  userEmail [str]:', stopMessage.userEmail || '(empty)');
 
       // Send stop signal - server will disconnect us
-      this.socket.emit('message', stopMessage);
+      this.socket.emit('message', stopMessage, (ack: any) => {
+        if (ack !== undefined) {
+          console.log('📨 ACK FROM SERVER FOR STOP SIGNAL:', JSON.stringify(ack));
+        }
+      });
       console.log('✅ Stop signal sent to server');
       console.log('⏳ Waiting for server to disconnect socket...');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -340,15 +612,32 @@ export class FingerprintSocketService {
   }
 
   disconnect(): void {
-    // Manual disconnect (for cleanup/unmount only)
+    // Disconnect and clean up socket
     if (this.socket) {
-      console.log('🔌 Manually disconnecting socket (cleanup)');
+      console.log('🔌 Disconnecting socket (measurement complete)');
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
     }
+    this.clearMeasurementTimer();
+    this.stopRequested = true;
+    
+    // Clear frame buffering state
+    this.framesSent = 0;
+    this.responsesQueue = [];
+    this.isProcessingResponses = false;
+    this.onVitalsCallback = null;
+    this.onBloodPressureCallback = null;
+    this.onStableReadingsCallback = null;
+    this.onTimeoutCallback = null;
+    this.onErrorCallback = null;
   }
 
   getTimeLapse(): number {
     return (Date.now() - this.startTime) / 1000;
+  }
+
+  isConnected(): boolean {
+    return !!this.socket?.connected;
   }
 }

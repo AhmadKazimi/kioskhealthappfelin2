@@ -92,11 +92,14 @@ export interface SocketConnectionParams {
   checkArrhythmias: boolean;
   checkStroke: boolean;
   client: string;
+  engageCarolChat: boolean;
   diastolicAdj?: number;
   longMeasurement: boolean;
   party: string;
   sampleTime: number;
   storeResult: boolean;
+  suspectedHypertensive: boolean;
+  suspectedHypotensive: boolean;
   systolicAdj?: number;
   user_age: number;
   user_sex: 'female' | 'male';
