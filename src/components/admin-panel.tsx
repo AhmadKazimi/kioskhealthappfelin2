@@ -93,7 +93,7 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   const hostUrl = process.env.NEXT_PUBLIC_HOST_DOMAIN;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Helper function to get translated condition name
   const getTranslatedConditionName = (conditionName: string): string => {
