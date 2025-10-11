@@ -723,7 +723,14 @@ export const FingerprintScanScreen = ({
                   <div className="absolute inset-0 flex items-center justify-center bg-green-500/90">
                     <div className="text-center text-white px-4">
                       <div className="mb-4 lg:mb-6 text-6xl lg:text-7xl xl:text-8xl">✓</div>
-                      <p className="text-2xl lg:text-3xl xl:text-4xl font-bold">{t('fingerprintScan.scanComplete') || 'Scan Complete!'}</p>
+                      <p className="text-2xl lg:text-3xl xl:text-4xl font-bold mb-3">{t('fingerprintScan.scanComplete') || 'Scan Complete!'}</p>
+                      <p className="text-base lg:text-lg xl:text-xl opacity-90">
+                        {t('fingerprintScan.reviewAndContinue') || 'Review your results below and click Next to continue'}
+                      </p>
+                      <div className="mt-4 flex items-center justify-center gap-2 text-sm lg:text-base opacity-80">
+                        <span>👇</span>
+                        <span>{t('fingerprintScan.clickNextBelow') || 'Click "Next" button below to continue'}</span>
+                      </div>
                     </div>
                   </div>
                 )}
