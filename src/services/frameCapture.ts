@@ -30,7 +30,7 @@ export class FrameCaptureService {
         video: {
           width: { ideal: options.width },
           height: { ideal: options.height },
-          facingMode: 'user'
+          facingMode: 'environment' // Use back camera for fingerprint scanning
         },
         audio: false
       });
@@ -119,17 +119,14 @@ export class FrameCaptureService {
         // Capture timestamp BEFORE processing
         const timeStamp = Date.now();
 
-        // Flip the image horizontally (mirror)
-        this.context.save();
-        this.context.scale(-1, 1); // Flip horizontally
+        // Draw the frame directly (no flip needed for back camera)
         this.context.drawImage(
           this.videoElement,
-          -this.canvas.width, // Compensate for flip
+          0,
           0,
           this.canvas.width,
           this.canvas.height
         );
-        this.context.restore();
 
         // Convert canvas to base64 WITH data URI prefix
         // Use JPEG quality 0.7 for faster encoding (balance quality vs speed)

@@ -374,12 +374,12 @@ export const FingerprintScanScreen = ({
               latestVitalsRef.current = vitalsData
               setVitals(vitalsData)
               
-              // Use server's finger detection to control measurement
+              // Use server's finger detection to update UI, but don't stop on false
               const serverFingerDetected = vitalsData.calculation_parameters.finger_detected
               
-              // Finger just detected by server - start measurement
+              // Finger just detected by server - start measurement if not already running
               if (serverFingerDetected && !lastServerFingerStateRef.current) {
-                console.log('✅ Server detected finger - starting measurement')
+                console.log('✅ Server detected finger - starting/continuing measurement')
                 fingerDetectedRef.current = true
                 setFingerDetected(true)
                 lastServerFingerStateRef.current = true
@@ -390,13 +390,19 @@ export const FingerprintScanScreen = ({
                 }
               }
               
-              // Finger lost according to server - stop measurement
+              // Finger temporarily not detected - just update UI but keep scanning
               if (!serverFingerDetected && lastServerFingerStateRef.current) {
-                console.log('❌ Server reports finger lost')
+                console.log('⚠️ Server reports finger temporarily not detected - continuing scan')
                 fingerDetectedRef.current = false
                 setFingerDetected(false)
                 lastServerFingerStateRef.current = false
-                handleFingerLost()
+                // DO NOT call handleFingerLost() - keep scanning!
+              }
+              
+              // Always update UI with current detection state
+              if (serverFingerDetected !== fingerDetectedRef.current) {
+                fingerDetectedRef.current = serverFingerDetected
+                setFingerDetected(serverFingerDetected)
               }
             },
             // onBloodPressure
@@ -683,8 +689,8 @@ export const FingerprintScanScreen = ({
                   </div>
                 )}
 
-                {/* Progress Bar - Full Width at Bottom */}
-                {isScanning && fingerDetected && (
+                {/* Progress Bar - Full Width at Bottom - Shows once measurement starts */}
+                {isScanning && (
                   <div className="absolute bottom-0 left-0 right-0 bg-white/95 p-3">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -693,7 +699,9 @@ export const FingerprintScanScreen = ({
                       </div>
                       <div className="relative h-2 overflow-hidden rounded-full bg-gray-200">
                         <div
-                          className="h-full rounded-full bg-[#407EFF] transition-all duration-500"
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            fingerDetected ? 'bg-[#407EFF]' : 'bg-yellow-500'
+                          }`}
                           style={{ width: `${Math.min(100, scanProgress)}%` }}
                         />
                       </div>
@@ -701,6 +709,11 @@ export const FingerprintScanScreen = ({
                         <span>{t('fingerprintScan.startTime')}</span>
                         <span>{t('fingerprintScan.endTime')}</span>
                       </div>
+                      {!fingerDetected && scanProgress > 0 && (
+                        <p className="text-xs text-yellow-600 font-medium text-center">
+                          ⚠️ {t('fingerprintScan.fingerNotDetectedContinuing') || 'Finger not detected - place finger back on camera'}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -722,17 +735,73 @@ export const FingerprintScanScreen = ({
                       <div className="mb-3 text-3xl md:text-4xl">⚠️</div>
                       <p className="text-sm md:text-base font-semibold mb-4 px-2">{error}</p>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
+                          console.log('🔄 Retry clicked - resetting scan on same page')
+                          
+                          // Clear error and reset all states
                           setError(null)
                           setCameraReady(false)
                           setAuthReady(false)
                           setScanStarted(false)
                           resetMeasurementState({ clearResults: true, clearCompletion: true })
-                          // Re-trigger initialization after a brief delay
-                          setTimeout(() => {
-                            hasInitializedRef.current = false
-                            window.location.reload() // Simple reload to ensure clean state
-                          }, 100)
+                          
+                          // Cleanup existing resources
+                          frameCaptureRef.current?.cleanup()
+                          frameCaptureRef.current = null
+                          
+                          if (socketServiceRef.current) {
+                            socketServiceRef.current.sendStopSignal()
+                            fingerprintSocketManager.scheduleCleanup(100)
+                            socketServiceRef.current = null
+                          }
+                          
+                          // Reset initialization flags
+                          hasInitializedRef.current = false
+                          isInitializingRef.current = false
+                          
+                          // Wait a moment for cleanup
+                          await new Promise(resolve => setTimeout(resolve, 200))
+                          
+                          // Re-initialize camera and auth (same as mount logic)
+                          try {
+                            isInitializingRef.current = true
+                            
+                            // Clear socket manager's cleanup timer
+                            fingerprintSocketManager.clearCleanupTimer()
+                            
+                            // Get auth token
+                            console.log('🔐 Getting authentication token...')
+                            const accessToken = await getAuthToken()
+                            console.log('✅ Access token obtained')
+                            setAuthReady(true)
+                            
+                            // Initialize camera
+                            if (!videoRef.current) {
+                              throw new Error('Video element not available')
+                            }
+                            
+                            console.log('📹 Initializing camera...')
+                            frameCaptureRef.current = new FrameCaptureService()
+                            await frameCaptureRef.current.initialize(videoRef.current, {
+                              width: 640,
+                              height: 480,
+                              fps: 30
+                            })
+                            
+                            console.log('✅ Camera initialized - ready to scan')
+                            setCameraReady(true)
+                            hasInitializedRef.current = true
+                            
+                          } catch (err) {
+                            console.error('❌ Retry initialization error:', err)
+                            if (err instanceof Error) {
+                              setError(err.message)
+                            } else {
+                              setError('Failed to initialize')
+                            }
+                          } finally {
+                            isInitializingRef.current = false
+                          }
                         }}
                         className="px-6 py-2 bg-white hover:bg-gray-100 text-red-600 text-sm md:text-base font-medium rounded-xl transition-all shadow-lg hover:shadow-xl"
                       >
