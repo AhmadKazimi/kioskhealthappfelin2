@@ -68,11 +68,11 @@ export async function saveFingerprintScan(
 
   try {
     // Get backend URL from environment
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     // If no backend URL is configured, skip saving (dev mode)
     if (!apiUrl || apiUrl === 'https://your-backend-url.com/api') {
-      console.warn('⚠️ No backend API URL configured - skipping save (set NEXT_PUBLIC_API_URL in .env.local)');
+      console.warn('⚠️ No backend API URL configured - skipping save (set NEXT_PUBLIC_API_BASE_URL in .env)');
       return {
         success: true,
         message: 'Scan completed (backend save skipped - no API URL configured)'
