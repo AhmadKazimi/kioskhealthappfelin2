@@ -810,7 +810,10 @@
       "connectionFailed": "Failed to connect to vitals server. Please check your internet connection and try again.",
       "cameraFailed": "Failed to access camera. Please allow camera permissions and try again.",
       "authenticationFailed": "Authentication failed. Please contact support."
-    }
+    },
+    "reviewAndContinue": "Review your results below and click Next to continue",
+    "clickNextBelow": "Click \"Next\" button below to continue",
+    "fingerNotDetectedContinuing": "Finger not detected - place finger back on camera"
   },
   "vitals": {
     "heartRate": "Heart Rate",
