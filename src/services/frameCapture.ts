@@ -13,6 +13,115 @@ export class FrameCaptureService {
   private isCapturing: boolean = false;
   private frameCount: number = 0; // Track total frames sent
 
+  /**
+   * Universal camera detection for all devices
+   * Finds the primary/main back camera on any phone/tablet (iPhone, Android, etc.)
+   * Avoids ultra-wide, telephoto, and other specialized cameras
+   */
+  private async findPrimaryBackCamera(): Promise<string | null> {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      
+      console.log('📷 Available cameras:', videoDevices.map((d, i) => ({
+        index: i,
+        label: d.label,
+        id: d.deviceId.substring(0, 20) + '...'
+      })));
+      
+      // If only one camera, use it
+      if (videoDevices.length === 1) {
+        console.log('✅ Only one camera available, using it');
+        return videoDevices[0].deviceId;
+      }
+      
+      // Score each camera based on how likely it is to be the primary back camera
+      const scoredCameras = videoDevices.map(device => {
+        const label = device.label.toLowerCase();
+        let score = 0;
+        
+        // Positive indicators (higher score = more likely to be primary)
+        if (label.includes('back')) score += 100;
+        if (label.includes('rear')) score += 100;
+        if (label.includes('environment')) score += 100;
+        
+        if (label.includes('main')) score += 50;
+        if (label.includes('primary')) score += 50;
+        if (label.includes('wide') && !label.includes('ultra')) score += 40;
+        if (label.includes('standard')) score += 30;
+        if (label.includes('normal')) score += 30;
+        
+        // Common patterns for first/default camera
+        if (label.includes('camera 0')) score += 40;
+        if (label.includes('camera0')) score += 40;
+        if (label.includes('facing back') && !label.includes('ultra')) score += 40;
+        
+        // Number patterns (camera 0, camera 1, etc.)
+        // Usually camera 0 is primary
+        const cameraNumberMatch = label.match(/camera\s*(\d+)/i);
+        if (cameraNumberMatch) {
+          const cameraNum = parseInt(cameraNumberMatch[1]);
+          if (cameraNum === 0) score += 30;
+          else if (cameraNum === 1) score += 10; // Could be primary on some devices
+        }
+        
+        // Negative indicators (lower score = less likely to be primary)
+        if (label.includes('ultra')) score -= 200; // Ultra-wide is NOT primary
+        if (label.includes('telephoto')) score -= 200; // Telephoto is NOT primary
+        if (label.includes('tele')) score -= 200;
+        if (label.includes('zoom')) score -= 150;
+        if (label.includes('macro')) score -= 100;
+        if (label.includes('depth')) score -= 100;
+        if (label.includes('front')) score -= 300; // Front camera is NOT back
+        if (label.includes('selfie')) score -= 300;
+        if (label.includes('user')) score -= 300;
+        
+        // Special handling for specific devices
+        // Samsung often uses "camera2 0" for main back camera
+        if (label.includes('camera2 0')) score += 60;
+        
+        return { device, score, label };
+      });
+      
+      // Sort by score (highest first)
+      scoredCameras.sort((a, b) => b.score - a.score);
+      
+      console.log('📊 Camera scores:', scoredCameras.map(c => ({
+        label: c.label,
+        score: c.score
+      })));
+      
+      // Select the highest scoring camera that has a positive score
+      const bestCamera = scoredCameras.find(c => c.score > 0);
+      
+      if (bestCamera) {
+        console.log('✅ Selected primary camera:', bestCamera.device.label, '(score:', bestCamera.score + ')');
+        return bestCamera.device.deviceId;
+      }
+      
+      // Fallback: Just find any back-facing camera
+      const backCamera = videoDevices.find(device => {
+        const label = device.label.toLowerCase();
+        return (
+          label.includes('back') || 
+          label.includes('rear') || 
+          label.includes('environment')
+        ) && !label.includes('front');
+      });
+      
+      if (backCamera) {
+        console.log('✅ Fallback: Selected back camera:', backCamera.label);
+        return backCamera.deviceId;
+      }
+      
+      console.log('⚠️ No specific camera found, using browser default');
+      return null;
+    } catch (error) {
+      console.warn('⚠️ Could not enumerate cameras:', error);
+      return null;
+    }
+  }
+
   async initialize(
     videoElement: HTMLVideoElement | null,
     options: FrameCaptureOptions = { width: 640, height: 480, fps: 30 }
@@ -24,14 +133,31 @@ export class FrameCaptureService {
 
     this.videoElement = videoElement;
 
-    // Get camera stream
+    // Get camera stream - prioritize main/primary back camera
     try {
+      console.log('🎥 Initializing camera for fingerprint scanning...');
+      
+      // First, try to find the primary back camera on multi-camera devices
+      const primaryCameraId = await this.findPrimaryBackCamera();
+      
+      // Build video constraints
+      const videoConstraints: MediaTrackConstraints = {
+        width: { ideal: options.width },
+        height: { ideal: options.height }
+      };
+      
+      if (primaryCameraId) {
+        // Use the specific primary camera we found
+        videoConstraints.deviceId = { exact: primaryCameraId };
+        console.log('🎯 Using specific primary camera');
+      } else {
+        // Fallback to facingMode if we couldn't identify a specific camera
+        videoConstraints.facingMode = { ideal: 'environment' };
+        console.log('🎯 Using facingMode: environment (back camera preferred)');
+      }
+      
       this.stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: options.width },
-          height: { ideal: options.height },
-          facingMode: 'environment' // Use back camera for fingerprint scanning
-        },
+        video: videoConstraints,
         audio: false
       });
 
@@ -77,6 +203,18 @@ export class FrameCaptureService {
       console.log('📹 Video dimensions:', this.videoElement.videoWidth, 'x', this.videoElement.videoHeight);
       console.log('📹 Video readyState:', this.videoElement.readyState);
       console.log('📹 Video paused:', this.videoElement.paused);
+      
+      // Log which camera is actually being used
+      const videoTrack = this.stream.getVideoTracks()[0];
+      if (videoTrack) {
+        const settings = videoTrack.getSettings();
+        console.log('📷 Camera in use:', {
+          label: videoTrack.label,
+          facingMode: settings.facingMode || 'unknown',
+          resolution: `${settings.width}x${settings.height}`,
+          deviceId: settings.deviceId?.substring(0, 20) + '...'
+        });
+      }
 
       // Setup canvas for frame capture
       this.canvas = document.createElement('canvas');

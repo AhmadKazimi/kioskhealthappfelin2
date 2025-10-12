@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useTranslation } from "@/hooks/useTranslation"
 import { Heart, Activity, Droplet, Wind } from "lucide-react"
-import { FingerprintSocketService, VitalsResult, BloodPressureResult } from "@/services/fingerprintSocketService"
+import { FingerprintSocketService, VitalsResult, BloodPressureResult, ArrhythmiaResult } from "@/services/fingerprintSocketService"
 import { FrameCaptureService } from "@/services/frameCapture"
 import { saveFingerprintScan } from "@/services/saveFingerprintScan"
 import { getAuthToken } from "@/services/fingerprintAuthService"
@@ -59,6 +59,7 @@ export const FingerprintScanScreen = ({
   // Vitals state
   const [vitals, setVitals] = useState<VitalsResult | null>(null)
   const [bloodPressure, setBloodPressure] = useState<BloodPressureResult | null>(null)
+  const [arrhythmia, setArrhythmia] = useState<ArrhythmiaResult | null>(null)
   const [waitingForBloodPressure, setWaitingForBloodPressure] = useState(false)
   const [scanComplete, setScanComplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,6 +81,7 @@ export const FingerprintScanScreen = ({
     if (clearResults) {
       setVitals(null)
       setBloodPressure(null)
+      setArrhythmia(null)
       latestVitalsRef.current = null
     }
     if (clearCompletion) {
@@ -355,7 +357,7 @@ export const FingerprintScanScreen = ({
             socketServiceRef.current!.connect(
             {
               bpCalibrated: false,
-              checkArrhythmias: false,
+              checkArrhythmias: true,
               checkStroke: false,
               client: 'health-kiosk',
               engageCarolChat: false,
@@ -429,6 +431,25 @@ export const FingerprintScanScreen = ({
                     }
                   })
                 }
+              }
+            },
+            // onArrhythmia
+            (arrhythmiaData) => {
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+              console.log('❤️ Arrhythmia result received')
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+              setArrhythmia(arrhythmiaData)
+
+              // Log detected arrhythmias for debugging
+              const detected = Object.entries(arrhythmiaData)
+                .filter(([, value]) => value.detected)
+                .map(([key, value]) => value.arrhythmia_name);
+
+              if (detected.length > 0) {
+                console.log('⚠️ Detected:', detected.join(', '))
+              } else {
+                console.log('✅ No arrhythmias detected')
               }
             },
             // onStableReadings

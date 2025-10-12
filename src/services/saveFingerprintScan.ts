@@ -115,16 +115,16 @@ export async function saveFingerprintScan(
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // ============================================================
-    // API CALL 2: Trigger Arrhythmia Detection
+    // API CALL 2: Trigger Arrhythmia Detection (Same as Face Scan)
     // ============================================================
-    const meanRR = vitals.vitals_results.mean_rr;
-    
-    // Only call arrhythmia detection if we have valid RR data
-    if (meanRR && meanRR > 0) {
+    const rrIntervals = vitals.vitals_results.rr_intervals || [];
+
+    // Only call arrhythmia detection if we have valid RR intervals array
+    if (rrIntervals.length > 0) {
       try {
         const arrhythmiaRequestData = {
           clientId: clientId,
-          inputs: [[meanRR]]  // Wrap in double array to match face scan format
+          inputs: [rrIntervals]  // Same format as face scan - array wrapped in array
         };
 
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -132,9 +132,10 @@ export async function saveFingerprintScan(
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('Endpoint:', `POST ${apiUrl}/Arrhythmia/AddArrhythmiaRequest`);
         console.log('Request Data:', JSON.stringify(arrhythmiaRequestData, null, 2));
-        console.log('Mean RR Value:', meanRR);
+        console.log('RR Intervals Count:', rrIntervals.length);
+        console.log('Sample RR Intervals:', rrIntervals.slice(0, 5).join(', '), '...');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        
+
         const arrhythmiaResponse = await fetch(`${apiUrl}/Arrhythmia/AddArrhythmiaRequest`, {
           method: 'POST',
           headers: {
@@ -172,10 +173,11 @@ export async function saveFingerprintScan(
       }
     } else {
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.warn('⚠️ SKIPPING API CALL 2: Invalid mean_rr value');
+      console.warn('⚠️ SKIPPING API CALL 2: No RR intervals available');
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.warn('Mean RR Value:', meanRR);
+      console.warn('RR Intervals:', rrIntervals);
       console.warn('Arrhythmia detection will not be triggered');
+      console.warn('Note: Ensure checkArrhythmias is enabled in socket connection');
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }
 

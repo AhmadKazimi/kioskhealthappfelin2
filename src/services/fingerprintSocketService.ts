@@ -89,6 +89,29 @@ export interface BloodPressureResult {
   diastolic_adj?: number;
 }
 
+export interface ArrhythmiaDetection {
+  api_name: string;
+  arrhythmia_name: string;
+  confidence: number;
+  detected: boolean;
+  error_msg: string;
+  prediction: string;
+  request_id: string;
+  success: boolean;
+}
+
+export interface ArrhythmiaResult {
+  atrial_fibrillation: ArrhythmiaDetection;
+  atrial_flutter: ArrhythmiaDetection;
+  apnea: ArrhythmiaDetection;
+  congestive_heart_failure: ArrhythmiaDetection;
+  heart_block: ArrhythmiaDetection;
+  premature_ventricular_contraction: ArrhythmiaDetection;
+  sinus_tachycardia: ArrhythmiaDetection;
+  supraventricular_tachycardia: ArrhythmiaDetection;
+  ventricular_tachycardia: ArrhythmiaDetection;
+}
+
 // Service Implementation
 export class FingerprintSocketService {
   private socket: Socket | null = null;
@@ -107,6 +130,7 @@ export class FingerprintSocketService {
   // Store callbacks for later processing
   private onVitalsCallback: ((vitals: VitalsResult) => void) | null = null;
   private onBloodPressureCallback: ((bp: BloodPressureResult) => void) | null = null;
+  private onArrhythmiaCallback: ((arrhythmia: ArrhythmiaResult) => void) | null = null;
   private onStableReadingsCallback: (() => void) | null = null;
   private onTimeoutCallback: (() => void) | null = null;
   private onErrorCallback: ((error: string) => void) | null = null;
@@ -137,6 +161,8 @@ export class FingerprintSocketService {
           this.onVitalsCallback(response.data);
         } else if (response.type === 'blood_pressure' && this.onBloodPressureCallback) {
           this.onBloodPressureCallback(response.data);
+        } else if (response.type === 'arrhythmia' && this.onArrhythmiaCallback) {
+          this.onArrhythmiaCallback(response.data);
         } else if (response.type === 'stable_readings' && this.onStableReadingsCallback) {
           this.onStableReadingsCallback();
         } else if (response.type === 'timeout' && this.onTimeoutCallback) {
@@ -170,6 +196,7 @@ export class FingerprintSocketService {
   private attachEventHandlers(
     onVitals: (vitals: VitalsResult) => void,
     onBloodPressure: (bp: BloodPressureResult) => void,
+    onArrhythmia: (arrhythmia: ArrhythmiaResult) => void,
     onStableReadings: () => void,
     onTimeout: () => void,
     onError: (error: string) => void
@@ -179,6 +206,7 @@ export class FingerprintSocketService {
     // Store callbacks for later use
     this.onVitalsCallback = onVitals;
     this.onBloodPressureCallback = onBloodPressure;
+    this.onArrhythmiaCallback = onArrhythmia;
     this.onStableReadingsCallback = onStableReadings;
     this.onTimeoutCallback = onTimeout;
     this.onErrorCallback = onError;
@@ -279,7 +307,7 @@ export class FingerprintSocketService {
         return;
       }
 
-      // Format 3: blood pressure / stable / timeout forwarded on "message"
+      // Format 3: blood pressure / arrhythmia / stable / timeout forwarded on "message"
       if (payload.subject === 'blood_pressure_result' && payload.data) {
         if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
           console.log(`🔄 QUEUING BLOOD PRESSURE RESPONSE (only ${this.framesSent} frames sent)`);
@@ -287,6 +315,17 @@ export class FingerprintSocketService {
         } else {
           this.processQueuedResponses();
           onBloodPressure(payload.data as BloodPressureResult);
+        }
+        return;
+      }
+
+      if (payload.subject === 'arrhythmia_result' && payload.data) {
+        if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
+          console.log(`🔄 QUEUING ARRHYTHMIA RESPONSE (only ${this.framesSent} frames sent)`);
+          this.responsesQueue.push({ type: 'arrhythmia', data: payload.data });
+        } else {
+          this.processQueuedResponses();
+          onArrhythmia(payload.data as ArrhythmiaResult);
         }
         return;
       }
@@ -324,21 +363,50 @@ export class FingerprintSocketService {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('🩺 BLOOD PRESSURE RESULT RECEIVED');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      
+
       if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
         console.log(`🔄 QUEUING BLOOD PRESSURE (only ${this.framesSent} frames sent, need ${this.MIN_FRAMES_BEFORE_RESPONSE})`);
         this.responsesQueue.push({ type: 'blood_pressure', data });
         return;
       }
-      
+
       console.log('Raw Data:', JSON.stringify(data, null, 2));
       console.log('Systolic:', data.systolic_blood_pressure);
       console.log('Diastolic:', data.diastolic_blood_pressure);
       console.log('Calibrated:', data.bp_calibrated);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      
+
       this.processQueuedResponses();
       onBloodPressure(data);
+    });
+
+    this.socket.on('arrhythmia_result', (data: ArrhythmiaResult) => {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('❤️ ARRHYTHMIA RESULT RECEIVED');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+      if (this.framesSent < this.MIN_FRAMES_BEFORE_RESPONSE) {
+        console.log(`🔄 QUEUING ARRHYTHMIA (only ${this.framesSent} frames sent, need ${this.MIN_FRAMES_BEFORE_RESPONSE})`);
+        this.responsesQueue.push({ type: 'arrhythmia', data });
+        return;
+      }
+
+      console.log('Raw Data:', JSON.stringify(data, null, 2));
+
+      // Log detected arrhythmias
+      const detected = Object.entries(data)
+        .filter(([, value]) => value.detected)
+        .map(([key, value]) => `${value.arrhythmia_name} (${(value.confidence * 100).toFixed(1)}%)`);
+
+      if (detected.length > 0) {
+        console.log('⚠️ Detected Arrhythmias:', detected.join(', '));
+      } else {
+        console.log('✅ No arrhythmias detected');
+      }
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+      this.processQueuedResponses();
+      onArrhythmia(data);
     });
 
     this.socket.on('stable_readings', () => {
@@ -439,6 +507,7 @@ export class FingerprintSocketService {
     accessToken: string,
     onVitals: (vitals: VitalsResult) => void,
     onBloodPressure: (bp: BloodPressureResult) => void,
+    onArrhythmia: (arrhythmia: ArrhythmiaResult) => void,
     onStableReadings: () => void,
     onTimeout: () => void,
     onError: (error: string) => void
@@ -514,7 +583,7 @@ export class FingerprintSocketService {
     });
 
     // Attach all other event handlers
-    this.attachEventHandlers(onVitals, onBloodPressure, onStableReadings, onTimeout, onError);
+    this.attachEventHandlers(onVitals, onBloodPressure, onArrhythmia, onStableReadings, onTimeout, onError);
     
     // IMPORTANT: Check if socket is already connected (can happen with fast connections)
     // Use setTimeout(0) to check on next tick after all event handlers are registered
@@ -652,6 +721,7 @@ export class FingerprintSocketService {
     this.isProcessingResponses = false;
     this.onVitalsCallback = null;
     this.onBloodPressureCallback = null;
+    this.onArrhythmiaCallback = null;
     this.onStableReadingsCallback = null;
     this.onTimeoutCallback = null;
     this.onErrorCallback = null;
