@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { HealthData } from '@/types/health-data';
 import { ClientModel } from '@/payload-types';
 import Cookies from 'js-cookie';
@@ -30,10 +30,19 @@ export function useClientScanResults(options: UseClientScanResultsOptions = {}):
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef<boolean>(true);
+  const isFetchingRef = useRef<boolean>(false); // Guard against concurrent fetches
+
+  // Memoize apiUrl to prevent dependency changes
+  const apiUrl = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL, []);
 
   const fetchData = useCallback(async () => {
+    // Guard: Prevent concurrent fetches
+    if (isFetchingRef.current) {
+      console.log('Fetch already in progress, skipping...');
+      return;
+    }
+
     const userId = Cookies.get('userId');
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     if (!userId || !apiUrl || !enabled) {
       return;
@@ -53,6 +62,9 @@ export function useClientScanResults(options: UseClientScanResultsOptions = {}):
       }
       return;
     }
+
+    // Mark as fetching
+    isFetchingRef.current = true;
 
     // Cancel previous request
     if (abortControllerRef.current) {
@@ -131,8 +143,11 @@ export function useClientScanResults(options: UseClientScanResultsOptions = {}):
       }
 
       console.error('Error fetching scan results:', error);
+    } finally {
+      // Reset fetching flag
+      isFetchingRef.current = false;
     }
-  }, [enabled, onSuccess, onError]);
+  }, [apiUrl, enabled]); // Removed callbacks from dependencies
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -143,6 +158,7 @@ export function useClientScanResults(options: UseClientScanResultsOptions = {}):
 
     return () => {
       isMountedRef.current = false;
+      isFetchingRef.current = false; // Reset fetch guard on unmount
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }

@@ -38,6 +38,29 @@ export default function NewLayout({
     const [storedApiData, setStoredApiData] = useState<ClientModel | null>(null);
     const progressTrackerRef = React.useRef<ProgressTrackerRef>(null);
     const { t, i18n } = useTranslation();
+
+    // Viewport detection to prevent triple rendering
+    const [viewport, setViewport] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+
+    React.useEffect(() => {
+        const checkViewport = () => {
+            const width = window.innerWidth;
+            if (width < 768) {
+                setViewport('mobile');
+            } else if (width < 1024) {
+                setViewport('tablet');
+            } else {
+                setViewport('desktop');
+            }
+        };
+
+        // Check immediately
+        checkViewport();
+
+        // Listen for resize
+        window.addEventListener('resize', checkViewport);
+        return () => window.removeEventListener('resize', checkViewport);
+    }, []);
     
     // Load client data from sessionStorage on mount or when step changes to 7
     React.useEffect(() => {
@@ -249,62 +272,66 @@ export default function NewLayout({
     };
     return (
       <>
-      {/* Mobile View (up to md breakpoint) */}
-      <div className="block md:hidden h-full w-full bg-white rounded-t-3xl">
-      {currentStep >= 1 && currentStep <= 6 && (
-        <ProgressTracker
-          ref={progressTrackerRef}
-          initialStep={currentStep}
-          className="flex flex-row justify-center items-center"
-          onStepChange={handleStepChange}
-          showNavigationButtons={false}
-          disabled={false}
-        />
-        )}
-        <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
-          {renderStep()}
+      {/* Mobile View (up to md breakpoint) - Only renders on mobile */}
+      {viewport === 'mobile' && (
+        <div className="h-full w-full bg-white rounded-t-3xl">
+          {currentStep >= 1 && currentStep <= 6 && (
+            <ProgressTracker
+              ref={progressTrackerRef}
+              initialStep={currentStep}
+              className="flex flex-row justify-center items-center"
+              onStepChange={handleStepChange}
+              showNavigationButtons={false}
+              disabled={false}
+            />
+          )}
+          <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
+            {renderStep()}
+          </div>
         </div>
-      </div>
-      
-      {/* Tablet View (md to lg breakpoint: 768px-1023px) */}
-      <div className="hidden md:block lg:hidden h-full w-full bg-white rounded-t-3xl">
-        {currentStep >= 1 && currentStep <= 6 && (
-          <ProgressTracker
-            ref={progressTrackerRef}
-            initialStep={currentStep}
-            className="flex flex-row justify-center items-center"
-            onStepChange={handleStepChange}
-            showNavigationButtons={false}
-            disabled={false}
-          />
-        )}
-        <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
-          {renderStep()}
+      )}
+
+      {/* Tablet View (md to lg breakpoint: 768px-1023px) - Only renders on tablet */}
+      {viewport === 'tablet' && (
+        <div className="h-full w-full bg-white rounded-t-3xl">
+          {currentStep >= 1 && currentStep <= 6 && (
+            <ProgressTracker
+              ref={progressTrackerRef}
+              initialStep={currentStep}
+              className="flex flex-row justify-center items-center"
+              onStepChange={handleStepChange}
+              showNavigationButtons={false}
+              disabled={false}
+            />
+          )}
+          <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
+            {renderStep()}
+          </div>
         </div>
-      </div>
-      
-      {/* Desktop View (lg and up: 1024px+) */}
-      <div className="hidden lg:block">
-        <div className="relative hidden lg:flex z-50 w-full h-[80vh] items-start justify-center gap-2 xl:gap-[24px]" style={{zIndex: 50}}>
-            <div className="flex-1 w-full h-full flex items-start justify-center min-w-0">
-                <LeftSection 
-                    currentStep={currentStep}
-                    onStepChange={handleStepChange}
-                    onNext={nextStep}
-                    onPrev={prevStep}
-                    showNavigationButtons={false}
-                />
-            </div>
-            <div className="flex-2 w-full h-full bg-white rounded-3xl min-w-0 overflow-hidden">
-                <MiddleSection>
-                    {renderStep()}
-                </MiddleSection>
-            </div>
-            <div className="flex-1 w-full h-full flex-col items-center justify-center flex min-w-0">
-                    <RightSection  title={renderRightSectionData().title} description={renderRightSectionData().description} className={renderRightSectionData().className} image={renderRightSectionData().image} />
-            </div>
+      )}
+
+      {/* Desktop View (lg and up: 1024px+) - Only renders on desktop */}
+      {viewport === 'desktop' && (
+        <div className="relative flex z-50 w-full h-[80vh] items-start justify-center gap-2 xl:gap-[24px]" style={{zIndex: 50}}>
+          <div className="flex-1 w-full h-full flex items-start justify-center min-w-0">
+            <LeftSection
+              currentStep={currentStep}
+              onStepChange={handleStepChange}
+              onNext={nextStep}
+              onPrev={prevStep}
+              showNavigationButtons={false}
+            />
+          </div>
+          <div className="flex-2 w-full h-full bg-white rounded-3xl min-w-0 overflow-hidden">
+            <MiddleSection>
+              {renderStep()}
+            </MiddleSection>
+          </div>
+          <div className="flex-1 w-full h-full flex-col items-center justify-center flex min-w-0">
+            <RightSection  title={renderRightSectionData().title} description={renderRightSectionData().description} className={renderRightSectionData().className} image={renderRightSectionData().image} />
+          </div>
         </div>
-        </div>
-        </>
+      )}
+      </>
     );
 }

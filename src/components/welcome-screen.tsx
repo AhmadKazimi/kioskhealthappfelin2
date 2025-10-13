@@ -17,21 +17,27 @@ export default function WelcomeScreen({ onNext }: WelcomeScreenProps) {
   const [audioReady, setAudioReady] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+  const hasPlayedRef = useRef(false); // Guard against re-play
+  const listenersAddedRef = useRef(false); // Track if listeners already added
+
   // Get partner logo URL from environment variable
   const partnerLogoUrl = process.env.NEXT_PUBLIC_PARTNER_LOGO_URL;
-  
+
   // Check if current language is Arabic (RTL)
   const isArabic = i18n.language === 'ar';
 
   // Play audio when component mounts, but only if Arabic (mute for English)
   useEffect(() => {
+    // Guard: Don't play if already played
+    if (hasPlayedRef.current) return;
+
     const playAudio = async () => {
       try {
-        if (audioRef.current && isArabic) {
+        if (audioRef.current && isArabic && !hasPlayedRef.current) {
           // For Arabic, play audio normally
           audioRef.current.volume = 0.7;
           await audioRef.current.play();
+          hasPlayedRef.current = true; // Mark as played
           setAudioPlaying(true);
           setAudioReady(false);
         } else if (audioRef.current && !isArabic) {
@@ -41,34 +47,41 @@ export default function WelcomeScreen({ onNext }: WelcomeScreenProps) {
       } catch (error) {
         console.log('Audio autoplay was prevented:', error);
         setAudioReady(true);
-        // Fallback: try to play on user interaction
-        const handleUserInteraction = async () => {
-          try {
-            if (audioRef.current) {
-              await audioRef.current.play();
-              setAudioPlaying(true);
-              setAudioReady(false);
+        // Fallback: try to play on user interaction (ONCE only)
+        if (!listenersAddedRef.current) {
+          const handleUserInteraction = async () => {
+            try {
+              if (audioRef.current && !hasPlayedRef.current) {
+                await audioRef.current.play();
+                hasPlayedRef.current = true;
+                setAudioPlaying(true);
+                setAudioReady(false);
+              }
+              document.removeEventListener('click', handleUserInteraction);
+              document.removeEventListener('touchstart', handleUserInteraction);
+            } catch (error) {
+              console.log('Audio playback failed:', error);
             }
-            document.removeEventListener('click', handleUserInteraction);
-            document.removeEventListener('touchstart', handleUserInteraction);
-          } catch (error) {
-            console.log('Audio playback failed:', error);
-          }
-        };
-        document.addEventListener('click', handleUserInteraction);
-        document.addEventListener('touchstart', handleUserInteraction);
+          };
+          document.addEventListener('click', handleUserInteraction, { once: true });
+          document.addEventListener('touchstart', handleUserInteraction, { once: true });
+          listenersAddedRef.current = true;
+        }
       }
     };
-    
+
     // Try to play audio after a short delay
     const timer = setTimeout(playAudio, 1000);
-    
+
     return () => {
       clearTimeout(timer);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
+      // Reset refs on unmount
+      hasPlayedRef.current = false;
+      listenersAddedRef.current = false;
     };
   }, [isArabic]);
 

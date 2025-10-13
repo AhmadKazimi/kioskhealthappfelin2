@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface ShenaiScannerProps {
@@ -10,8 +10,17 @@ interface ShenaiScannerProps {
 
 const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
     const { t } = useTranslation();
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    // Memoize apiUrl to prevent dependency changes
+    const apiUrl = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL, []);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Use ref for callback to avoid dependency changes
+    const onScanCompleteRef = useRef(onScanComplete);
+
+    // Update ref when callback changes
+    useEffect(() => {
+        onScanCompleteRef.current = onScanComplete;
+    }, [onScanComplete]);
 
     const setLoading = (loading: boolean) => {
         setIsLoading(loading);
@@ -66,10 +75,10 @@ const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
                         inputs: [heartBeatsArray]
                     })
                 });
-                
-                // Call the completion callback instead of redirecting
-                if (onScanComplete) {
-                    onScanComplete();
+
+                // Call the completion callback instead of redirecting (use ref)
+                if (onScanCompleteRef.current) {
+                    onScanCompleteRef.current();
                 }
             } catch (error) {
                 console.error('Error saving scan results:', error);
@@ -98,7 +107,19 @@ const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
                     API_KEY,
                     USER_ID,
                     {
+                        // ✅ VISUAL ENHANCEMENTS
                         hideShenaiLogo: true,
+                        showFaceMask: true,              // 3D face mesh overlay
+                        showBloodFlow: true,             // Blood flow visualization
+                        showFacePositioningOverlay: true, // Face positioning hints
+                        showVisualWarnings: true,         // Signal quality warnings
+
+                        // ✅ CUSTOM COLORS (match app theme)
+                        themeColor: "#407EFF",
+                        backgroundColor: "#FFFFFF",
+                        textColor: "#1F2937",
+                        tileColor: "#F3F4F6",
+
                         measurementPreset: shenaiSDK.MeasurementPreset.CUSTOM,
                         eventCallback: async (event: string) => {
                             if (event === "START_BUTTON_CLICKED") {
@@ -169,6 +190,12 @@ const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
                                     setTimeout(() => {
                                         if ((window as any).shenaiInitialized) {
                                             shenaiSDK.setCameraMode(shenaiSDK.CameraMode.FACING_USER);
+
+                                            // ✅ RE-APPLY VISUAL EFFECTS AFTER CAMERA STARTS
+                                            shenaiSDK.setShowFaceMask(true);
+                                            shenaiSDK.setShowBloodFlow(true);
+                                            shenaiSDK.setShowFacePositioningOverlay(true);
+                                            shenaiSDK.setShowVisualWarnings(true);
                                         }
                                     }, 100);
                                 } catch (e) {
@@ -201,19 +228,44 @@ const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
             (window as any).shenaiInitialized = false;
             (window as any).setReactLoading = undefined;
         };
-    }, [apiUrl, onScanComplete]);
+    }, []); // Empty deps - SDK should only initialize once
 
     return (
-      <div className="w-full h-full min-h-[300px] flex items-center justify-center">
+      <div className="w-full h-full min-h-[300px] flex items-center justify-center relative">
+          {/* Background Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-50 rounded-3xl"></div>
+
+          {/* Decorative Border */}
+          <div className="absolute inset-0 border-4 border-blue-200/50 rounded-3xl pointer-events-none"></div>
+
+          {/* Canvas */}
+          <canvas
+            id="mxcanvas"
+            className="relative w-full max-w-full h-auto rounded-2xl shadow-2xl z-10"
+            style={{
+              aspectRatio: '480/894',
+              maxHeight: '70vh',
+              objectFit: 'contain'
+            }}
+          />
+
+          {/* Signal Quality Indicator */}
+          <div className="absolute top-4 right-4 z-20">
+            <div className="flex items-center space-x-2 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-gray-200">
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
+              <span className="text-sm font-medium text-gray-700">{t('faceScan.activeScanning') || 'Active Scan'}</span>
+            </div>
+          </div>
+
+          {/* Loading Overlay */}
           {isLoading && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-              <div className="bg-white rounded-lg p-4 flex flex-col items-center">
-                <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-2"></div>
-                <div className="text-sm">{t('assessment.savingResults')}</div>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-3xl flex items-center justify-center z-30">
+              <div className="bg-white rounded-2xl p-6 flex flex-col items-center space-y-4 shadow-2xl">
+                <div className="w-12 h-12 border-4 border-gray-200 border-t-[#407EFF] rounded-full animate-spin"></div>
+                <div className="text-base font-medium text-gray-700">{t('assessment.savingResults')}</div>
               </div>
             </div>
           )}
-          <canvas id="mxcanvas" className="w-full max-w-full h-auto max-h-[70vh] aspect-[480/894] sm:max-h-[60vh] lg:max-h-[65vh]"></canvas>
       </div>
     );
 };

@@ -27,19 +27,7 @@ const RightSection: React.FC<RightSectionProps> = React.memo(({
       videoRef.current.volume = 0.8;
       setVideoLoaded(true);
       setVideoError(false);
-
-      // Small delay before playing to ensure cleanup is complete
-      setTimeout(() => {
-        if (videoRef.current) {
-          // Manually trigger play in case autoplay was blocked
-          const playPromise = videoRef.current.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(error => {
-              console.log('Autoplay prevented, will play on user interaction:', error);
-            });
-          }
-        }
-      }, 100);
+      // Let autoplay handle playback - removed manual play() to prevent echo
     }
   }, []);
 
@@ -80,7 +68,8 @@ const RightSection: React.FC<RightSectionProps> = React.memo(({
         currentVideo.pause();
         currentVideo.currentTime = 0;
         currentVideo.volume = 0;
-        currentVideo.src = ''; // Clear source to force cleanup
+        currentVideo.removeAttribute('src'); // Force cleanup
+        currentVideo.load(); // Reset media element state
       }
     };
   }, [image]);

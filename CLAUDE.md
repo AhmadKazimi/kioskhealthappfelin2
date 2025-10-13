@@ -111,3 +111,4 @@ Container (h-full flex flex-col)
 - ✅ Responsive design maintained for mobile/tablet/desktop
 - ✅ No more hidden buttons or cut-off content
 - add to memeroy what we did now
+- add the above details

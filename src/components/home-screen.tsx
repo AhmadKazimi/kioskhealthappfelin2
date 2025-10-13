@@ -140,19 +140,49 @@ export default function HomeScreen() {
  
   return (
     <KioskLayout currentStep={step} totalSteps={7}>
-      <div className="hidden md:block">
-        {renderStepForDesktop()}
-      </div>
-      <div className="block md:hidden">
-      <NewLayout 
-            userData={userData}
-            updateUserData={updateUserData}
-            onNext={nextStep}
-            onPrev={prevStep}
-            currentStep={step}
-            totalSteps={7}
-          />    
-            </div>
+      {/* Only render ONE layout based on screen size - prevents double mounting */}
+      {step === 0 ? (
+        // Welcome screen works for both mobile and desktop
+        <WelcomeScreen onNext={nextStep} />
+      ) : step === 7 ? (
+        // Health summary page
+        (() => {
+          const sessionClientData = sessionStorage.getItem('clientData');
+          const clientData = sessionClientData ? JSON.parse(sessionClientData) : null;
+          return (
+            <HealthSummaryPage
+              isOpen={true}
+              onClose={prevStep}
+              userData={clientData || {
+                Id: userData.id || 0,
+                UserName: userData.personalInfo?.fullName || "",
+                Email: userData.personalInfo?.email || "",
+                FullName: userData.personalInfo?.fullName || "",
+                Phone: userData.personalInfo?.phone || "",
+                NationalityId: String(userData.personalInfo?.nationalityId || ""),
+                HealthConcern: userData.complaint || "",
+                Age: userData.age || "",
+                Gender: userData.gender || "",
+                HeartRate: userData.vitals?.heartRate || 0,
+                BloodPressure: userData.vitals?.bloodPressure || "",
+                Temperature: userData.vitals?.temperature || 0,
+                OxygonSaturation: String(userData.vitals?.oxygenSaturation || ""),
+                ReportedSymptoms: userData.complaint || "",
+              }}
+            />
+          );
+        })()
+      ) : (
+        // NewLayout for all other steps (works for both mobile and desktop)
+        <NewLayout
+          userData={userData}
+          updateUserData={updateUserData}
+          onNext={nextStep}
+          onPrev={prevStep}
+          currentStep={step}
+          totalSteps={7}
+        />
+      )}
     </KioskLayout>
   );
 }
