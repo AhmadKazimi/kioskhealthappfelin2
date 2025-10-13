@@ -89,7 +89,7 @@ navigator.mediaDevices.enumerateDevices().then(devices => {
           onDropdownVisibleChange={updateCameraList}
           value={getEnumName(
             shenaiSDK?.CameraMode,
-            sdkState?.cameraMode,
+            sdkState?.cameraMode?.value,
             "UNKNOWN"
           )}
           popupMatchSelectWidth={false}

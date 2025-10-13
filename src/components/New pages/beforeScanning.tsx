@@ -73,7 +73,10 @@ export default function BeforeScanning({ onNext, onPrev }: { onNext: () => void,
                     console.log('✅ SDK is ready!');
                     setSdkReady(true);
                 }}
-                onScanComplete={onNext}
+                onScanComplete={() => {
+                    // Scan complete - do nothing, stay on scanner
+                    console.log('Scan completed - no auto-navigation');
+                }}
             />
 
             {nextItem ? (

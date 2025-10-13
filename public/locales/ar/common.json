@@ -81,12 +81,22 @@
       "heartRate": "معدل ضربات القلب",
       "pulse": "معدل النبض",
       "heartRateVariability": "تفاوت معدل ضربات القلب",
+      "hrvLnrmssd": "تفاوت ضربات القلب lnRMSSD",
       "respirationRate": "معدل التنفس",
       "bloodPressure": "ضغط الدم",
       "bloodPressureEstimated": "ضغط الدم (تقديري)",
       "temperature": "درجة الحرارة",
       "oxygen": "الأوكسجين",
-      "bpm": "نبضة/دقيقة"
+      "bpm": "نبضة/دقيقة",
+      "cardiacStress": "إجهاد القلب",
+      "stressIndex": "مؤشر الضغط",
+      "cardiacWorkload": "عبء القلب",
+      "parasympatheticActivity": "النشاط نظير الودي",
+      "estimatedAge": "العمر المقدر",
+      "bmi": "مؤشر كتلة الجسم",
+      "weight": "الوزن",
+      "height": "الطول",
+      "signalQuality": "جودة الإشارة"
     }
   },
 

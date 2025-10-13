@@ -4,9 +4,10 @@ interface CounterProps {
   value: number;
   duration?: number;
   className?: string;
+  decimals?: number;
 }
 
-export default function Counter({ value, duration = 1000, className = "" }: CounterProps) {
+export default function Counter({ value, duration = 1000, className = "", decimals = 0 }: CounterProps) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -16,11 +17,11 @@ export default function Counter({ value, duration = 1000, className = "" }: Coun
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime;
       const progress = Math.min((currentTime - startTime) / duration, 1);
-      
+
       // Easing function for smooth animation
       const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      const currentCount = Math.floor(easeOutQuart * value);
-      
+      const currentCount = easeOutQuart * value;
+
       setCount(currentCount);
 
       if (progress < 1) {
@@ -37,9 +38,12 @@ export default function Counter({ value, duration = 1000, className = "" }: Coun
     };
   }, [value, duration]);
 
+  // Format the count with the specified number of decimal places
+  const formattedCount = decimals > 0 ? count.toFixed(decimals) : Math.floor(count).toString();
+
   return (
     <span className={className}>
-      {count}
+      {formattedCount}
     </span>
   );
 }

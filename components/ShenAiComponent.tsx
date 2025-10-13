@@ -16,6 +16,7 @@ import {
   InitializationSettings,
   CustomColorTheme,
   CustomMeasurementConfig,
+  InitializationResult,
 } from "shenai-sdk";
 import { Collapse, message } from "antd";
 import { useEffect, useRef, useState } from "react";
@@ -117,11 +118,15 @@ export default function ShenAiComponent() {
   ) => {
     if (!shenaiSDK) return;
     setPendingInitialization(true);
-    shenaiSDK.initialize(apiKey, "", settings, (res) => {
-      if (res === shenaiSDK.InitializationResult.OK) {
+    shenaiSDK.initialize(apiKey, "", settings, (res: InitializationResult) => {
+      // Handle new enum structure with .value property
+      const resultValue = typeof res === 'object' && 'value' in res ? res.value : res;
+      const isSuccess = resultValue === shenaiSDK.InitializationResult.OK.value;
+
+      if (isSuccess) {
         console.log("Shen.AI License result: ", res);
         shenaiSDK.attachToCanvas("#mxcanvas");
-        
+
         // Camera workaround as suggested by shen.ai team
         setTimeout(() => {
           console.log("Applying camera workaround...");
@@ -131,13 +136,13 @@ export default function ShenAiComponent() {
             console.log("Camera workaround applied - permission prompt should now appear");
           }, 100);
         }, 500);
-        
+
         onSuccess?.();
         scrollToCanvas();
       } else {
         message.error(
           "License initialization problem: " +
-            getEnumName(shenaiSDK.InitializationResult, res, "UNKNOWN")
+            getEnumName(shenaiSDK.InitializationResult, resultValue, "UNKNOWN")
         );
       }
       setPendingInitialization(false);

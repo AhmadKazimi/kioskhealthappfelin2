@@ -46,7 +46,7 @@ export const InitializationSettingsComponent: React.FC<{
           }))}
           value={getEnumName(
             shenaiSDK?.OnboardingMode,
-            settings?.onboardingMode,
+            settings?.onboardingMode?.value,
             "UNKNOWN"
           )}
           popupMatchSelectWidth={false}
@@ -86,35 +86,35 @@ const settings = {` +
     ? `
   precisionMode: shenaiSDK.PrecisionMode.${getEnumName(
     shenaiSDK.PrecisionMode,
-    settings.precisionMode
+    settings.precisionMode.value
   )},`
     : "") +
   (settings.operatingMode
     ? `
   operatingMode: shenaiSDK.OperatingMode.${getEnumName(
     shenaiSDK.OperatingMode,
-    settings.operatingMode
+    settings.operatingMode.value
   )},`
     : "") +
   (settings.measurementPreset
     ? `
   measurementPreset: shenaiSDK.MeasurementPreset.${getEnumName(
     shenaiSDK.MeasurementPreset,
-    settings.measurementPreset
+    settings.measurementPreset.value
   )},`
     : "") +
   (settings.cameraMode
     ? `
   cameraMode: shenaiSDK.CameraMode.${getEnumName(
     shenaiSDK.CameraMode,
-    settings.cameraMode
+    settings.cameraMode.value
   )},`
     : "") +
   (settings.onboardingMode
     ? `
   onboardingMode: shenaiSDK.OnboardingMode.${getEnumName(
     shenaiSDK.OnboardingMode,
-    settings.onboardingMode
+    settings.onboardingMode.value
   )},`
     : "") +
   `

@@ -82,12 +82,22 @@
       "heartRate": "Heart Rate",
       "pulse": "PULSE",
       "heartRateVariability": "Heart Rate Variability",
+      "hrvLnrmssd": "HRV lnRMSSD",
       "respirationRate": "Respiration Rate",
       "bloodPressure": "Blood Pressure",
       "bloodPressureEstimated": "BLOOD PRESSURE (Estimated)",
       "temperature": "Temperature",
       "oxygen": "Oxygen",
-      "bpm": "BPM"
+      "bpm": "BPM",
+      "cardiacStress": "Cardiac Stress",
+      "stressIndex": "Stress Index",
+      "cardiacWorkload": "Cardiac Workload",
+      "parasympatheticActivity": "Parasympathetic Activity",
+      "estimatedAge": "Estimated Age",
+      "bmi": "BMI",
+      "weight": "Weight",
+      "height": "Height",
+      "signalQuality": "Signal Quality"
     }
   },
   "fastScan": {

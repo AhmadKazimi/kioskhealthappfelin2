@@ -10,6 +10,7 @@ interface VitalCardProps {
   unit: string;
   isLoading: boolean;
   className?: string;
+  decimals?: number;
 }
 
 export default function VitalCard({
@@ -19,7 +20,8 @@ export default function VitalCard({
   value,
   unit,
   isLoading,
-  className = ""
+  className = "",
+  decimals = 0
 }: VitalCardProps) {
   // Check if value is valid (not null, undefined, or 0)
   const hasValidValue = value != null && value !== 0;
@@ -56,6 +58,7 @@ export default function VitalCard({
                   <Counter
                     value={value}
                     duration={1500}
+                    decimals={decimals}
                     className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black"
                   />
                 ) : (

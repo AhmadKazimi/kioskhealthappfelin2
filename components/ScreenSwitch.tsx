@@ -9,7 +9,7 @@ export const ScreenSwitch: React.FC<{
   shenaiSDK: ShenaiSDK | undefined;
   sdkState?: ShenaiSdkState;
 }> = ({ shenaiSDK, sdkState }) => {
-  const screen = getEnumName(shenaiSDK?.Screen, sdkState?.screen, "UNKNOWN");
+  const screen = getEnumName(shenaiSDK?.Screen, sdkState?.screen?.value, "UNKNOWN");
 
   return (
     <div className={styles.controlRow}>

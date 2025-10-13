@@ -35,7 +35,7 @@ switch (faceState) {
           />
         </div>
         <div className={styles.outputCodeValue}>
-          {getEnumName(shenaiSDK?.FaceState, sdkState?.faceState, "UNKNOWN")}
+          {getEnumName(shenaiSDK?.FaceState, sdkState?.faceState?.value, "UNKNOWN")}
         </div>
       </div>
       <div className={styles.outputRow}>
@@ -75,7 +75,7 @@ switch (measurementState) {
         <div className={styles.outputCodeValue}>
           {getEnumName(
             shenaiSDK?.MeasurementState,
-            sdkState?.measurementState,
+            sdkState?.measurementState?.value,
             "UNKNOWN"
           )}
         </div>

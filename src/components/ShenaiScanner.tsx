@@ -72,8 +72,16 @@ const ShenaiScanner = ({ onScanComplete, onSdkReady, isVisible = true }: ShenaiS
                     healthRisks: results.healthRisks,
                     breathingRate: results.breathingRate,
                     hrvSdnnMs: results.hrvSdnnMs,
+                    hrvLnrmssdMs: results.hrvLnrmssdMs,
                     systolicBloodPressureMmhg: results.systolicBloodPressureMmhg,
                     diastolicBloodPressureMmhg: results.diastolicBloodPressureMmhg,
+                    cardiacWorkload: results.cardiacWorkload,
+                    parasympatheticActivity: results.parasympatheticActivity,
+                    age: results.age,
+                    bmi: results.bmi,
+                    weight: results.weight,
+                    height: results.height,
+                    averageSignalQuality: results.averageSignalQuality,
                     heartRateIntervals: heartBeatsArray
                 };
 
@@ -306,11 +314,9 @@ const ShenaiScanner = ({ onScanComplete, onSdkReady, isVisible = true }: ShenaiS
           {/* Canvas */}
           <canvas
             id="mxcanvas"
-            className="relative w-full max-w-full h-auto rounded-2xl shadow-2xl z-10"
+            className="relative w-full h-full rounded-2xl shadow-2xl z-10"
             style={{
-              aspectRatio: '480/894',
-              maxHeight: '70vh',
-              objectFit: 'contain'
+              objectFit: 'cover'
             }}
           />
 

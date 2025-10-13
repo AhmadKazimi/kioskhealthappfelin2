@@ -110,7 +110,7 @@ const FaceScanResult = React.memo(function FaceScanResult({
                   isLoading={isFetching}
                 />
 
-                {/* Heart Rate Variability Card */}
+                {/* Heart Rate Variability (SDNN) Card */}
                 <VitalCard
                   title={t('faceScan.vitals.heartRateVariability')}
                   icon="/variabilty.png"
@@ -140,6 +140,120 @@ const FaceScanResult = React.memo(function FaceScanResult({
                   unit="mm Hg"
                   isLoading={isFetching}
                 />
+
+                {/* HRV lnRMSSD Card - if available */}
+                {latestResult?.HrvLnrmssdMs !== undefined && (
+                  <VitalCard
+                    title={t('faceScan.vitals.hrvLnrmssd')}
+                    icon="/variabilty.png"
+                    iconAlt="hrv lnrmssd"
+                    value={latestResult?.HrvLnrmssdMs}
+                    unit="ms"
+                    isLoading={isFetching}
+                  />
+                )}
+
+                {/* Cardiac Stress / Stress Index Card - if available */}
+                {latestResult?.CardiacStress !== undefined && (
+                  <VitalCard
+                    title={t('faceScan.vitals.stressIndex')}
+                    icon="/heart.png"
+                    iconAlt="stress index"
+                    value={latestResult?.CardiacStress}
+                    unit=""
+                    decimals={2}
+                    isLoading={isFetching}
+                  />
+                )}
+
+                {/* Cardiac Workload Card - if available */}
+                {latestResult?.CardiacWorkload !== undefined && (
+                  <VitalCard
+                    title={t('faceScan.vitals.cardiacWorkload')}
+                    icon="/heart.png"
+                    iconAlt="cardiac workload"
+                    value={latestResult?.CardiacWorkload}
+                    unit="mmHg/s"
+                    decimals={1}
+                    isLoading={isFetching}
+                  />
+                )}
+
+                {/* Parasympathetic Activity Card - if available */}
+                {latestResult?.ParasympatheticActivity !== undefined && (
+                  <VitalCard
+                    title={t('faceScan.vitals.parasympatheticActivity')}
+                    icon="/variabilty.png"
+                    iconAlt="parasympathetic activity"
+                    value={latestResult?.ParasympatheticActivity}
+                    unit=""
+                    decimals={2}
+                    isLoading={isFetching}
+                  />
+                )}
+
+                {/* BMI Card - if available */}
+                {latestResult?.BMI !== undefined && (
+                  <VitalCard
+                    title={t('faceScan.vitals.bmi')}
+                    icon="/heart.png"
+                    iconAlt="bmi"
+                    value={latestResult?.BMI}
+                    unit="kg/m²"
+                    decimals={1}
+                    isLoading={isFetching}
+                  />
+                )}
+
+                {/* Estimated Age Card - if available */}
+                {latestResult?.Age !== undefined && (
+                  <VitalCard
+                    title={t('faceScan.vitals.estimatedAge')}
+                    icon="/heart.png"
+                    iconAlt="estimated age"
+                    value={latestResult?.Age}
+                    unit="years"
+                    isLoading={isFetching}
+                  />
+                )}
+
+                {/* Weight Card - if available */}
+                {latestResult?.Weight !== undefined && (
+                  <VitalCard
+                    title={t('faceScan.vitals.weight')}
+                    icon="/heart.png"
+                    iconAlt="weight"
+                    value={latestResult?.Weight}
+                    unit="kg"
+                    decimals={1}
+                    isLoading={isFetching}
+                  />
+                )}
+
+                {/* Height Card - if available */}
+                {latestResult?.Height !== undefined && (
+                  <VitalCard
+                    title={t('faceScan.vitals.height')}
+                    icon="/heart.png"
+                    iconAlt="height"
+                    value={latestResult?.Height}
+                    unit="cm"
+                    isLoading={isFetching}
+                  />
+                )}
+
+                {/* Signal Quality Card - if available */}
+                {latestResult?.AverageSignalQuality !== undefined && (
+                  <VitalCard
+                    title={t('faceScan.vitals.signalQuality')}
+                    icon="/heart.png"
+                    iconAlt="signal quality"
+                    value={latestResult?.AverageSignalQuality}
+                    unit="%"
+                    decimals={2}
+                    isLoading={isFetching}
+                  />
+                )}
               </div>
                 </div>
     

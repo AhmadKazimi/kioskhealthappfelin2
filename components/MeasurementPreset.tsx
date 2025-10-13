@@ -54,7 +54,7 @@ export const MeasurementPresetChoice: React.FC<{
     const currentPreset = sdkState?.measurementPreset;
     if (presetNames) {
       presetNames.forEach((val, preset) => {
-        const name = getEnumName(shenaiSDK?.MeasurementPreset, preset);
+        const name = getEnumName(shenaiSDK?.MeasurementPreset, preset?.value);
         if (name != "")
           lines.push(
             `${

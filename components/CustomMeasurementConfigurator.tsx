@@ -167,7 +167,7 @@ export const CustomMeasurementConfigurator: React.FC<{
           "[" +
           metrics
             .map((m) =>
-              getEnumName(shenaiSDK?.Metric, stringToMetric?.get(m) ?? -1)
+              getEnumName(shenaiSDK?.Metric, stringToMetric?.get(m)?.value ?? -1)
             )
             .filter((x) => x !== "")
             .map((x) => `shenaiSDK.Metric.${x}`)

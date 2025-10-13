@@ -143,7 +143,7 @@ const ClientAssessment = ({onNext, onPrev}: ClientAssessmentProps) => {
       
       // Remove existing entry for this condition if it exists
       const filteredQuestionnaires = existingQuestionnaires.filter(
-        (q: any) => q.ArrhythmiaName !== condition.ArrhythmiaName
+        (q: { ArrhythmiaName: string }) => q.ArrhythmiaName !== condition.ArrhythmiaName
       );
       
       // Add the new/updated questionnaire

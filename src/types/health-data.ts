@@ -14,9 +14,17 @@ export interface HealthData {
     Timestamp: string; // ISO 8601 date string
     ClientId: string;
     HrvSdnnMs: number;
+    HrvLnrmssdMs?: number;
     SystolicBloodPressureMmhg: number;
     DiastolicBloodPressureMmhg: number;
-    BreathingRate: number
+    BreathingRate: number;
+    CardiacWorkload?: number;
+    ParasympatheticActivity?: number;
+    Age?: number;
+    BMI?: number;
+    Weight?: number;
+    Height?: number;
+    AverageSignalQuality?: number;
     HealthConcern: string[];
     VitalSigns: {
         name: string;

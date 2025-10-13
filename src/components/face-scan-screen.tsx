@@ -166,6 +166,8 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
             </div>
           </div>
         </div>
+
+        {/* No button after scan - stay on scanner screen */}
       </div>
     </div>
   )
@@ -205,11 +207,11 @@ export default function FaceScanScreen({ onPrev, onNext }: FaceScanScreenProps) 
 
       setVitals(sampleVitals)
 
-      // Show results after a short delay
-      const timer = setTimeout(() => {
-        setShowResults(true)
-      }, RESULTS_DELAY)
-      return () => clearTimeout(timer)
+      // Auto-redirection disabled - user must manually click Next
+      // const timer = setTimeout(() => {
+      //   setShowResults(true)
+      // }, RESULTS_DELAY)
+      // return () => clearTimeout(timer)
     }
   }, [scanning, countdown])
 
@@ -240,11 +242,9 @@ export default function FaceScanScreen({ onPrev, onNext }: FaceScanScreenProps) 
       scanning={scanning}
       showResults={showResults}
       onScanComplete={() => {
-        // Wait 1 second for API calls to complete before navigation
-        // This prevents SDK destruction error while data is being saved
-        setTimeout(() => {
-          onNext();
-        }, 1000);
+        // Scan complete - do nothing, stay on scan screen
+        // No auto-navigation, no button, no state changes
+        console.log('Scan completed successfully');
       }}
     />
   )
