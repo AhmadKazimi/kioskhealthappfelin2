@@ -46,11 +46,15 @@ export type UserData = {
 };
 
 export default function HomeScreen() {
-  const searchParams = useSearchParams(); 
-  const isChecked = searchParams.get("ischecked") === "true"; 
+  const searchParams = useSearchParams();
+  const isChecked = searchParams.get("ischecked") === "true";
   const stepParam = searchParams.get("step");
 
-  const [step, setStep] = useState(0); 
+  // Feature flag: if true, show only vital results (4 steps), else show full journey (7 steps)
+  const onlyVitalResult = process.env.NEXT_PUBLIC_ONLY_VITAL_RESULT === 'true';
+  const totalSteps = onlyVitalResult ? 4 : 7;
+
+  const [step, setStep] = useState(0);
   const [userData, setUserData] = useState<UserData>({
     id: 0,
     personalInfo: null,
@@ -94,13 +98,13 @@ export default function HomeScreen() {
       case 6:
         return (
       
-          <NewLayout 
+          <NewLayout
             userData={userData}
             updateUserData={updateUserData}
             onNext={nextStep}
             onPrev={prevStep}
             currentStep={step}
-            totalSteps={6}
+            totalSteps={onlyVitalResult ? 4 : 6}
           />
   
         );
@@ -139,12 +143,12 @@ export default function HomeScreen() {
   };
  
   return (
-    <KioskLayout currentStep={step} totalSteps={7}>
+    <KioskLayout currentStep={step} totalSteps={totalSteps}>
       {/* Only render ONE layout based on screen size - prevents double mounting */}
       {step === 0 ? (
         // Welcome screen works for both mobile and desktop
         <WelcomeScreen onNext={nextStep} />
-      ) : step === 7 ? (
+      ) : step === 7 && !onlyVitalResult ? (
         // Health summary page
         (() => {
           const sessionClientData = sessionStorage.getItem('clientData');
@@ -180,7 +184,8 @@ export default function HomeScreen() {
           onNext={nextStep}
           onPrev={prevStep}
           currentStep={step}
-          totalSteps={7}
+          totalSteps={onlyVitalResult ? 4 : 6}
+          onlyVitalResult={onlyVitalResult}
         />
       )}
     </KioskLayout>

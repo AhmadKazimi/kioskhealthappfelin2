@@ -6,21 +6,28 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 interface ShenaiScannerProps {
     onScanComplete?: () => void;
+    onSdkReady?: () => void;
+    isVisible?: boolean;
 }
 
-const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
+const ShenaiScanner = ({ onScanComplete, onSdkReady, isVisible = true }: ShenaiScannerProps) => {
     const { t } = useTranslation();
     // Memoize apiUrl to prevent dependency changes
     const apiUrl = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL, []);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Use ref for callback to avoid dependency changes
+    // Use refs for callbacks to avoid dependency changes
     const onScanCompleteRef = useRef(onScanComplete);
+    const onSdkReadyRef = useRef(onSdkReady);
 
-    // Update ref when callback changes
+    // Update refs when callbacks change
     useEffect(() => {
         onScanCompleteRef.current = onScanComplete;
     }, [onScanComplete]);
+
+    useEffect(() => {
+        onSdkReadyRef.current = onSdkReady;
+    }, [onSdkReady]);
 
     const setLoading = (loading: boolean) => {
         setIsLoading(loading);
@@ -36,44 +43,64 @@ const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
         // expose loading setter
         (window as any).setReactLoading = setLoading;
 
-        // guard against multiple inits
+        // guard against multiple inits - if SDK already initialized, just use existing instance
         if ((window as any).shenaiInitialized) {
+            console.log('SDK already initialized, using existing instance');
+            // SDK is already initialized, just call onSdkReady immediately
+            onSdkReadyRef.current?.();
             return () => {};
         }
         (window as any).shenaiInitialized = true;
 
         const saveScanResults = async (results: any) => {
             (window as any).setReactLoading?.(true);
-            const heartBeatsArray = heartbeats.map(x => x.duration_ms);
+
+            // Extract heartbeat intervals from results (already populated from getMeasurementResults)
+            const heartBeatsArray = results.heartbeats.map((x: any) => x.duration_ms);
+
+            // Debug logging for heartbeat intervals
+            console.log('💓 Total heartbeats:', results.heartbeats.length);
+            console.log('💓 Heart rate intervals array length:', heartBeatsArray.length);
+            console.log('💓 Sample intervals (first 5):', heartBeatsArray.slice(0, 5));
+
             try {
+                const scanResultPayload = {
+                    clientId: document.cookie.split('; ').find(r => r.startsWith('userId='))?.split('=')[1],
+                    realtimeHeartRate: results.heartRate,
+                    hrvSdnn: results.cardiacStress,
+                    cardiacStress: results.cardiacStress,
+                    healthRisks: results.healthRisks,
+                    breathingRate: results.breathingRate,
+                    hrvSdnnMs: results.hrvSdnnMs,
+                    systolicBloodPressureMmhg: results.systolicBloodPressureMmhg,
+                    diastolicBloodPressureMmhg: results.diastolicBloodPressureMmhg,
+                    heartRateIntervals: heartBeatsArray
+                };
+
+                console.log('📤 Sending to ScanResult API:', scanResultPayload);
+
                 const response = await fetch(String(apiUrl) + '/ScanResult/AddScanResult', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        clientId: document.cookie.split('; ').find(r => r.startsWith('userId='))?.split('=')[1],
-                        heartRate10s: results.heartRate10s,
-                        heartRate4s: results.heartRate4s,
-                        realtimeHeartRate: results.realtimeHeartRate,
-                        hrvSdnn: results.hrvSdnn,
-                        cardiacStress: results.cardiacStress,
-                        systolicBloodPressure: results.systolicBp,
-                        diastolicBloodPressure: results.diastolicBp,
-                        healthRisks: results.healthRisks,
-                        breathingRate: results.breathingRate,
-                        hrvSdnnMs: results.hrvSdnnMs,
-                        systolicBloodPressureMmhg: results.systolicBloodPressureMmhg,
-                        diastolicBloodPressureMmhg: results.diastolicBloodPressureMmhg,
-                        heartRateIntervals: heartBeatsArray
-                    })
+                    body: JSON.stringify(scanResultPayload)
                 });
                 await response.json();
+
+                // Prepare Arrhythmia request payload
+                const arrhythmiaPayload = {
+                    clientId: document.cookie.split('; ').find(r => r.startsWith('userId='))?.split('=')[1],
+                    inputs: [heartBeatsArray]
+                };
+
+                console.log('🫀 Sending to Arrhythmia API:');
+                console.log('   - Client ID:', arrhythmiaPayload.clientId);
+                console.log('   - Intervals count:', heartBeatsArray.length);
+                console.log('   - Payload:', JSON.stringify(arrhythmiaPayload).substring(0, 200) + '...');
+
                 await fetch(String(apiUrl) + '/Arrhythmia/AddArrhythmiaRequest', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        clientId: document.cookie.split('; ').find(r => r.startsWith('userId='))?.split('=')[1],
-                        inputs: [heartBeatsArray]
-                    })
+                    body: JSON.stringify(arrhythmiaPayload)
                 });
 
                 // Call the completion callback instead of redirecting (use ref)
@@ -124,7 +151,7 @@ const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
                         eventCallback: async (event: string) => {
                             if (event === "START_BUTTON_CLICKED") {
                                 shenaiSDK.setCustomMeasurementConfig({
-                                    durationSeconds: 100,
+                                    durationSeconds: 30,
                                     instantMetrics: [
                                         shenaiSDK.Metric.HEART_RATE,
                                         shenaiSDK.Metric.HRV_SDNN,
@@ -152,19 +179,48 @@ const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
                                 });
                             }
                             if (event === "MEASUREMENT_FINISHED") {
-                                heartbeats = await shenaiSDK.getRealtimeHeartbeats(120);
+                                // Wait for measurement data to be fully processed
+                                await new Promise(resolve => setTimeout(resolve, 500));
+
+                                // ✅ GET ALL DATA FROM getMeasurementResults() - single source of truth
+                                const measurementResults = shenaiSDK.getMeasurementResults();
+                                const healthRisks = shenaiSDK.getHealthRisks();
+
+                                console.log('📊 Measurement Results:', measurementResults);
+                                console.log('💓 Heartbeats in results:', measurementResults?.heartbeats?.length || 0);
+                                console.log('💓 Sample heartbeat:', measurementResults?.heartbeats?.[0]);
+
+                                // Extract heartbeats from measurementResults
+                                heartbeats = measurementResults?.heartbeats || [];
+
                                 const results = {
-                                    heartRate10s: shenaiSDK.getHeartRate10s(),
-                                    heartRate4s: shenaiSDK.getHeartRate4s(),
-                                    realtimeHeartRate: shenaiSDK.getRealtimeHeartRate(),
-                                    hrvSdnn: shenaiSDK.getRealtimeHrvSdnn(),
-                                    cardiacStress: shenaiSDK.getRealtimeCardiacStress(),
-                                    healthRisks: shenaiSDK.getHealthRisks(),
-                                    breathingRate: shenaiSDK.getMeasurementResults()?.breathing_rate_bpm,
-                                    hrvSdnnMs: shenaiSDK.getMeasurementResults()?.hrv_sdnn_ms,
-                                    systolicBloodPressureMmhg: shenaiSDK.getMeasurementResults()?.systolic_blood_pressure_mmhg,
-                                    diastolicBloodPressureMmhg: shenaiSDK.getMeasurementResults()?.diastolic_blood_pressure_mmhg
+                                    // All data from getMeasurementResults()
+                                    heartRate: measurementResults?.heart_rate_bpm,
+                                    hrvSdnnMs: measurementResults?.hrv_sdnn_ms,
+                                    hrvLnrmssdMs: measurementResults?.hrv_lnrmssd_ms,
+                                    breathingRate: measurementResults?.breathing_rate_bpm,
+                                    systolicBloodPressureMmhg: measurementResults?.systolic_blood_pressure_mmhg,
+                                    diastolicBloodPressureMmhg: measurementResults?.diastolic_blood_pressure_mmhg,
+                                    cardiacStress: measurementResults?.stress_index,
+                                    cardiacWorkload: measurementResults?.cardiac_workload_mmhg_per_sec,
+                                    parasympatheticActivity: measurementResults?.parasympathetic_activity,
+                                    age: measurementResults?.age_years,
+                                    bmi: measurementResults?.bmi_kg_per_m2,
+                                    weight: measurementResults?.weight_kg,
+                                    height: measurementResults?.height_cm,
+                                    averageSignalQuality: measurementResults?.average_signal_quality,
+                                    heartbeats: measurementResults?.heartbeats || [],
+                                    healthRisks: healthRisks
                                 };
+
+                                console.log('📦 Prepared results for API:', {
+                                    heartRate: results.heartRate,
+                                    hrvSdnnMs: results.hrvSdnnMs,
+                                    breathingRate: results.breathingRate,
+                                    bloodPressure: `${results.systolicBloodPressureMmhg}/${results.diastolicBloodPressureMmhg}`,
+                                    heartbeatsCount: results.heartbeats.length
+                                });
+
                                 await saveScanResults(results);
                             }
                         },
@@ -177,6 +233,15 @@ const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
                             console.error('Shen.AI init error:', initResult?.toString?.() ?? initResult);
                             return;
                         }
+
+                        // ✅ ENABLE RECORDING to capture heartbeat intervals for arrhythmia detection
+                        shenaiSDK.setRecordingEnabled(true);
+                        console.log('Recording enabled for heartbeat capture');
+
+                        // ✅ NOTIFY THAT SDK IS READY
+                        console.log('✅ SDK initialization complete - calling onSdkReady');
+                        onSdkReadyRef.current?.();
+
                         // ensure canvas is ready then toggle camera to trigger permission prompt
                         const applyCameraWorkaround = () => {
                             const canvas = document.getElementById('mxcanvas');
@@ -231,7 +296,7 @@ const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
     }, []); // Empty deps - SDK should only initialize once
 
     return (
-      <div className="w-full h-full min-h-[300px] flex items-center justify-center relative">
+      <div className={`w-full h-full min-h-[300px] flex items-center justify-center relative ${!isVisible ? 'hidden' : ''}`}>
           {/* Background Gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-50 rounded-3xl"></div>
 
@@ -248,14 +313,6 @@ const ShenaiScanner = ({ onScanComplete }: ShenaiScannerProps) => {
               objectFit: 'contain'
             }}
           />
-
-          {/* Signal Quality Indicator */}
-          <div className="absolute top-4 right-4 z-20">
-            <div className="flex items-center space-x-2 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-gray-200">
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
-              <span className="text-sm font-medium text-gray-700">{t('faceScan.activeScanning') || 'Active Scan'}</span>
-            </div>
-          </div>
 
           {/* Loading Overlay */}
           {isLoading && (

@@ -166,44 +166,6 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
             </div>
           </div>
         </div>
-
-        {/* Sticky Next Button at Bottom (only when results ready) */}
-        {showResults && (
-          <div className="flex-shrink-0 pt-4">
-            <div className="flex justify-end items-center w-full">
-              <button
-                type="button"
-                onClick={onNext}
-                disabled={scanning}
-                className={`cursor-pointer group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3
-                         text-sm md:text-base font-medium text-white bg-gradient-to-r from-[#407EFF] to-[#1E40AF]
-                         rounded-xl shadow-lg
-                         transition-all duration-300 ease-out
-                         hover:shadow-xl hover:scale-[1.02] hover:from-[#1E40AF] hover:to-[#407EFF]
-                         focus:outline-none focus:ring-4 focus:ring-[#407EFF]/30
-                         active:scale-[0.98]
-                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg
-                         w-auto`}
-              >
-                {scanning ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>{t('buttons.loading')}</span>
-                  </div>
-                ) : (
-                  <>
-                    <span>{t('buttons.next')}</span>
-                    {isArabic ? (
-                      <ArrowLeft className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:-translate-x-1" />
-                    ) : (
-                      <ArrowRight className="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:translate-x-1" />
-                    )}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -278,11 +240,11 @@ export default function FaceScanScreen({ onPrev, onNext }: FaceScanScreenProps) 
       scanning={scanning}
       showResults={showResults}
       onScanComplete={() => {
-        setShowResults(true);
-        // Automatically move to next step after scan completion
+        // Wait 1 second for API calls to complete before navigation
+        // This prevents SDK destruction error while data is being saved
         setTimeout(() => {
           onNext();
-        }, 2000); // Give user 2 seconds to see the scan completed
+        }, 1000);
       }}
     />
   )

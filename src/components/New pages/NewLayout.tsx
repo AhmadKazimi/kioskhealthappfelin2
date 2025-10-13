@@ -24,6 +24,7 @@ interface NewLayoutProps {
     currentStep?: number;
     totalSteps?: number;
     localApiData?: ClientModel | null;
+    onlyVitalResult?: boolean;
 }
 
 export default function NewLayout({
@@ -33,6 +34,7 @@ export default function NewLayout({
     onPrev,
     currentStep = 1,
     totalSteps = 7,
+    onlyVitalResult = false,
     //localApiData = null
 }: NewLayoutProps) {
     const [storedApiData, setStoredApiData] = useState<ClientModel | null>(null);
@@ -103,6 +105,12 @@ export default function NewLayout({
         onPrev();
     };
 
+    const handleScanAgain = () => {
+        // Reset to step 3 (BeforeScanning)
+        // This will be handled by navigating back from step 4 to step 3
+        onPrev();
+    };
+
     const handleStepChange = (newStep: number) => {
         // Only update if the step is different and within valid range
         if (newStep !== currentStep && newStep >= 1 && newStep <= totalSteps) {
@@ -146,11 +154,13 @@ export default function NewLayout({
              
             case 4:
             return (
-              <FaceScanResult 
+              <FaceScanResult
                 userData={userData}
                 updateUserData={updateUserData}
                 onNext={nextStep}
                 onPrev={prevStep}
+                onlyVitalResult={onlyVitalResult}
+                onScanAgain={handleScanAgain}
               />
             );
             case 5:
@@ -275,17 +285,18 @@ export default function NewLayout({
       {/* Mobile View (up to md breakpoint) - Only renders on mobile */}
       {viewport === 'mobile' && (
         <div className="h-full w-full bg-white rounded-t-3xl">
-          {currentStep >= 1 && currentStep <= 6 && (
+          {currentStep >= 1 && currentStep <= totalSteps && (
             <ProgressTracker
               ref={progressTrackerRef}
               initialStep={currentStep}
+              totalSteps={totalSteps}
               className="flex flex-row justify-center items-center"
               onStepChange={handleStepChange}
               showNavigationButtons={false}
               disabled={false}
             />
           )}
-          <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
+          <div className={`${currentStep > totalSteps ? 'h-full' : ''} w-full`}>
             {renderStep()}
           </div>
         </div>
@@ -294,17 +305,18 @@ export default function NewLayout({
       {/* Tablet View (md to lg breakpoint: 768px-1023px) - Only renders on tablet */}
       {viewport === 'tablet' && (
         <div className="h-full w-full bg-white rounded-t-3xl">
-          {currentStep >= 1 && currentStep <= 6 && (
+          {currentStep >= 1 && currentStep <= totalSteps && (
             <ProgressTracker
               ref={progressTrackerRef}
               initialStep={currentStep}
+              totalSteps={totalSteps}
               className="flex flex-row justify-center items-center"
               onStepChange={handleStepChange}
               showNavigationButtons={false}
               disabled={false}
             />
           )}
-          <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
+          <div className={`${currentStep > totalSteps ? 'h-full' : ''} w-full`}>
             {renderStep()}
           </div>
         </div>
@@ -316,6 +328,7 @@ export default function NewLayout({
           <div className="flex-1 w-full h-full flex items-start justify-center min-w-0">
             <LeftSection
               currentStep={currentStep}
+              totalSteps={totalSteps}
               onStepChange={handleStepChange}
               onNext={nextStep}
               onPrev={prevStep}

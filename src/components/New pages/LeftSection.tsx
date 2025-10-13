@@ -12,16 +12,17 @@ interface LeftSectionProps {
   children?: React.ReactNode;
 }
 
-const LeftSection: React.FC<LeftSectionProps> = ({ 
-  currentStep = 1, 
-  onStepChange, 
-  onNext, 
-  onPrev, 
+const LeftSection: React.FC<LeftSectionProps> = ({
+  currentStep = 1,
+  totalSteps = 6,
+  onStepChange,
+  onNext,
+  onPrev,
   showNavigationButtons = false,
-  children 
+  children
 }) => {
   return (
-    <motion.div 
+    <motion.div
       className="left-section w-full bg-white rounded-3xl p-2 sm:p-4 md:p-6 h-full container overflow-hidden flex flex-col"
       initial={{ opacity: 0, x: -100 }}
       animate={{ opacity: 1, x: 0 }}
@@ -35,6 +36,7 @@ const LeftSection: React.FC<LeftSectionProps> = ({
       >
         <ProgressTracker
           initialStep={currentStep}
+          totalSteps={totalSteps}
           onStepChange={onStepChange}
           onNext={onNext}
           onPrev={onPrev}
