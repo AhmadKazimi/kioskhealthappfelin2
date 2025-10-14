@@ -23,7 +23,7 @@ export default function KioskLayout({ children }: KioskLayoutProps) {
   }
 
   return (
-    <div className="h-full overflow-hidden relative bg-gradient-to-b from-[#407EFF] to-white ">
+    <div className="h-full overflow-hidden relative bg-gradient-to-b from-[#407EFF] to-white flex flex-col">
         
       <motion.div
           className="absolute top-20 right-0 decorative-vector-top hidden sm:block z-0"
@@ -53,7 +53,7 @@ export default function KioskLayout({ children }: KioskLayoutProps) {
         </motion.div>
       
       {/* Responsive Header */}
-      <header className="bg-transparent py-2 sm:py-3 z-50 md:py-4 lg:py-6 px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 h-[10%] ">
+      <header className="bg-transparent py-1 sm:py-2 z-50 md:py-3 lg:py-4 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 flex-shrink-0">
         <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4 lg:gap-6">
           {/* Left: Language Switcher */}
           <div className="flex items-center">
@@ -84,12 +84,12 @@ export default function KioskLayout({ children }: KioskLayoutProps) {
       </header>
 
       {/* Responsive Main content */}
-      <main className="flex-1 relative z-50 flex flex-col items-center justify-center h-[80%]  sm:px-10 ">
-        <div className="w-full mx-auto">{children}</div>
+      <main className="flex-1 relative z-50 min-h-0 sm:px-10">
+        <div className="w-full h-full">{children}</div>
       </main>
 
       {/* Responsive Footer */}
-      <footer className="bg-transparent relative z-50 py-2 sm:py-3 md:py-4 lg:py-6 px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 h-[10%] text-center">
+      <footer className="bg-transparent relative z-50 py-1 sm:py-2 md:py-3 lg:py-4 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 flex-shrink-0 text-center">
         <div className="space-y-1">
           <p className="text-[10px] sm:text-xs md:text-sm leading-tight text-gray-600 relative z-50">
             {t('layout.footerCopyright')}

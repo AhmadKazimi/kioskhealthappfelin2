@@ -6,10 +6,12 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Home() {
   const { t } = useTranslation();
-  
+
   return (
-    <Suspense fallback={<div>{t('common.loading')}</div>}>
-      <HomeInner />
-    </Suspense>
+    <div className="h-full w-full">
+      <Suspense fallback={<div>{t('common.loading')}</div>}>
+        <HomeInner />
+      </Suspense>
+    </div>
   );
 } 

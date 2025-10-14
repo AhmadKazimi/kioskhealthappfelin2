@@ -284,19 +284,19 @@ export default function NewLayout({
       <>
       {/* Mobile View (up to md breakpoint) - Only renders on mobile */}
       {viewport === 'mobile' && (
-        <div className="h-full w-full bg-white rounded-t-3xl">
+        <div className="h-full w-full bg-white rounded-t-3xl flex flex-col">
           {currentStep >= 1 && currentStep <= totalSteps && (
             <ProgressTracker
               ref={progressTrackerRef}
               initialStep={currentStep}
               totalSteps={totalSteps}
-              className="flex flex-row justify-center items-center"
+              className="flex flex-row justify-center items-center flex-shrink-0"
               onStepChange={handleStepChange}
               showNavigationButtons={false}
               disabled={false}
             />
           )}
-          <div className={`${currentStep > totalSteps ? 'h-full' : ''} w-full`}>
+          <div className="flex-1 w-full min-h-0">
             {renderStep()}
           </div>
         </div>
@@ -304,19 +304,19 @@ export default function NewLayout({
 
       {/* Tablet View (md to lg breakpoint: 768px-1023px) - Only renders on tablet */}
       {viewport === 'tablet' && (
-        <div className="h-full w-full bg-white rounded-t-3xl">
+        <div className="h-full w-full bg-white rounded-t-3xl flex flex-col">
           {currentStep >= 1 && currentStep <= totalSteps && (
             <ProgressTracker
               ref={progressTrackerRef}
               initialStep={currentStep}
               totalSteps={totalSteps}
-              className="flex flex-row justify-center items-center"
+              className="flex flex-row justify-center items-center flex-shrink-0"
               onStepChange={handleStepChange}
               showNavigationButtons={false}
               disabled={false}
             />
           )}
-          <div className={`${currentStep > totalSteps ? 'h-full' : ''} w-full`}>
+          <div className="flex-1 w-full min-h-0">
             {renderStep()}
           </div>
         </div>

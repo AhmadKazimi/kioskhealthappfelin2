@@ -304,17 +304,17 @@ const ShenaiScanner = ({ onScanComplete, onSdkReady, isVisible = true }: ShenaiS
     }, []); // Empty deps - SDK should only initialize once
 
     return (
-      <div className={`w-full h-full min-h-[300px] flex items-center justify-center relative ${!isVisible ? 'hidden' : ''}`}>
-          {/* Background Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-50 rounded-3xl"></div>
+      <div className={`w-full h-full flex relative ${!isVisible ? 'invisible' : 'visible'}`}>
+          {/* Background Gradient - hidden on mobile, visible on desktop */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-50 lg:rounded-3xl"></div>
 
-          {/* Decorative Border */}
-          <div className="absolute inset-0 border-4 border-blue-200/50 rounded-3xl pointer-events-none"></div>
+          {/* Decorative Border - hidden on mobile, visible on desktop */}
+          <div className="hidden lg:block absolute inset-0 border-4 border-blue-200/50 rounded-3xl pointer-events-none"></div>
 
-          {/* Canvas */}
+          {/* Canvas - always in DOM, full screen on mobile, rounded on desktop */}
           <canvas
             id="mxcanvas"
-            className="relative w-full h-full rounded-2xl shadow-2xl z-10"
+            className="relative w-full h-full lg:rounded-2xl lg:shadow-2xl z-10"
             style={{
               objectFit: 'cover'
             }}
@@ -322,7 +322,7 @@ const ShenaiScanner = ({ onScanComplete, onSdkReady, isVisible = true }: ShenaiS
 
           {/* Loading Overlay */}
           {isLoading && (
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-3xl flex items-center justify-center z-30">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm lg:rounded-3xl flex items-center justify-center z-30">
               <div className="bg-white rounded-2xl p-6 flex flex-col items-center space-y-4 shadow-2xl">
                 <div className="w-12 h-12 border-4 border-gray-200 border-t-[#407EFF] rounded-full animate-spin"></div>
                 <div className="text-base font-medium text-gray-700">{t('assessment.savingResults')}</div>

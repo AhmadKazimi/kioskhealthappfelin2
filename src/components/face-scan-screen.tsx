@@ -132,9 +132,9 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
   const isArabic = i18n.language === 'ar'
 
   return (
-    <div className="h-full flex flex-col p-4 lg:p-6 relative">
-      {/* Compact Back Button - Top Corner */}
-      <div className={`absolute top-4 z-50 ${isArabic ? 'right-4' : 'left-4'}`}>
+    <div className="h-full w-full relative">
+      {/* Compact Back Button - Top Corner - Hidden on mobile, visible on desktop */}
+      <div className={`hidden lg:block absolute top-4 z-50 ${isArabic ? 'right-4' : 'left-4'}`}>
         <Button
           onClick={onPrev}
           disabled={scanning}
@@ -151,23 +151,9 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
         </Button>
       </div>
 
-      <div className="max-w-7xl mx-auto h-full flex flex-col w-full">
-        {/* Scanner Camera - No Title Needed (Already shown in animation) */}
-
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto min-h-0 flex items-center justify-center">
-          <div className="relative w-full h-full max-h-[60vh] lg:max-h-none">
-            <div className="relative w-full h-full">
-              <div className="relative h-full">
-                <div className="relative z-10 h-full">
-                  <ShenaiScanner onScanComplete={onScanComplete} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* No button after scan - stay on scanner screen */}
+      {/* Scanner fills full height */}
+      <div className="h-full w-full">
+        <ShenaiScanner onScanComplete={onScanComplete} />
       </div>
     </div>
   )
@@ -242,9 +228,9 @@ export default function FaceScanScreen({ onPrev, onNext }: FaceScanScreenProps) 
       scanning={scanning}
       showResults={showResults}
       onScanComplete={() => {
-        // Scan complete - do nothing, stay on scan screen
-        // No auto-navigation, no button, no state changes
-        console.log('Scan completed successfully');
+        console.log('Scan completed successfully - auto-navigating to results');
+        // Auto-navigate to the scan results page (step 4)
+        onNext();
       }}
     />
   )

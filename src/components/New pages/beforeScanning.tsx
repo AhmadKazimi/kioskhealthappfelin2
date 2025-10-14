@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import FaceScanScreen from '../face-scan-screen';
 import ShenaiScanner from '../ShenaiScanner';
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -65,28 +64,54 @@ export default function BeforeScanning({ onNext, onPrev }: { onNext: () => void,
     }, [i18n.language]);
 
     return (
-        <>
-            {/* Always mounted scanner - hidden during animation, visible during scan */}
-            <ShenaiScanner
-                isVisible={!nextItem}
-                onSdkReady={() => {
-                    console.log('✅ SDK is ready!');
-                    setSdkReady(true);
-                }}
-                onScanComplete={() => {
-                    // Scan complete - do nothing, stay on scanner
-                    console.log('Scan completed - no auto-navigation');
-                }}
-            />
+        <div className="h-full w-full relative">
+            {/* Single scanner instance - always mounted, visibility controlled */}
+            <div className={`h-full w-full absolute inset-0 ${nextItem ? 'hidden' : 'block'}`}>
+                {/* Back button - hidden on mobile, visible on desktop */}
+                <div className={`hidden lg:block absolute top-4 z-50 ${isArabic ? 'right-4' : 'left-4'}`}>
+                    <button
+                        onClick={onPrev}
+                        className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md hover:shadow-lg transition-all duration-300"
+                        title={t('buttons.back')}
+                    >
+                        {isArabic ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-gray-700 mx-auto">
+                                <path d="M5 12h14"></path>
+                                <path d="m12 5 7 7-7 7"></path>
+                            </svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-gray-700 mx-auto">
+                                <path d="M5 12h14"></path>
+                                <path d="m12 19-7-7 7-7"></path>
+                            </svg>
+                        )}
+                    </button>
+                </div>
 
-            {nextItem ? (
+                {/* Scanner fills full height */}
+                <div className="h-full w-full">
+                    <ShenaiScanner
+                        isVisible={!nextItem}
+                        onSdkReady={() => {
+                            console.log('✅ SDK is ready!');
+                            setSdkReady(true);
+                        }}
+                        onScanComplete={() => {
+                            console.log('Scan completed - auto-navigating to results');
+                            onNext();
+                        }}
+                    />
+                </div>
+            </div>
+
+            {nextItem && (
                 <motion.div
-                    className="flex w-full items-start p-5 sm:p-10 justify-center max-w-7xl mx-auto h-full"
+                    className="w-full h-full absolute inset-0 flex items-center justify-center"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.8, delay: 0.1 }}
                 >
-                    <div className="mx-auto w-full h-full flex flex-col">
+                    <div className="w-full h-full flex flex-col p-3 sm:p-6 max-w-7xl mx-auto">
                         {/* Scrollable Content Area */}
                         <div className="flex-1 overflow-y-auto min-h-0">
                             {/* Header */}
@@ -205,28 +230,8 @@ export default function BeforeScanning({ onNext, onPrev }: { onNext: () => void,
                             </motion.div>
                         </div>
                     </div>
-
-                    {/* Hidden SDK Scanner - initializes in background during animation */}
-                    {nextItem && (
-                        <div className="hidden">
-                            <ShenaiScanner
-                                isVisible={false}
-                                onSdkReady={() => {
-                                    console.log('✅ SDK is ready!');
-                                    setSdkReady(true);
-                                }}
-                            />
-                        </div>
-                    )}
                 </motion.div>
-            ) : (
-                <div>
-                    <FaceScanScreen
-                        onNext={onNext}
-                        onPrev={onPrev}
-                    />
-                </div>
             )}
-        </>
+        </div>
     );
 }

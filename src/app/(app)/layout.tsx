@@ -22,9 +22,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body 
-        className={roboto.variable} 
+    <html lang="en" className="h-full">
+      <body
+        className={`${roboto.variable} h-full`}
         suppressHydrationWarning={true}
         // Additional attributes to help with browser extensions
         data-suppress-hydration-warning="true"
