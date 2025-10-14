@@ -3,6 +3,7 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { saveScanResults } from "@/utils/scanStorage";
 
 interface ShenaiScannerProps {
     onScanComplete?: () => void;
@@ -52,7 +53,7 @@ const ShenaiScanner = ({ onScanComplete, onSdkReady, isVisible = true }: ShenaiS
         }
         (window as any).shenaiInitialized = true;
 
-        const saveScanResults = async (results: any) => {
+        const saveScanResultsToAPI = async (results: any) => {
             (window as any).setReactLoading?.(true);
 
             // Extract heartbeat intervals from results (already populated from getMeasurementResults)
@@ -66,7 +67,7 @@ const ShenaiScanner = ({ onScanComplete, onSdkReady, isVisible = true }: ShenaiS
             try {
                 const scanResultPayload = {
                     clientId: document.cookie.split('; ').find(r => r.startsWith('userId='))?.split('=')[1],
-                    realtimeHeartRate: results.heartRate,
+                    realTimeHeartRate: results.heartRate,  // ✅ Fixed casing: realTimeHeartRate
                     hrvSdnn: results.cardiacStress,
                     cardiacStress: results.cardiacStress,
                     healthRisks: results.healthRisks,
@@ -201,6 +202,27 @@ const ShenaiScanner = ({ onScanComplete, onSdkReady, isVisible = true }: ShenaiS
                                 // Extract heartbeats from measurementResults
                                 heartbeats = measurementResults?.heartbeats || [];
 
+                                // ✅ SAVE COMPLETE SDK RESULTS TO SESSION STORAGE (for immediate display)
+                                saveScanResults({
+                                    heart_rate_bpm: measurementResults?.heart_rate_bpm,
+                                    hrv_sdnn_ms: measurementResults?.hrv_sdnn_ms,
+                                    hrv_lnrmssd_ms: measurementResults?.hrv_lnrmssd_ms,
+                                    breathing_rate_bpm: measurementResults?.breathing_rate_bpm,
+                                    systolic_blood_pressure_mmhg: measurementResults?.systolic_blood_pressure_mmhg,
+                                    diastolic_blood_pressure_mmhg: measurementResults?.diastolic_blood_pressure_mmhg,
+                                    stress_index: measurementResults?.stress_index,
+                                    cardiac_workload_mmhg_per_sec: measurementResults?.cardiac_workload_mmhg_per_sec,
+                                    parasympathetic_activity: measurementResults?.parasympathetic_activity,
+                                    age_years: measurementResults?.age_years,
+                                    bmi_kg_per_m2: measurementResults?.bmi_kg_per_m2,
+                                    weight_kg: measurementResults?.weight_kg,
+                                    height_cm: measurementResults?.height_cm,
+                                    average_signal_quality: measurementResults?.average_signal_quality,
+                                    heartbeats: measurementResults?.heartbeats || [],
+                                    healthRisks: healthRisks
+                                });
+
+                                // Prepare results for API (keep existing format for backend)
                                 const results = {
                                     // All data from getMeasurementResults()
                                     heartRate: measurementResults?.heart_rate_bpm,
@@ -229,7 +251,8 @@ const ShenaiScanner = ({ onScanComplete, onSdkReady, isVisible = true }: ShenaiS
                                     heartbeatsCount: results.heartbeats.length
                                 });
 
-                                await saveScanResults(results);
+                                // Save to API (for backend records)
+                                await saveScanResultsToAPI(results);
                             }
                         },
                         onCameraError: (error: string) => {
