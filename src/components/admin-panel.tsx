@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation";
 import Select, { SingleValue } from "react-select";
-import { ArrowDown, ArrowUp, Minus, Plus, ChevronLeft } from "lucide-react"
+import { ArrowDown, ArrowUp, Minus, Plus, ChevronLeft, Eye, EyeOff } from "lucide-react"
 import Swal from "sweetalert2";
 import { debounce } from 'lodash'; 
 import Cookies from 'js-cookie'; 
@@ -106,6 +106,7 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState("");
   // #endregion 
@@ -344,6 +345,10 @@ useEffect(() => {
 
     router.push('/');
   };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 // #endregion 
 
 // #region RequestReading Functions  
@@ -490,9 +495,13 @@ useEffect(() => {
       <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-md">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h2 className="text-2xl font-bold text-gray-800">{t('admin.login')}</h2>
-          <Button variant="ghost" onClick={onExit} className="w-full sm:w-auto">
+            <Button 
+            variant="outline" 
+            onClick={onExit} 
+            className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200 cursor-pointer"
+            >
             {t('admin.backToKiosk')}
-          </Button>
+        </Button>
         </div>
         
         <form onSubmit={handleLogin}>
@@ -507,20 +516,33 @@ useEffect(() => {
                 required
               />
             </div>
-            <div>
+            <div className="relative">
               <Label htmlFor="login-password">{t('admin.password')}</Label>
-              <Input
-                id="login-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-10"
+                />
+              <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200 cursor-pointer rounded px-2 py-1"
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+              </div>
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            <Button type="submit" className="w-full">
-              {t('admin.loginButton')}
-            </Button>
+          <Button 
+          type="submit" 
+          className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors duration-200 cursor-pointer"
+           >
+          {t('admin.loginButton')}
+        </Button>
           </div>
         </form>
       </div>
