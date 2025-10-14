@@ -238,12 +238,8 @@ export default function UserInfoScreen({
               }}
               className="w-full px-4 py-3 text-center text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
               placeholder={t('userInfo.enterAge')}
-              autoComplete="off"
             />
-            <div className="flex justify-between mt-2 text-sm text-gray-600">
-              <span>1</span>
-              <span>99</span>
-            </div>
+           
             <p className="text-xs text-gray-500 mt-1 text-center">
               {t('userInfo.tapToEnterAge')}
             </p>
