@@ -156,7 +156,7 @@ export default function WelcomeScreen({ onNext }: WelcomeScreenProps) {
         </motion.div>
       )}
         {/* Mobile Layout */}
-        <div className="md:hidden h-full flex flex-col bg-[#407EFF] relative overflow-hidden">
+        <div className="md:hidden h-full flex flex-col bg-[#407EFF] relative overflow-y-auto">
           {/* Animated Gradient Layer */}
             <motion.div
                         className="absolute top-[33%] right-[15%] z-100"
@@ -184,7 +184,7 @@ export default function WelcomeScreen({ onNext }: WelcomeScreenProps) {
             className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent"
           />
         {/* Top Section with Doctor Image */}
-        <div className="flex-1 relative flex items-center justify-center px-4 pt-8">
+        <div className="flex-shrink-0 relative flex items-center justify-center px-4 pt-8 min-h-[50vh]">
                     {/* Partnership Logo - Top Left Prominent */}
                     {partnerLogoUrl && (
                     <motion.div
@@ -234,7 +234,7 @@ export default function WelcomeScreen({ onNext }: WelcomeScreenProps) {
         </div>
 
                   {/* Bottom White Card */}
-          <div className={`relative z-10 ${isArabic ? 'text-right' : 'text-left'}`}>
+          <div className={`flex-shrink-0 relative z-10 ${isArabic ? 'text-right' : 'text-left'}`}>
             <motion.div
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
