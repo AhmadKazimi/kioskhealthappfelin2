@@ -83,13 +83,12 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.55.0",
     "react-i18next": "^15.5.3",
+    "react-phone-input-2": "^2.15.1",
     "react-qr-code": "^2.0.15",
     "react-resizable-panels": "^2.1.7",
-
     "react-syntax-highlighter": "^15.6.1",
     "recharts": "^2.15.1",
     "shenai-sdk": "file:shenai-sdk",
-
     "sonner": "^2.0.3",
     "swal": "^0.1.0",
     "sweetalert2": "^11.17.2",

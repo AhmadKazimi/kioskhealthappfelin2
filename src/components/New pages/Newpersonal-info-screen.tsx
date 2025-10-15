@@ -17,6 +17,10 @@ import { motion } from "framer-motion";
 import CountrySelector from "../ui/country-selector";
 import { Card, CardContent } from "../ui/card";
 import { AspectRatio } from "../ui/aspect-ratio";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+
+
 
 
 
@@ -77,29 +81,30 @@ export default function NewPersonalInfoScreen({
     }
     return { isValid: true, error: "" };
   };
+const validatePhone = (phone: string) => {
+  if (!phone) return { isValid: true, error: "" }; 
 
-  const validatePhone = (phone: string) => {
-    if (!phone) return { isValid: true, error: "" }; // Empty is valid since it's optional
-    
-    // Check if phone contains only digits, spaces, parentheses, hyphens, and plus sign
-    const phoneRegex = /^[\+\d\s\(\)\-\s]+$/;
-    if (!phoneRegex.test(phone)) {
-      return { isValid: false, error: t('personalInfo.errors.invalidPhoneCharacters') };
-    }
-    
-    // Remove all non-digit characters to check length
-    const digitsOnly = phone.replace(/\D/g, '');
-    
-    if (digitsOnly.length < 10) {
-      return { isValid: false, error: t('personalInfo.errors.invalidPhoneLength').replace('{digits}', digitsOnly.length.toString()) };
-    }
-    
-    if (digitsOnly.length > 15) {
-      return { isValid: false, error: t('personalInfo.errors.invalidPhoneTooLong').replace('{digits}', digitsOnly.length.toString()) };
-    }
-    
-    return { isValid: true, error: "" };
-  };
+  
+  const digitsOnly = phone.replace(/\D/g, '');
+
+  if (digitsOnly.length < 10) {
+    return {
+      isValid: false,
+      error: t('personalInfo.errors.invalidPhoneLength').replace('{digits}', digitsOnly.length.toString())
+    };
+  }
+
+  if (digitsOnly.length > 15) {
+    return {
+      isValid: false,
+      error: t('personalInfo.errors.invalidPhoneTooLong').replace('{digits}', digitsOnly.length.toString())
+    };
+  }
+
+  return { isValid: true, error: "" };
+};
+
+
 
   const handleNext = async () => {
     console.log("handleNext called - button clicked!"); // Debug log
@@ -344,29 +349,31 @@ export default function NewPersonalInfoScreen({
           </Label>
           <div className="relative">
             
-            <Input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => {
-                const newPhoneValue = e.target.value;
-                setPhone(newPhoneValue);
-                // Only clear error if the input becomes valid
-                if (errors.phone && (newPhoneValue === "" || validatePhone(newPhoneValue).isValid)) {
-                  setErrors(prev => ({ ...prev, phone: "" }));
-                }
-              }}
-              placeholder={t('personalInfo.phonePlaceholderExample')}
-              autoComplete="off"
-              className={`w-full py-2 sm:py-3  pr-3 sm:pr-4 border rounded-lg
-                         bg-white transition-all duration-300 text-xs
-                         focus:outline-none focus:ring-2 focus:ring-[#407EFF]/20 focus:shadow-lg
-                         ${errors.phone 
-                           ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                           : 'border-gray-300 focus:border-[#407EFF] hover:border-gray-400'
-                         }
-                         ${phone ? 'bg-blue-50/30' : 'bg-white'}`}
-            />
+           <PhoneInput
+  country={'us'} 
+  value={phone}
+  onChange={(value: string) => {
+    setPhone(value);
+    
+    if (errors.phone && validatePhone(value).isValid) {
+      setErrors(prev => ({ ...prev, phone: '' }));
+    }
+  }}
+  placeholder={t('personalInfo.phonePlaceholderExample')}
+  inputClass={`w-full text-base md:text-lg py-3 md:py-3 px-4 border border-gray-500
+                hover:border-2 
+                focus:border-2 rounded-xl 
+                bg-gray-50/50 backdrop-blur-sm
+                transition-all duration-300 ease-out
+                hover:border-gray-300 hover:bg-white/70
+                focus:border-[#407EFF] focus:bg-white focus:outline-none 
+                focus:ring-4 focus:ring-[#407EFF]/10 focus:shadow-lg
+                placeholder:text-gray-600 placeholder:font-medium
+                ${errors.phone ? 'border-red-500 focus:border-red-500' : ''}`}
+  containerClass="w-full rounded-xl"
+/>
+
+            
             {phone && (
               <div className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center">
                 <div className={`w-2 h-2 rounded-full ${validatePhone(phone).isValid ? 'bg-green-500' : 'bg-gray-300'}`} />
@@ -640,57 +647,45 @@ export default function NewPersonalInfoScreen({
 
               {/* Phone and Nationality */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Phone */}
-                <div className="group flex-shrink-0">
-                  <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 block uppercase tracking-wide">
-                    {t('personalInfo.phone')}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => {
-                        const newPhoneValue = e.target.value;
-                        setPhone(newPhoneValue);
-                        // Only clear error if the input becomes valid
-                        if (errors.phone && (newPhoneValue === "" || validatePhone(newPhoneValue).isValid)) {
-                          setErrors(prev => ({ ...prev, phone: "" }));
-                        }
-                      }}
-                      placeholder={t('personalInfo.phonePlaceholderExample')}
-                      autoComplete="off"
-                      className="w-full text-base md:text-lg py-3 md:py-3 px-4 border border-gray-500
-                      hover:border-2 
-                      focus:border-2 rounded-xl 
-                                     bg-gray-50/50 backdrop-blur-sm
-                                     transition-all duration-300 ease-out
-                                     hover:border-gray-300 hover:bg-white/70
-                                     focus:border-[#407EFF] focus:bg-white focus:outline-none 
-                                     focus:ring-4 focus:ring-[#407EFF]/10 focus:shadow-lg
-                                     placeholder:text-gray-600 placeholder:font-medium"
-                    />
-                    {phone && (
-                      <div className="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center">
-                        <div className={`w-2 h-2 rounded-full ${validatePhone(phone).isValid ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      </div>
-                    )}
-                  </div>
-                  {errors.phone && (
-                    <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
-                  )}
-                  {phone && !errors.phone && validatePhone(phone).isValid && (
-                    <motion.p 
-                      className="text-green-600 text-xs flex items-center gap-1 mt-1"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <CheckCircle className="w-3 h-3" />
-                      {t('personalInfo.errors.validPhoneNumber')}
-                    </motion.p>
-                  )}
-                </div>
+          {/* Phone */}
+<div className="group flex-shrink-0">
+  <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 block uppercase tracking-wide">
+    {t('personalInfo.phone')}
+  </Label>
+  <div className="relative">
+  <PhoneInput
+    country={'us'} 
+    value={phone}
+    onChange={(value: string) => {
+      setPhone(value);
+     
+      if (errors.phone && value.length >= 10) { 
+        setErrors(prev => ({ ...prev, phone: '' }));
+      }
+    }}
+    placeholder={t('personalInfo.phonePlaceholderExample')}
+  inputClass={`w-full text-base md:text-lg py-3 md:py-3 px-4 border border-gray-500
+                    hover:border-2 
+                    focus:border-2 rounded-x2 
+                               bg-gray-50/50 backdrop-blur-sm
+                               transition-all duration-300 ease-out
+                               hover:border-gray-300 hover:bg-white/70
+                               focus:border-[#407EFF] focus:bg-white focus:outline-none 
+                               focus:ring-4 focus:ring-[#407EFF]/10 focus:shadow-lg
+                               placeholder:text-gray-600 placeholder:font-medium
+               ${errors.phone ? 'border-red-500 focus:border-red-500' : ''}`}
+  containerClass="w-full rounded-xl"
+  />
+</div>
+
+{errors.phone && (
+  <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+)}
+
+
+
+</div>
+
 
                 {/* Nationality */}
                 <div className="group flex-shrink-0">
