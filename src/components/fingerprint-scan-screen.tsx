@@ -16,6 +16,17 @@ interface FingerprintScanScreenProps {
   userGender: 'male' | 'female'
   onBack: () => void
   onNext: () => void
+  // emit measured values upward for local summary rendering
+  onLocalResults?: (results: {
+    heartRate: number;
+    breathingRate: number;
+    hrvSdnnMs: number;
+    systolicBP: number;
+    diastolicBP: number;
+    bloodPressure: string;
+    oxygenSaturation?: number;
+    temperature?: number;
+  }) => void
 }
 
 export const FingerprintScanScreen = ({
@@ -24,7 +35,8 @@ export const FingerprintScanScreen = ({
   userAge,
   userGender,
   onBack,
-  onNext
+  onNext,
+  onLocalResults
 }: FingerprintScanScreenProps) => {
   const { t, i18n } = useTranslation()
   const isArabic = i18n.language === 'ar'
@@ -422,12 +434,66 @@ export const FingerprintScanScreen = ({
 
                 const vitalsToSave = latestVitalsRef.current
                 if (vitalsToSave) {
-                  console.log('💾 Saving scan results to backend...')
+                  // Push local results upward immediately for summary
+                  try {
+                    const systolic = bpData.bp_calibrated ? Math.round(bpData.calibrated_systolic_blood_pressure || 0) : Math.round(bpData.systolic_blood_pressure)
+                    const diastolic = bpData.bp_calibrated ? Math.round(bpData.calibrated_diastolic_blood_pressure || 0) : Math.round(bpData.diastolic_blood_pressure)
+                    onLocalResults?.({
+                      heartRate: Math.round(vitalsToSave.vitals_results.heart_rate || 0),
+                      hrvSdnnMs: Math.round(vitalsToSave.vitals_results.hrv_rate || 0),
+                      breathingRate: Math.round(vitalsToSave.vitals_results.resp_rate || 0),
+                      oxygenSaturation: Math.round(vitalsToSave.vitals_results.spo2_rate || 0),
+                      temperature: 0,
+                      systolicBP: systolic,
+                      diastolicBP: diastolic,
+                      bloodPressure: `${systolic}/${diastolic}`,
+                    })
+                  } catch (e) {
+                    console.warn('Failed to emit local results:', e)
+                  }
+                  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                  console.log('💾 FINGERPRINT SCAN - INITIATING SAVE')
+                  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                  console.log('📋 Save Details:')
+                  console.log('  ClientId:', userId)
+                  console.log('  Timestamp:', new Date().toISOString())
+                  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                  console.log('📊 Vitals Data Being Saved:')
+                  console.log('  Heart Rate:', vitalsToSave.vitals_results.heart_rate, 'BPM')
+                  console.log('  HRV SDNN:', vitalsToSave.vitals_results.hrv_rate, 'ms')
+                  console.log('  SpO2:', vitalsToSave.vitals_results.spo2_rate, '%')
+                  console.log('  Breathing Rate:', vitalsToSave.vitals_results.resp_rate, 'BPM')
+                  console.log('  Perfusion Index:', vitalsToSave.vitals_results.perfusion_index)
+                  console.log('  Mean RR:', vitalsToSave.vitals_results.mean_rr, 'ms')
+                  console.log('  RR Intervals Count:', vitalsToSave.vitals_results.rr_intervals?.length || 0)
+                  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                  console.log('🩺 Blood Pressure Data Being Saved:')
+                  console.log('  BP Calibrated:', bpData.bp_calibrated)
+                  if (bpData.bp_calibrated) {
+                    console.log('  Calibrated Systolic:', Math.round(bpData.calibrated_systolic_blood_pressure!), 'mmHg')
+                    console.log('  Calibrated Diastolic:', Math.round(bpData.calibrated_diastolic_blood_pressure!), 'mmHg')
+                  } else {
+                    console.log('  Systolic:', Math.round(bpData.systolic_blood_pressure), 'mmHg')
+                    console.log('  Diastolic:', Math.round(bpData.diastolic_blood_pressure), 'mmHg')
+                  }
+                  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                  console.log('📤 Calling saveFingerprintScan service...')
                   saveFingerprintScan(userId, vitalsToSave, bpData).then((result) => {
                     if (!result.success) {
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                      console.log('❌ FINGERPRINT SCAN - SAVE FAILED')
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                      console.log('Error Message:', result.message)
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
                       setError(result.message)
                     } else {
-                      console.log('✅ Scan results saved successfully')
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                      console.log('✅ FINGERPRINT SCAN - SAVE SUCCESSFUL')
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                      console.log('Message:', result.message)
+                      console.log('ClientId:', userId)
+                      console.log('Saved at:', new Date().toISOString())
+                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
                     }
                   })
                 }

@@ -52,7 +52,20 @@
     // Use shared hook for API calls
     const { data: latestResult, client, loading, error } = useClientScanResults({
       onSuccess: useCallback((data: HealthData) => {
-        console.log('Health summary page: Data received:', data);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📄 HEALTH SUMMARY PAGE - Data Received from Hook');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('Full Data Object:', JSON.stringify(data, null, 2));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('Vitals for Display:');
+        console.log('  Heart Rate:', data.HeartRate10s || data.RealTimeHeartRate);
+        console.log('  Blood Pressure:', `${data.SystolicBloodPressureMmhg}/${data.DiastolicBloodPressureMmhg}`);
+        console.log('  HRV:', data.HrvSdnnMs);
+        console.log('  Breathing Rate:', data.BreathingRate);
+        console.log('  SpO2:', data.SpO2 || 'N/A');
+        console.log('  Scan Type:', data.ScanType);
+        console.log('  Scan Date:', data.ScanDate);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       }, [])
     });
 
@@ -145,33 +158,48 @@
     gender: translateGender(userData?.Gender)
   };
 
-    // Create vital signs array from latestResult
-    const vitalSigns = latestResult ? [
+    // Prefer local values from userData (populated right after scan) and fall back to API results
+    const parseBP = (bp?: string | null): { sys?: number; dia?: number } => {
+      if (!bp) return {};
+      const m = /([0-9]{2,3})\s*\/\s*([0-9]{2,3})/.exec(bp);
+      return m ? { sys: Number(m[1]), dia: Number(m[2]) } : {};
+    };
+
+    const localSys = (userData as any)?.SystolicBloodPressureMmhg ?? parseBP((userData as any)?.BloodPressure)?.sys;
+    const localDia = (userData as any)?.DiastolicBloodPressureMmhg ?? parseBP((userData as any)?.BloodPressure)?.dia;
+
+    const heartRate = latestResult?.HeartRate10s ?? latestResult?.RealTimeHeartRate ?? (userData as any)?.HeartRate ?? undefined;
+    const systolic = latestResult?.SystolicBloodPressureMmhg ?? latestResult?.SystolicBloodPressure ?? localSys;
+    const diastolic = latestResult?.DiastolicBloodPressureMmhg ?? latestResult?.DiastolicBloodPressure ?? localDia;
+    const hrv = latestResult?.HrvSdnnMs ?? (userData as any)?.HrvSdnnMs ?? undefined;
+    const breathing = latestResult?.BreathingRate ?? (userData as any)?.BreathingRate ?? undefined;
+
+    const vitalSigns = [
       {
         name: t('faceScan.vitals.heartRate'),
-        value: `${latestResult.HeartRate10s || "N/A"} ${t('fastScan.units.bpm')}`,
+        value: heartRate !== undefined && heartRate !== null ? `${Math.round(Number(heartRate))} ${t('fastScan.units.bpm')}` : 'N/A',
         normalRange: `60-100 ${t('fastScan.units.bpm')}`,
-        status: latestResult.HeartRate10s && latestResult.HeartRate10s >= 60 && latestResult.HeartRate10s <= 100 ? t('healthSummary.normal') : t('healthSummary.abnormal')
+        status: heartRate !== undefined && Number(heartRate) >= 60 && Number(heartRate) <= 100 ? t('healthSummary.normal') : t('healthSummary.abnormal')
       },
       {
         name: t('faceScan.vitals.bloodPressure'),
-        value: `${latestResult.SystolicBloodPressureMmhg ? Math.round(latestResult.SystolicBloodPressureMmhg) : "N/A"}/${latestResult.DiastolicBloodPressureMmhg ? Math.round(latestResult.DiastolicBloodPressureMmhg) : "N/A"} ${t('fastScan.units.mmhg')}`,
+        value: systolic !== undefined && diastolic !== undefined ? `${Math.round(Number(systolic))}/${Math.round(Number(diastolic))} ${t('fastScan.units.mmhg')}` : `N/A ${t('fastScan.units.mmhg')}`,
         normalRange: `<120/<80 ${t('fastScan.units.mmhg')}`,
-        status: latestResult.SystolicBloodPressureMmhg && latestResult.SystolicBloodPressureMmhg < 120 && latestResult.DiastolicBloodPressureMmhg && latestResult.DiastolicBloodPressureMmhg < 80 ? t('healthSummary.normal') : t('healthSummary.abnormal')
+        status: systolic !== undefined && diastolic !== undefined && Number(systolic) < 120 && Number(diastolic) < 80 ? t('healthSummary.normal') : t('healthSummary.abnormal')
       },
       {
         name: t('faceScan.vitals.heartRateVariability'),
-        value: `${latestResult.HrvSdnnMs || "N/A"} ${t('fastScan.units.ms')}`,
+        value: hrv !== undefined && hrv !== null ? `${Math.round(Number(hrv))} ${t('fastScan.units.ms')}` : `N/A ${t('fastScan.units.ms')}`,
         normalRange: `20-100 ${t('fastScan.units.ms')}`,
-        status: latestResult.HrvSdnnMs && latestResult.HrvSdnnMs >= 20 && latestResult.HrvSdnnMs <= 100 ? t('healthSummary.normal') : t('healthSummary.abnormal')
+        status: hrv !== undefined && Number(hrv) >= 20 && Number(hrv) <= 100 ? t('healthSummary.normal') : t('healthSummary.abnormal')
       },
       {
         name: t('faceScan.vitals.respirationRate'),
-        value: `${latestResult.BreathingRate || "N/A"} ${t('healthSummary.breathingRateUnit')}`,
+        value: breathing !== undefined && breathing !== null ? `${Math.round(Number(breathing))} ${t('healthSummary.breathingRateUnit')}` : `N/A ${t('healthSummary.breathingRateUnit')}`,
         normalRange: `12-20 ${t('healthSummary.breathingRateUnit')}`,
-        status: latestResult.BreathingRate && latestResult.BreathingRate >= 12 && latestResult.BreathingRate <= 20 ? t('healthSummary.normal') : t('healthSummary.abnormal')
+        status: breathing !== undefined && Number(breathing) >= 12 && Number(breathing) <= 20 ? t('healthSummary.normal') : t('healthSummary.abnormal')
       }
-    ] : [];
+    ];
 
     // Create symptoms array from userData.HealthConcern and translate each
     const symptoms = userData.HealthConcern ?
@@ -240,7 +268,7 @@
         const requestData = {
           receiver: userData.Email,
           subject: t('healthSummary.emailSubject'),
-          reportData: {
+            reportData: {
             date: currentDate,
             time: currentTime,
             name: combineName(
@@ -248,15 +276,28 @@
             ),
             age: userData?.Age || "N/A",
             gender: userData?.Gender || "N/A",
-            heartRate: latestResult?.HeartRate10s || "N/A",
-            bloodPressure: latestResult ? `${latestResult.SystolicBloodPressureMmhg}/${latestResult.DiastolicBloodPressureMmhg}` : "N/A",
-            heartRateVariability: latestResult?.HrvSdnnMs || "N/A",
-            respirationRate: latestResult?.BreathingRate || "N/A",
+            heartRate: heartRate ?? "N/A",
+            bloodPressure: systolic !== undefined && diastolic !== undefined ? `${systolic}/${diastolic}` : "N/A",
+            heartRateVariability: hrv ?? "N/A",
+            respirationRate: breathing ?? "N/A",
             reportedSymptoms: symptoms.length > 0 ? symptoms.join(', ') : t('healthSummary.noSymptomsReported')
           }
         };
 
-        console.log("SendMedicalReport Request Data:", requestData);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📧 SENDING MEDICAL REPORT EMAIL');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('Recipient:', requestData.receiver);
+        console.log('API URL:', `${apiUrl}/email/SendMedicalReport`);
+        console.log('Report Data:');
+        console.log('  Patient:', requestData.reportData.name);
+        console.log('  Heart Rate:', requestData.reportData.heartRate);
+        console.log('  Blood Pressure:', requestData.reportData.bloodPressure);
+        console.log('  HRV:', requestData.reportData.heartRateVariability);
+        console.log('  Breathing Rate:', requestData.reportData.respirationRate);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('Full Request:', JSON.stringify(requestData, null, 2));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
         const response = await fetch(`${apiUrl}/email/SendMedicalReport`, {
           method: "POST",
@@ -267,6 +308,14 @@
         });
 
         const responseJson = await response.json();
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ EMAIL API RESPONSE');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('Status:', response.status, response.statusText);
+        console.log('Is Success:', responseJson.IsSuccess);
+        console.log('Response:', JSON.stringify(responseJson, null, 2));
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         if (responseJson.IsSuccess) {
             // Don't clear session storage to prevent redirect
             // sessionStorage.removeItem('clientData');
@@ -322,16 +371,43 @@
 
     // Debug logging - moved to useEffect to prevent repeated logging
     useEffect(() => {
-      console.log('HealthSummaryPage Debug Info:');
-      console.log('- Screen width:', window.innerWidth);
-      console.log('- userData:', userData);
-      console.log('- userData.UserName:', userData?.UserName);
-      console.log('- userData.FullName:', userData?.FullName);
-      console.log('- Combined name result:', combineName(userData?.FullName));
-      console.log('- Patient object:', patient);
-      console.log('- Latest result:', latestResult);
-      //console.log('recomend:',recommendation);
-    }, []); // Empty dependency array - only log once on mount
+      if (!latestResult) {
+        console.log('⚠️  HEALTH SUMMARY - No scan results available yet');
+        return;
+      }
+
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📊 HEALTH SUMMARY - DISPLAYING VALUES ON SCREEN');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Patient Info:');
+      console.log('  Name:', patient.name);
+      console.log('  Age:', patient.age);
+      console.log('  Gender:', patient.gender);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Vitals Table Values (Rendered on Screen):');
+      vitalSigns.forEach((vital, index) => {
+        console.log(`  ${index + 1}. ${vital.name}:`);
+        console.log(`     Value: ${vital.value}`);
+        console.log(`     Normal Range: ${vital.normalRange}`);
+        console.log(`     Status: ${vital.status}`);
+      });
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Raw Data Source (latestResult):');
+      console.log('  HeartRate10s:', latestResult.HeartRate10s);
+      console.log('  RealTimeHeartRate:', latestResult.RealTimeHeartRate);
+      console.log('  SystolicBP:', latestResult.SystolicBloodPressureMmhg);
+      console.log('  DiastolicBP:', latestResult.DiastolicBloodPressureMmhg);
+      console.log('  HRV:', latestResult.HrvSdnnMs);
+      console.log('  Breathing Rate:', latestResult.BreathingRate);
+      console.log('  SpO2:', latestResult.SpO2 || 'N/A');
+      console.log('  Scan Type:', latestResult.ScanType);
+      console.log('  Scan Date:', latestResult.ScanDate);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔍 COMPARISON CHECK:');
+      console.log('  Compare the "Raw Data Source" above with what you saved');
+      console.log('  If different, data is not being saved or retrieved correctly');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    }, [latestResult]); // Log whenever latestResult changes
     
     return (
       <div className="flex justify-center items-start h-screen overflow-hidden p-2 sm:p-4 lg:p-6">

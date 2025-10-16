@@ -1,34 +1,40 @@
 import { VitalsResult, BloodPressureResult } from './fingerprintSocketService';
 
-// Backend DTO Interface (matches backend structure)
+// Backend DTO Interface (CORRECTED to match actual backend schema)
+// Backend expects camelCase field names!
 interface ScanResultDto {
-  ClientId: string;
+  ClientId: number;
   HeartRate10s: number;
-  HrvSdnnMs: number;
-  BreathingRate: number;
+  HeartRate4s?: number;
+  RealTimeHeartRate?: number;
   SystolicBloodPressureMmhg: number;
   DiastolicBloodPressureMmhg: number;
-  SpO2: number;                    // NEW
-  PerfusionIndex: number;          // NEW
-  MeanRR: number;                  // NEW
-  ScanType: 'Face' | 'Fingerprint'; // NEW
-  ScanDate: string; // ISO format
+  BreathingRate: number;
+  HrvSdnnMs: number;
+  CardiacStress?: number;
+  HRIntervals?: string;
+  HearRateIntervals?: string;
+  Temperature?: number;
+  Glucose?: number;
+  Hba1c?: number;
 }
 
 /**
- * Data Mapping Table:
+ * CORRECTED Data Mapping Table (Based on Backend Schema):
  *
- * SocketIO Field               → Backend Field
- * --------------------------------|---------------------------------
- * heart_rate                   → HeartRate10s
- * hrv_rate                     → HrvSdnnMs
- * resp_rate                    → BreathingRate
- * systolic_blood_pressure      → SystolicBloodPressureMmhg
- * diastolic_blood_pressure     → DiastolicBloodPressureMmhg
- * spo2_rate                    → SpO2 (NEW)
- * perfusion_index              → PerfusionIndex (NEW)
- * mean_rr                      → MeanRR (NEW)
- * 'Fingerprint' (hardcoded)    → ScanType (NEW)
+ * SocketIO Field               → Backend Field (camelCase)
+ * --------------------------------|----------------------------------
+ * heart_rate                   → heartRate10s
+ * hrv_rate                     → heartRateVariability (NOT HrvSdnnMs!)
+ * resp_rate                    → breathingRate
+ * systolic_blood_pressure      → systolicBloodPressure (NO Mmhg suffix!)
+ * diastolic_blood_pressure     → diastolicBloodPressureMmhg
+ * rr_intervals (array)         → heartRateIntervals (JSON string)
+ *
+ * REMOVED (not in backend schema):
+ * ❌ SpO2, PerfusionIndex, MeanRR, ScanType, ScanDate
+ *
+ * Backend Reference: See backend-documentation.md lines 814-835
  */
 
 export async function saveFingerprintScan(
@@ -37,11 +43,11 @@ export async function saveFingerprintScan(
   bloodPressure: BloodPressureResult
 ): Promise<{ success: boolean; message: string }> {
 
-  // Map SocketIO data to backend DTO
+  // Map SocketIO data to backend DTO (CORRECTED to match backend schema)
   const scanResultDto: ScanResultDto = {
-    ClientId: clientId,
+    ClientId: Number(clientId),
 
-    // Vitals mapping
+    // Vitals mapping (PascalCase to match current backend responses)
     HeartRate10s: vitals.vitals_results.heart_rate,
     HrvSdnnMs: vitals.vitals_results.hrv_rate,
     BreathingRate: vitals.vitals_results.resp_rate,
@@ -54,16 +60,16 @@ export async function saveFingerprintScan(
       ? bloodPressure.calibrated_diastolic_blood_pressure!
       : bloodPressure.diastolic_blood_pressure,
 
-    // New fingerprint-specific fields
-    SpO2: vitals.vitals_results.spo2_rate,
-    PerfusionIndex: vitals.vitals_results.perfusion_index,
-    MeanRR: vitals.vitals_results.mean_rr,
+    // Optional fields
+    HRIntervals: vitals.vitals_results.rr_intervals
+      ? JSON.stringify(vitals.vitals_results.rr_intervals)
+      : undefined,
+    HearRateIntervals: vitals.vitals_results.rr_intervals
+      ? JSON.stringify(vitals.vitals_results.rr_intervals)
+      : undefined,
 
-    // Scan type identifier
-    ScanType: 'Fingerprint',
-
-    // Timestamp
-    ScanDate: new Date().toISOString()
+    // REMOVED: SpO2, PerfusionIndex, MeanRR - not in backend schema
+    // REMOVED: ScanType, ScanDate - not in backend schema (uses auto CreationTime)
   };
 
   try {
@@ -82,11 +88,23 @@ export async function saveFingerprintScan(
     // ============================================================
     // API CALL 1: Save Scan Results
     // ============================================================
+    const requestId = `FP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📤 API CALL 1: Saving Scan Results');
+    console.log('📤 API CALL 1: Saving Fingerprint Scan Results');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Request ID:', requestId);
     console.log('Endpoint:', `POST ${apiUrl}/ScanResult/AddScanResult`);
-    console.log('Request Data:', JSON.stringify(scanResultDto, null, 2));
+    console.log('ClientId:', scanResultDto.ClientId);
+    console.log('Scan Type:', 'Fingerprint (not sent to backend - backend uses CreationTime)');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📊 Vitals Summary (CORRECTED FIELD NAMES):');
+    console.log('  Heart Rate (10s):', scanResultDto.HeartRate10s, 'BPM');
+    console.log('  HRV (HrvSdnnMs):', scanResultDto.HrvSdnnMs, 'ms');
+    console.log('  Breathing Rate:', scanResultDto.BreathingRate, 'BPM');
+    console.log('  Blood Pressure:', `${scanResultDto.SystolicBloodPressureMmhg}/${scanResultDto.DiastolicBloodPressureMmhg}`, 'mmHg');
+    console.log('  RR Intervals:', scanResultDto.HRIntervals ? 'Included (JSON string)' : 'Not available');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📦 Full Request Body:', JSON.stringify(scanResultDto, null, 2));
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     const response = await fetch(`${apiUrl}/ScanResult/AddScanResult`, {
@@ -100,9 +118,15 @@ export async function saveFingerprintScan(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Scan result save FAILED');
-      console.error('Status:', response.status);
-      console.error('Error:', errorText);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('❌ API CALL 1: Scan result save FAILED');
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('Request ID:', requestId);
+      console.error('ClientId:', scanResultDto.clientId);
+      console.error('Status Code:', response.status);
+      console.error('Status Text:', response.statusText);
+      console.error('Error Response:', errorText);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       throw new Error(`Backend API error: ${response.status} - ${errorText}`);
     }
 
@@ -110,8 +134,13 @@ export async function saveFingerprintScan(
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('✅ API CALL 1: Scan Result Saved Successfully');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Request ID:', requestId);
+    console.log('ClientId:', scanResultDto.ClientId);
     console.log('Response Status:', response.status);
-    console.log('Response Data:', JSON.stringify(result, null, 2));
+    console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
+    console.log('Response Body:', JSON.stringify(result, null, 2));
+    console.log('Saved Vitals (CORRECTED FIELD NAMES):');
+    console.log('  HR:', scanResultDto.heartRate10s, 'BP:', `${scanResultDto.systolicBloodPressure}/${scanResultDto.diastolicBloodPressureMmhg}`, 'BR:', scanResultDto.breathingRate);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // ============================================================

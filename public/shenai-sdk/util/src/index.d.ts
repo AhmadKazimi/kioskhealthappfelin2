@@ -1,4 +1,4 @@
 export { initSentry } from "./sentry";
-export { createPreloadDisplay } from "./preload-display";
+export { createPreloadDisplay, setLoadingProgressCallback, updateLoadingProgress, } from "./preload-display";
 export { ensureBrowserCompatibility, ensureCameraAccess } from "./compat";
 export { makeResponseWithLoading } from "./wasm-loading";

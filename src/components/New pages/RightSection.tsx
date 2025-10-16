@@ -19,7 +19,7 @@ const RightSection: React.FC<RightSectionProps> = React.memo(({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const { i18n } = useTranslation();
+  // const { i18n } = useTranslation();
 
   // Video event handlers
   const handleVideoLoadedMetadata = useCallback(() => {

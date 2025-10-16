@@ -14,6 +14,19 @@ interface ScanningWorkflowProps {
   userGender: 'male' | 'female'
   onBack: () => void
   onNext: () => void
+  // Update local user data with measured vitals so summary doesn't depend on API
+  updateUserData?: (data: Partial<{
+    vitals: {
+      heartRate: number;
+      bloodPressure: string;
+      breathingRate: number;
+      hrvSdnnMs: number;
+      systolicBP: number;
+      diastolicBP: number;
+      oxygenSaturation?: number;
+      temperature?: number;
+    }
+  }>) => void
 }
 
 type ScanType = 'face' | 'fingerprint' | null
@@ -34,7 +47,8 @@ export const ScanningWorkflow = ({
   userAge,
   userGender,
   onBack,
-  onNext
+  onNext,
+  updateUserData
 }: ScanningWorkflowProps) => {
   const [currentView, setCurrentView] = useState<WorkflowView>('selection')
   const [scanType, setScanType] = useState<ScanType>(null)
@@ -98,6 +112,20 @@ export const ScanningWorkflow = ({
             userGender={userGender}
             onBack={handleBackToInstructions}
             onNext={onNext} // Only this advances to the next step
+            onLocalResults={(r) => {
+              updateUserData?.({
+                vitals: {
+                  heartRate: r.heartRate,
+                  breathingRate: r.breathingRate,
+                  hrvSdnnMs: r.hrvSdnnMs,
+                  systolicBP: r.systolicBP,
+                  diastolicBP: r.diastolicBP,
+                  oxygenSaturation: r.oxygenSaturation ?? 0,
+                  temperature: r.temperature ?? 0,
+                  bloodPressure: r.bloodPressure,
+                }
+              });
+            }}
           />
         )
       } else {
@@ -105,6 +133,28 @@ export const ScanningWorkflow = ({
           <FaceScanScreen
             onNext={onNext} // Only this advances to the next step
             onPrev={handleBackToInstructions}
+            onLocalResults={(r) => {
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+              console.log('📊 FACE SCAN - Received Local Results in Workflow');
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+              console.log('Results:', JSON.stringify(r, null, 2));
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+              updateUserData?.({
+                vitals: {
+                  heartRate: r.heartRate,
+                  breathingRate: r.breathingRate,
+                  hrvSdnnMs: r.hrvSdnnMs,
+                  systolicBP: r.systolicBP,
+                  diastolicBP: r.diastolicBP,
+                  oxygenSaturation: 0, // Face scan doesn't measure SpO2
+                  temperature: 0, // Face scan doesn't measure temperature
+                  bloodPressure: r.bloodPressure,
+                }
+              });
+
+              console.log('✅ Updated userData with face scan vitals');
+            }}
           />
         )
       }

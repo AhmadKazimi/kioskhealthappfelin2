@@ -47,13 +47,35 @@ const FaceScanResult = React.memo(function FaceScanResult({
     // Use shared hook for API calls
     const { data: latestResult, client, loading: isFetching, error } = useClientScanResults({
         onSuccess: useCallback((data: HealthData) => {
-            console.log("FaceScan Result Data received:", data);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('📊 FACE SCAN RESULT PAGE - Data Received from Hook');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('Full Data Object:', JSON.stringify(data, null, 2));
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('Vitals Being Displayed:');
+            console.log('  Heart Rate (Realtime):', data.RealTimeHeartRate, 'BPM');
+            console.log('  HRV SDNN:', data.HrvSdnnMs, 'ms');
+            console.log('  Breathing Rate:', data.BreathingRate, 'BPM');
+            console.log('  Blood Pressure:', `${data.SystolicBloodPressureMmhg}/${data.DiastolicBloodPressureMmhg}`, 'mmHg');
+            console.log('  Scan Type:', data.ScanType);
+            console.log('  Scan Date:', data.ScanDate);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('🔍 Verify these match your scan!');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         }, [])
     });
 
-    // Update user data when client and scan results are available
+    // Update user data when client and scan results are available (ONLY IF LOCAL DATA NOT PRESENT)
     useEffect(() => {
-        if (client && latestResult && (!userData.id || userData.id !== client.Id)) {
+        // Only update from API if we don't have local vitals data already
+        const hasLocalVitals = userData.vitals &&
+                               (userData.vitals.heartRate > 0 ||
+                                userData.vitals.systolicBP > 0);
+
+        if (client && latestResult && (!userData.id || userData.id !== client.Id) && !hasLocalVitals) {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('📊 FACE SCAN RESULT - Updating userData from API (no local data)');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             console.log("FaceScan Result UserData: " + JSON.stringify(userData));
 
             updateUserData({
@@ -80,8 +102,14 @@ const FaceScanResult = React.memo(function FaceScanResult({
                     temperature: 0
                 }
             });
+        } else if (hasLocalVitals) {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('✅ FACE SCAN RESULT - Using LOCAL vitals data (already present)');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('Local Vitals:', JSON.stringify(userData.vitals, null, 2));
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         }
-    }, [client, latestResult, userData.id]);
+    }, [client, latestResult, userData.id, userData.vitals]);
 
     return (
           <div className="h-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-10">
@@ -112,7 +140,7 @@ const FaceScanResult = React.memo(function FaceScanResult({
           <div className="flex flex-col items-end min-w-0">
             <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black leading-tight whitespace-nowrap">
               <Counter
-                value={latestResult?.RealTimeHeartRate || 99}
+                value={userData.vitals?.heartRate || latestResult?.RealTimeHeartRate || 0}
                 duration={1500}
                 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black"
               />
@@ -137,7 +165,7 @@ const FaceScanResult = React.memo(function FaceScanResult({
           <div className="flex flex-col items-end min-w-0">
             <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black leading-tight whitespace-nowrap">
               <Counter
-                value={latestResult?.HrvSdnnMs || 0}
+                value={userData.vitals?.hrvSdnnMs || latestResult?.HrvSdnnMs || 0}
                 duration={1500}
                 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black"
               />
@@ -162,7 +190,7 @@ const FaceScanResult = React.memo(function FaceScanResult({
           <div className="flex flex-col items-end min-w-0">
             <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black leading-tight whitespace-nowrap">
               <Counter
-                value={latestResult?.BreathingRate || 0}
+                value={userData.vitals?.breathingRate || latestResult?.BreathingRate || 0}
                 duration={1500}
                 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-black"
               />
@@ -187,13 +215,13 @@ const FaceScanResult = React.memo(function FaceScanResult({
           <div className="flex flex-col items-end min-w-0">
             <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-black leading-tight whitespace-nowrap">
               <Counter
-                value={latestResult?.SystolicBloodPressureMmhg || 0}
+                value={userData.vitals?.systolicBP || latestResult?.SystolicBloodPressureMmhg || latestResult?.SystolicBloodPressure || 0}
                 duration={1500}
                 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-black"
               />
               <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl">/</span>
               <Counter
-                value={latestResult?.DiastolicBloodPressureMmhg || 0}
+                value={userData.vitals?.diastolicBP || latestResult?.DiastolicBloodPressureMmhg || latestResult?.DiastolicBloodPressure || 0}
                 duration={1500}
                 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-black"
               />

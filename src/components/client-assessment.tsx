@@ -300,7 +300,7 @@ const ClientAssessment = ({onNext, onPrev}: ClientAssessmentProps) => {
           <h1 className={`text-xl sm:text-3xl font-bold text-blue-600 pt-4 sm:pt-6 lg:pt-8 mb-2 text-center flex-shrink-0 ${isArabic ? 'text-right' : 'text-left'}`}>
             {t('assessment.patientHealthAssessment')}
           </h1>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0">
             <ConditionQuestionnaire
               key={`condition-${currentConditionIndex}`}
               condition={currentCondition}

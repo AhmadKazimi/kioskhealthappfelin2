@@ -68,6 +68,14 @@ export function useClientScanResults(options: UseClientScanResultsOptions = {}):
     }
 
     try {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔍 FETCHING CLIENT DATA');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('UserId from Cookie:', userId);
+      console.log('API URL:', `${apiUrl}/client/GetClient?id=${userId}`);
+      console.log('Timestamp:', new Date().toISOString());
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
       // Fetch client data
       const clientResponse = await fetch(`${apiUrl}/client/GetClient?id=${userId}`, {
         method: "GET",
@@ -79,13 +87,37 @@ export function useClientScanResults(options: UseClientScanResultsOptions = {}):
       });
 
       if (!clientResponse.ok) {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ CLIENT DATA FETCH FAILED');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('Status:', clientResponse.status, clientResponse.statusText);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         throw new Error(`Client API failed with status: ${clientResponse.status}`);
       }
 
       const clientResponseJson = await clientResponse.json();
       const clientData: ClientModel = clientResponseJson.Result;
 
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('✅ CLIENT DATA RETRIEVED');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Client Info:');
+      console.log('  Id:', clientData.Id);
+      console.log('  Name:', clientData.FullName || clientData.UserName);
+      console.log('  Age:', clientData.Age);
+      console.log('  Gender:', clientData.Gender);
+      console.log('  Email:', clientData.Email);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
       // Fetch scan results
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔍 FETCHING LATEST SCAN RESULT');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('ClientId:', userId);
+      console.log('API URL:', `${apiUrl}/ScanResult/GetClientLatestScanResult?clientId=${userId}`);
+      console.log('Request Timestamp:', new Date().toISOString());
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
       const scanResultsResponse = await fetch(`${apiUrl}/ScanResult/GetClientLatestScanResult?clientId=${userId}`, {
         method: "GET",
         headers: {
@@ -96,11 +128,39 @@ export function useClientScanResults(options: UseClientScanResultsOptions = {}):
       });
 
       if (!scanResultsResponse.ok) {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ SCAN RESULT FETCH FAILED');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('Status:', scanResultsResponse.status, scanResultsResponse.statusText);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         throw new Error(`Scan results API failed with status: ${scanResultsResponse.status}`);
       }
 
       const scanResultsJson = await scanResultsResponse.json();
       const scanData: HealthData = scanResultsJson.Result;
+
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('✅ SCAN RESULT RETRIEVED - DETAILED BREAKDOWN');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📦 Full API Response:', JSON.stringify(scanResultsJson, null, 2));
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📊 Vitals Breakdown:');
+      console.log('  Heart Rate (10s):', scanData.HeartRate10s, 'BPM');
+      console.log('  Heart Rate (Realtime):', scanData.RealTimeHeartRate, 'BPM');
+      console.log('  HRV SDNN:', scanData.HrvSdnnMs, 'ms');
+      console.log('  Breathing Rate:', scanData.BreathingRate, 'BPM');
+      console.log('  Blood Pressure:', `${scanData.SystolicBloodPressureMmhg}/${scanData.DiastolicBloodPressureMmhg}`, 'mmHg');
+      console.log('  SpO2:', scanData.SpO2 || 'N/A', '%');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🏷️  Scan Metadata:');
+      console.log('  Scan Type:', scanData.ScanType || 'Not specified');
+      console.log('  Scan Date:', scanData.ScanDate || 'Not specified');
+      console.log('  Client ID:', scanData.ClientId || userId);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('⚠️  CRITICAL CHECK:');
+      console.log('  Are these the values you just scanned?');
+      console.log('  If not, backend might be returning stale data!');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       if (isMountedRef.current) {
         setData(scanData);

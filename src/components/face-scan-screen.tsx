@@ -10,9 +10,18 @@ import ShenaiScanner from "@/components/ShenaiScanner"
 import { useTranslation } from "@/hooks/useTranslation"
 
 // Types
-interface FaceScanScreenProps { 
+interface FaceScanScreenProps {
   onPrev: () => void
   onNext: () => void
+  // Emit measured vitals upward for local summary rendering
+  onLocalResults?: (results: {
+    heartRate: number;
+    breathingRate: number;
+    hrvSdnnMs: number;
+    systolicBP: number;
+    diastolicBP: number;
+    bloodPressure: string;
+  }) => void
 } 
 
 interface VitalsData {
@@ -121,12 +130,20 @@ const VitalCard = ({ icon, iconBg, label, value }: {
   </Card>
 )
 
-const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplete }: {
+const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplete, onLocalResults }: {
   onPrev: () => void
   onNext: () => void
   scanning: boolean
   showResults: boolean
   onScanComplete?: () => void
+  onLocalResults?: (results: {
+    heartRate: number;
+    breathingRate: number;
+    hrvSdnnMs: number;
+    systolicBP: number;
+    diastolicBP: number;
+    bloodPressure: string;
+  }) => void
 }) => {
   const { t, i18n } = useTranslation()
   const isArabic = i18n.language === 'ar'
@@ -160,7 +177,10 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
             <div className="relative w-full h-full">
               <div className="relative h-full">
                 <div className="relative z-10 h-full">
-                  <ShenaiScanner onScanComplete={onScanComplete} />
+                  <ShenaiScanner
+                    onScanComplete={onScanComplete}
+                    onLocalResults={onLocalResults}
+                  />
                 </div>
               </div>
             </div>
@@ -210,7 +230,7 @@ const ScannerInterface = ({ onPrev, onNext, scanning, showResults, onScanComplet
 }
 
 // Main Component
-export default function FaceScanScreen({ onPrev, onNext }: FaceScanScreenProps) {
+export default function FaceScanScreen({ onPrev, onNext, onLocalResults }: FaceScanScreenProps) {
   const [scanning, setScanning] = useState(false)
   const [countdown, setCountdown] = useState(COUNTDOWN_DURATION)
   const [scanComplete, setScanComplete] = useState(false)
@@ -277,12 +297,14 @@ export default function FaceScanScreen({ onPrev, onNext }: FaceScanScreenProps) 
       onNext={handleContinue}
       scanning={scanning}
       showResults={showResults}
+      onLocalResults={onLocalResults}
       onScanComplete={() => {
-        setShowResults(true);
-        // Automatically move to next step after scan completion
-        setTimeout(() => {
-          onNext();
-        }, 2000); // Give user 2 seconds to see the scan completed
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ Face Scan Complete - Navigating to Next Step');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        // Navigate immediately after scan save completes
+        // (save happens in ShenaiScanner before onScanComplete is called)
+        onNext();
       }}
     />
   )

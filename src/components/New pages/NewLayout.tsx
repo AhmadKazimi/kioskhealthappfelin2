@@ -4,16 +4,9 @@ import LeftSection from "./LeftSection";
 import MiddleSection from "./MiddleSection";
 import RightSection from "./RightSection";
 import UserInfoScreen from "../user-info-screen";
-import FaceScanScreen from "../face-scan-screen";
-import FaceScanResult from "../face-scan-result";
 import ClientAssessment from "../client-assessment";
 import ComplaintScreen from "../complaint-screen";
 import WelcomeScreen from "../welcome-screen";
-import BeforeScanning from "./beforeScanning";
-import { BeforeFingerprintScanning } from "./beforeFingerprintScanning";
-import { ScanTypeSelection } from "../scan-type-selection";
-import { FingerprintScanScreen } from "../fingerprint-scan-screen";
-import { FingerprintWorkflow } from "../fingerprint-workflow";
 import { ScanningWorkflow } from "../scanning-workflow";
 import HealthSummaryPage from "./health-summary-page";
 import { ClientModel } from "@/payload-types";
@@ -41,9 +34,31 @@ export default function NewLayout({
     //localApiData = null
 }: NewLayoutProps) {
     const [storedApiData, setStoredApiData] = useState<ClientModel | null>(null);
-    const [scanType, setScanType] = useState<'face' | 'fingerprint' | null>(null);
     const progressTrackerRef = React.useRef<ProgressTrackerRef>(null);
     const { t, i18n } = useTranslation();
+
+    // Viewport detection to prevent triple rendering
+    const [viewport, setViewport] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+
+    React.useEffect(() => {
+        const checkViewport = () => {
+            const width = window.innerWidth;
+            if (width < 768) {
+                setViewport('mobile');
+            } else if (width < 1024) {
+                setViewport('tablet');
+            } else {
+                setViewport('desktop');
+            }
+        };
+
+        // Check immediately
+        checkViewport();
+
+        // Listen for resize
+        window.addEventListener('resize', checkViewport);
+        return () => window.removeEventListener('resize', checkViewport);
+    }, []);
     
     // Load client data from sessionStorage on mount or when step changes to 8
     React.useEffect(() => {
@@ -122,12 +137,13 @@ export default function NewLayout({
             // Unified Scanning Workflow (selection + instructions + scanning all in step 3)
             return (
               <ScanningWorkflow
-                userId={String(userData.id || Date.now())}
+                userId={String(userData.id || 0)}
                 userEmail={userData.personalInfo?.email || 'unknown@example.com'}
                 userAge={parseInt(userData.age) || 25}
                 userGender={(userData.gender?.toLowerCase() as 'male' | 'female') || 'male'}
                 onNext={nextStep}
                 onBack={prevStep}
+                updateUserData={updateUserData}
               />
             );
           case 4:
@@ -164,6 +180,11 @@ export default function NewLayout({
               BloodPressure: userData.vitals?.bloodPressure || "",
               Temperature: userData.vitals?.temperature || 0,
               OxygonSaturation: String(userData.vitals?.oxygenSaturation || ""),
+              // Prefer local vitals for summary (fallback to API inside component)
+              BreathingRate: userData.vitals?.breathingRate || 0,
+              HrvSdnnMs: userData.vitals?.hrvSdnnMs || 0,
+              SystolicBloodPressureMmhg: userData.vitals?.systolicBP || undefined,
+              DiastolicBloodPressureMmhg: userData.vitals?.diastolicBP || undefined,
               ReportedSymptoms: userData.complaint || "",
             };
 
@@ -241,62 +262,66 @@ export default function NewLayout({
     };
     return (
       <>
-      {/* Mobile View (up to md breakpoint) */}
-      <div className="block md:hidden h-full w-full bg-white rounded-t-3xl">
-      {currentStep >= 1 && currentStep <= 7 && (
-        <ProgressTracker
-          ref={progressTrackerRef}
-          initialStep={currentStep}
-          className="flex flex-row justify-center items-center"
-          onStepChange={handleStepChange}
-          showNavigationButtons={false}
-          disabled={false}
-        />
-        )}
-        <div className={`${currentStep === 8 ? 'h-full' : ''} w-full`}>
-          {renderStep()}
+      {/* Mobile View (up to md breakpoint) - Only renders on mobile */}
+      {viewport === 'mobile' && (
+        <div className="h-full w-full bg-white rounded-t-3xl flex flex-col">
+          {currentStep >= 1 && currentStep <= 7 && (
+            <ProgressTracker
+              ref={progressTrackerRef}
+              initialStep={currentStep}
+              className="flex flex-row justify-center items-center flex-shrink-0"
+              onStepChange={handleStepChange}
+              showNavigationButtons={false}
+              disabled={false}
+            />
+          )}
+          <div className="flex-1 w-full min-h-0">
+            {renderStep()}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Tablet View (md to lg breakpoint: 768px-1023px) */}
-      <div className="hidden md:block lg:hidden h-full w-full bg-white rounded-t-3xl">
-        {currentStep >= 1 && currentStep <= 7 && (
-          <ProgressTracker
-            ref={progressTrackerRef}
-            initialStep={currentStep}
-            className="flex flex-row justify-center items-center"
-            onStepChange={handleStepChange}
-            showNavigationButtons={false}
-            disabled={false}
-          />
-        )}
-        <div className={`${currentStep === 8 ? 'h-full' : ''} w-full`}>
-          {renderStep()}
+      {/* Tablet View (md to lg breakpoint: 768px-1023px) - Only renders on tablet */}
+      {viewport === 'tablet' && (
+        <div className="h-full w-full bg-white rounded-t-3xl flex flex-col">
+          {currentStep >= 1 && currentStep <= 7 && (
+            <ProgressTracker
+              ref={progressTrackerRef}
+              initialStep={currentStep}
+              className="flex flex-row justify-center items-center flex-shrink-0"
+              onStepChange={handleStepChange}
+              showNavigationButtons={false}
+              disabled={false}
+            />
+          )}
+          <div className="flex-1 w-full min-h-0">
+            {renderStep()}
+          </div>
         </div>
-      </div>
-      
-      {/* Desktop View (lg and up: 1024px+) */}
-      <div className="hidden lg:block">
-        <div className="relative hidden lg:flex z-50 w-full h-[80vh] items-start justify-center gap-2 xl:gap-[24px]" style={{zIndex: 50}}>
-            <div className="flex-1 w-full h-full flex items-start justify-center min-w-0">
-                <LeftSection 
-                    currentStep={currentStep}
-                    onStepChange={handleStepChange}
-                    onNext={nextStep}
-                    onPrev={prevStep}
-                    showNavigationButtons={false}
-                />
-            </div>
-            <div className="flex-2 w-full h-full bg-white rounded-3xl min-w-0 overflow-hidden">
-                <MiddleSection>
-                    {renderStep()}
-                </MiddleSection>
-            </div>
-            <div className="flex-1 w-full h-full flex-col items-center justify-center flex min-w-0">
-                    <RightSection  title={renderRightSectionData().title} description={renderRightSectionData().description} className={renderRightSectionData().className} image={renderRightSectionData().image} />
-            </div>
+      )}
+
+      {/* Desktop View (lg and up: 1024px+) - Only renders on desktop */}
+      {viewport === 'desktop' && (
+        <div className="relative flex z-50 w-full h-[80vh] items-start justify-center gap-2 xl:gap-[24px]" style={{zIndex: 50}}>
+          <div className="flex-1 w-full h-full flex items-start justify-center min-w-0">
+            <LeftSection
+              currentStep={currentStep}
+              onStepChange={handleStepChange}
+              onNext={nextStep}
+              onPrev={prevStep}
+              showNavigationButtons={false}
+            />
+          </div>
+          <div className="flex-2 w-full h-full bg-white rounded-3xl min-w-0 overflow-hidden">
+            <MiddleSection>
+              {renderStep()}
+            </MiddleSection>
+          </div>
+          <div className="flex-1 w-full h-full flex-col items-center justify-center flex min-w-0">
+            <RightSection title={renderRightSectionData().title} description={renderRightSectionData().description} className={renderRightSectionData().className} image={renderRightSectionData().image} />
+          </div>
         </div>
-        </div>
-        </>
+      )}
+      </>
     );
 }

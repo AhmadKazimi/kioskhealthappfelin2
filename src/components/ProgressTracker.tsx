@@ -268,7 +268,8 @@ const ProgressTracker = forwardRef<ProgressTrackerRef, ProgressTrackerProps>(({
                 {step.title}
               </div>
               )}
-               {!phoneStyle || activeStep === index + 1 && (  <div className={`
+              {((!phoneStyle) || (activeStep === index + 1)) && (
+                <div className={`
                 text-sm mb-1 transition-colors duration-300
                 ${step.number === activeStep 
                   ? 'text-gray-900' 

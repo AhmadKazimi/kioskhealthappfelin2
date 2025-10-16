@@ -1,130 +1,42 @@
 export * from "./util/src/index";
+export * from "./enums/index";
+
+import {
+  PrecisionMode,
+  Screen,
+  OperatingMode,
+  Metric,
+  HealthIndex,
+  MeasurementPreset,
+  InitializationMode,
+  CalibrationState,
+  CameraMode,
+  OnboardingMode,
+  InitializationResult,
+  FaceState,
+  MeasurementState,
+  NAFLDRisk,
+  BmiCategory,
+  HypertensionTreatment,
+  Gender,
+  Race,
+  PhysicalActivity,
+  ParentalHistory,
+  FamilyHistory,
+  ShenaiSDKEnums,
+} from "./enums/index";
 
 export interface ShenaiArguments {
+  // Emscripten module settings
   onRuntimeInitialized?: () => void;
   locateFile?: (filename: string) => string;
-}
+  print?: (text: string) => void;
 
-export const enum InitializationResult {
-  OK = 0,
-  INVALID_API_KEY,
-  CONNECTION_ERROR,
-  INTERNAL_ERROR,
-}
-
-export const enum OperatingMode {
-  POSITIONING = 0,
-  MEASURE,
-  SYSTEM_OVERLOADED,
-}
-
-export const enum CalibrationState {
-  NOT_CALIBRATED = 0,
-  CALIBRATED,
-  OUTDATED,
-}
-
-export const enum PrecisionMode {
-  STRICT = 0,
-  RELAXED,
-}
-
-export const enum InitializationMode {
-  MEASUREMENT,
-  CALIBRATION,
-  CALIBRATED_MEASUREMENT,
-  CLINICAL_TRIAL_BP,
-}
-
-export const enum Screen {
-  INITIALIZATION = 0,
-  ONBOARDING,
-  MEASUREMENT,
-  INSTRUCTIONS,
-  RESULTS,
-  HEALTH_RISKS,
-  HEALTH_RISKS_EDIT,
-  CALIBRATION_FINISH,
-  CALIBRATION_ONBOARDING,
-  ENTERID,
-  CALIBRATION_DATA_ENTRY,
-  HISTORY
-}
-
-export const enum Metric {
-  HEART_RATE = 0,
-  HRV_SDNN,
-  BREATHING_RATE,
-  SYSTOLIC_BP,
-  DIASTOLIC_BP,
-  CARDIAC_STRESS,
-  PNS_ACTIVITY,
-  CARDIAC_WORKLOAD,
-  AGE,
-  BMI,
-  BLOOD_PRESSURE,
-}
-
-export const enum HealthIndex {
-  WELLNESS_SCORE = 0,
-  VASCULAR_AGE,
-  CARDIOVASCULAR_DISEASE_RISK,
-  HARD_AND_FATAL_EVENTS_RISKS,
-  CARDIOVASCULAR_RISK_SCORE,
-  WAIST_TO_HEIGHT_RATIO,
-  BODY_FAT_PERCENTAGE,
-  BODY_ROUNDNESS_INDEX,
-  A_BODY_SHAPE_INDEX,
-  CONICITY_INDEX,
-  BASAL_METABOLIC_RATE,
-  TOTAL_DAILY_ENERGY_EXPENDITURE,
-  HYPERTENSION_RISK,
-  DIABETES_RISK,
-  NON_ALCOHOLIC_FATTY_LIVER_DISEASE_RISK
-}
-
-export const enum MeasurementPreset {
-  ONE_MINUTE_HR_HRV_BR = 0,
-  ONE_MINUTE_BETA_METRICS,
-  INFINITE_HR,
-  INFINITE_METRICS,
-  FOURTY_FIVE_SECONDS_UNVALIDATED,
-  THIRTY_SECONDS_UNVALIDATED,
-  CUSTOM,
-  CLINICAL_TRIAL,
-}
-
-export const enum CameraMode {
-  OFF = 0,
-  FACING_USER,
-  FACING_ENVIRONMENT,
-  DEVICE_ID,
-}
-
-export const enum OnboardingMode {
-  HIDDEN = 0,
-  SHOW_ONCE,
-  SHOW_ALWAYS,
-}
-
-export const enum FaceState {
-  OK = 0,
-  TOO_FAR,
-  TOO_CLOSE,
-  NOT_CENTERED,
-  NOT_VISIBLE,
-  UNKNOWN,
-}
-
-export const enum MeasurementState {
-  NOT_STARTED = 0, // Measurement has not started yet
-  WAITING_FOR_FACE, // Waiting for face to be properly positioned in the frame
-  RUNNING_SIGNAL_SHORT, // Measurement started: Signal is too short for any conclusions
-  RUNNING_SIGNAL_GOOD, // Measurement proceeding: Signal quality is good
-  RUNNING_SIGNAL_BAD, // Measurement stalled due to poor signal quality
-  RUNNING_SIGNAL_BAD_DEVICE_UNSTABLE, // Measurement stalled due to poor signal quality (because of unstable device)
-  FINISHED, // Measurement has finished successfully
-  FAILED, // Measurement has failed
+  // Shen.AI SDK loading settings
+  enableErrorReporting?: boolean; // whether to enable error reporting
+  enablePreloadDisplay?: boolean; // whether to show the preload display
+  preloadDisplayCanvasId?: string; // ID of the canvas element for preload display
+  wasmLoadingProgressCallback?: (progress: number) => void; // callback for loading progress
 }
 
 export interface Heartbeat {
@@ -145,6 +57,7 @@ export interface MeasurementResults {
   cardiac_workload_mmhg_per_sec: number | null;
   age_years: number | null;
   bmi_kg_per_m2: number | null;
+  bmi_category: BmiCategory | null;
   weight_kg: number | null;
   height_cm: number | null;
   heartbeats: Heartbeat[];
@@ -208,50 +121,6 @@ export interface FacePose {
 export interface MomentaryHrValue {
   timestamp_sec: number;
   hr_bpm: number;
-}
-
-export const enum Gender {
-  MALE = 0,
-  FEMALE,
-  OTHER,
-}
-
-export const enum PhysicalActivity {
-  SEDENTARY = 0,
-  LIGHTLY_ACTIVE,
-  MODERATELY,
-  VERY_ACTIVE,
-  EXTRA_ACTIVE,
-}
-
-export const enum Race {
-  WHITE = 0,
-  AFRICAN_AMERICAN,
-  OTHER,
-}
-
-export const enum HypertensionTreatment {
-  NOT_NEEDED = 0,
-  NO,
-  YES,
-}
-
-export const enum ParentalHistory {
-  NONE = 0,
-  ONE,
-  BOTH,
-}
-
-export const enum FamilyHistory {
-  NONE = 0,
-  NONE_FIRST_DEGREE,
-  FIRST_DEGREE,
-}
-
-export const enum NAFLDRisk {
-  LOW = 0,
-  MODERATE,
-  HIGH,
 }
 
 interface HardAndFatalEventsRisks {
@@ -327,7 +196,8 @@ export type EventName =
   | "START_BUTTON_CLICKED"
   | "STOP_BUTTON_CLICKED"
   | "MEASUREMENT_FINISHED"
-  | "USER_FLOW_FINISHED";
+  | "USER_FLOW_FINISHED"
+  | "SCREEN_CHANGED";
 
 export interface InitializationSettings {
   initializationMode?: InitializationMode;
@@ -335,6 +205,7 @@ export interface InitializationSettings {
   operatingMode?: OperatingMode;
   measurementPreset?: MeasurementPreset;
   cameraMode?: CameraMode;
+  cameraAspectRatio?: number;
   onboardingMode?: OnboardingMode;
   showUserInterface?: boolean;
   showFacePositioningOverlay?: boolean;
@@ -347,14 +218,20 @@ export interface InitializationSettings {
   enableStartAfterSuccess?: boolean;
   enableSummaryScreen?: boolean;
   enableHealthRisks?: boolean;
+  saveHealthRisksFactors?: boolean;
   showOutOfRangeResultIndicators?: boolean;
   showSignalQualityIndicator?: boolean;
   showSignalTile?: boolean;
+  showStartStopButton?: boolean;
+  showInfoButton?: boolean;
+  showDisclaimer?: boolean;
+  enableMeasurementsDashboard?: boolean;
   showTrialMetricLabels?: boolean;
   enableFullFrameProcessing?: boolean;
   language?: string;
   customColorTheme?: CustomColorTheme;
   customMeasurementConfig?: CustomMeasurementConfig;
+  risksFactors?: RisksFactors;
   eventCallback?: (event: EventName) => void;
   onCameraError?: () => void;
 }
@@ -372,6 +249,7 @@ export interface UIConfig {
   enableStartAfterSuccess: boolean;
   enableSummaryScreen: boolean;
   enableHealthRisks: boolean;
+  saveHealthRisksFactors: boolean;
   showOutOfRangeResultIndicators: boolean;
   showTrialMetricLabels: boolean;
 
@@ -393,56 +271,7 @@ export interface SDKConfig {
   enableFullFrameProcessing: boolean;
 }
 
-export interface ShenaiSDK {
-  InitializationResult: {
-    [P in keyof typeof InitializationResult]: InitializationResult;
-  };
-  OperatingMode: {
-    [P in keyof typeof OperatingMode]: OperatingMode;
-  };
-  CalibrationState: {
-    [P in keyof typeof CalibrationState]: CalibrationState;
-  };
-  PrecisionMode: {
-    [P in keyof typeof PrecisionMode]: PrecisionMode;
-  };
-  InitializationMode: {
-    [P in keyof typeof InitializationMode]: InitializationMode;
-  };
-  Screen: {
-    [P in keyof typeof Screen]: Screen;
-  };
-  Metric: {
-    [P in keyof typeof Metric]: Metric;
-  };
-  HealthIndex: {
-    [P in keyof typeof HealthIndex]: HealthIndex;
-  };
-  MeasurementPreset: {
-    [P in keyof typeof MeasurementPreset]: MeasurementPreset;
-  };
-  CameraMode: {
-    [P in keyof typeof CameraMode]: CameraMode;
-  };
-  OnboardingMode: {
-    [P in keyof typeof OnboardingMode]: OnboardingMode;
-  };
-  FaceState: {
-    [P in keyof typeof FaceState]: FaceState;
-  };
-  MeasurementState: {
-    [P in keyof typeof MeasurementState]: MeasurementState;
-  };
-  Gender: {
-    [P in keyof typeof Gender]: Gender;
-  };
-  PhysicalActivity: {
-    [P in keyof typeof PhysicalActivity]: PhysicalActivity;
-  };
-  Race: {
-    [P in keyof typeof Race]: Race;
-  };
-
+export interface ShenaiSDK extends ShenaiSDKEnums {
   getVersion: () => string;
 
   initialize: (
@@ -480,6 +309,7 @@ export interface ShenaiSDK {
   selectCameraByDeviceId: (deviceId: string, facingUser?: boolean) => void;
   setEnableFullFrameProcessing: (enable: boolean) => void;
   getEnableFullFrameProcessing: () => boolean;
+  setMediaStream: (stream: MediaStream, facingUser?: boolean) => void;
 
   // SDK interface elements
   setShowUserInterface: (show: boolean) => void;
@@ -510,6 +340,13 @@ export interface ShenaiSDK {
   getShowSignalTile: () => boolean;
   setShowSignalQualityIndicator: (show: boolean) => void;
   getShowSignalQualityIndicator: () => boolean;
+  setShowStartStopButton: (show: boolean) => void;
+  getShowStartStopButton: () => boolean;
+  setEnableMeasurementsDashboard: (enable: boolean) => void;
+  getEnableMeasurementsDashboard: () => boolean;
+  setShowInfoButton: (show: boolean) => void;
+  getShowInfoButton: () => boolean;
+  getShowDisclaimer: () => boolean;
 
   setOnboardingMode: (mode: OnboardingMode) => void;
   getOnboardingMode: () => OnboardingMode;
@@ -539,6 +376,7 @@ export interface ShenaiSDK {
 
   // SDK health risks
   getHealthRisksFactors: () => RisksFactors;
+  clearHealthRisksFactors: () => void;
   getHealthRisks: () => HealthRisks;
   computeHealthRisks: (factors: RisksFactors) => HealthRisks;
   getMaximalRisks: (factors: RisksFactors) => HealthRisks;
@@ -582,6 +420,17 @@ export interface ShenaiSDK {
   // SDK configuration
   getSDKConfigString: () => string;
   applySDKConfig(configJson: string): void;
+
+  // Email sending
+  sendMeasurementResultsPdfToEmail: (
+    email: string,
+    callback: (success: boolean) => void
+  ) => void;
+  openMeasurementResultsPdfInBrowser: () => void;
+  getMeasurementResultsPdfUrl: (callback: (url: string) => void) => void;
+  getMeasurementResultsPdfBytes: (
+    callback: (bytes: Uint8Array) => void
+  ) => void;
 }
 
 export function createPreloadDisplay(canvasId: string): void;

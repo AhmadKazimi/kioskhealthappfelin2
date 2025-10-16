@@ -15,7 +15,8 @@ import ComplaintScreen from "@/components/complaint-screen";
 import ClientAssessment from "@/components/client-assessment"; 
 import KioskLayout from "@/components/kiosk-layout";
 import NewPersonalInfoScreen from "./New pages/Newpersonal-info-screen";
-import NewLayout from "./New pages/NewLayout";
+import dynamic from "next/dynamic";
+const NewLayout = dynamic(() => import("./New pages/NewLayout"), { ssr: false });
 import HealthSummaryPage from "./New pages/health-summary-page";
 import { ClientModel } from "@/payload-types";
 //import UserData 
@@ -117,15 +118,15 @@ export default function HomeScreen() {
         {renderStepForDesktop()}
       </div>
       <div className="block md:hidden">
-      <NewLayout
-            userData={userData}
-            updateUserData={updateUserData}
-            onNext={nextStep}
-            onPrev={prevStep}
-            currentStep={step}
-            totalSteps={8}
-          />
-            </div>
+        <NewLayout
+          userData={userData}
+          updateUserData={updateUserData}
+          onNext={nextStep}
+          onPrev={prevStep}
+          currentStep={step}
+          totalSteps={8}
+        />
+      </div>
     </KioskLayout>
   );
 }
