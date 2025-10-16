@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslation } from "@/hooks/useTranslation"
-import { Hand, Camera, Timer, CheckCircle, ArrowLeft, ArrowRight } from "lucide-react"
+import { Hand, Camera, Timer, CheckCircle } from "lucide-react"
 
 interface BeforeFingerprintScanningProps {
   onBack: () => void

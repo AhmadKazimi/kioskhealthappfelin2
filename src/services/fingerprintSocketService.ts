@@ -123,7 +123,7 @@ export class FingerprintSocketService {
   
   // Frame buffering to ensure at least 6 frames sent before processing responses
   private framesSent: number = 0;
-  private responsesQueue: Array<{type: string, data: any}> = [];
+  private responsesQueue: Array<{type: string, data: unknown}> = [];
   private isProcessingResponses: boolean = false;
   private MIN_FRAMES_BEFORE_RESPONSE = 6; // Minimum frames to send before processing responses
   
@@ -285,7 +285,7 @@ export class FingerprintSocketService {
     this.socket.on('result', handleVitalsResult);
 
     // Some environments send everything back on "message" with a subject field.
-    this.socket.on('message', (payload: any) => {
+    this.socket.on('message', (payload: unknown) => {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('📩 MESSAGE EVENT RECEIVED FROM SERVER');
       console.log('Payload:', JSON.stringify(payload, null, 2));
@@ -396,7 +396,7 @@ export class FingerprintSocketService {
       // Log detected arrhythmias
       const detected = Object.entries(data)
         .filter(([, value]) => value.detected)
-        .map(([key, value]) => `${value.arrhythmia_name} (${(value.confidence * 100).toFixed(1)}%)`);
+        .map(([, value]) => `${value.arrhythmia_name} (${(value.confidence * 100).toFixed(1)}%)`);
 
       if (detected.length > 0) {
         console.log('⚠️ Detected Arrhythmias:', detected.join(', '));
@@ -649,7 +649,7 @@ export class FingerprintSocketService {
     }
 
     // Emit the frame AFTER incrementing counter
-    this.socket.emit('message', frameData, (ack: any) => {
+    this.socket.emit('message', frameData, (ack: unknown) => {
       if (ack !== undefined) {
         console.log('📨 ACK FROM SERVER FOR FRAME', frameData.frameNumber, ':', JSON.stringify(ack));
       }
@@ -693,7 +693,7 @@ export class FingerprintSocketService {
       console.log('  userEmail [str]:', stopMessage.userEmail || '(empty)');
 
       // Send stop signal - server will disconnect us
-      this.socket.emit('message', stopMessage, (ack: any) => {
+      this.socket.emit('message', stopMessage, (ack: unknown) => {
         if (ack !== undefined) {
           console.log('📨 ACK FROM SERVER FOR STOP SIGNAL:', JSON.stringify(ack));
         }

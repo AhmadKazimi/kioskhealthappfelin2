@@ -15,7 +15,9 @@ export function getEnumName(enumObj: any, value?: unknown, defaultName = "") {
           : value;
       if (typeof evNum === "number" && typeof valNum === "number" && evNum === valNum) return key;
     }
-  } catch (_) {}
+  } catch {
+    // Ignore enum parsing errors
+  }
   return defaultName;
 }
 

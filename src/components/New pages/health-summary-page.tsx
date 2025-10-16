@@ -165,14 +165,14 @@
       return m ? { sys: Number(m[1]), dia: Number(m[2]) } : {};
     };
 
-    const localSys = (userData as any)?.SystolicBloodPressureMmhg ?? parseBP((userData as any)?.BloodPressure)?.sys;
-    const localDia = (userData as any)?.DiastolicBloodPressureMmhg ?? parseBP((userData as any)?.BloodPressure)?.dia;
+    const localSys = (userData as ClientModel)?.SystolicBloodPressureMmhg ?? parseBP((userData as ClientModel)?.BloodPressure)?.sys;
+    const localDia = (userData as ClientModel)?.DiastolicBloodPressureMmhg ?? parseBP((userData as ClientModel)?.BloodPressure)?.dia;
 
-    const heartRate = latestResult?.HeartRate10s ?? latestResult?.RealTimeHeartRate ?? (userData as any)?.HeartRate ?? undefined;
+    const heartRate = latestResult?.HeartRate10s ?? latestResult?.RealTimeHeartRate ?? (userData as ClientModel)?.HeartRate ?? undefined;
     const systolic = latestResult?.SystolicBloodPressureMmhg ?? latestResult?.SystolicBloodPressure ?? localSys;
     const diastolic = latestResult?.DiastolicBloodPressureMmhg ?? latestResult?.DiastolicBloodPressure ?? localDia;
-    const hrv = latestResult?.HrvSdnnMs ?? (userData as any)?.HrvSdnnMs ?? undefined;
-    const breathing = latestResult?.BreathingRate ?? (userData as any)?.BreathingRate ?? undefined;
+    const hrv = latestResult?.HrvSdnnMs ?? (userData as ClientModel)?.HrvSdnnMs ?? undefined;
+    const breathing = latestResult?.BreathingRate ?? (userData as ClientModel)?.BreathingRate ?? undefined;
 
     const vitalSigns = [
       {
@@ -399,7 +399,7 @@
       console.log('  DiastolicBP:', latestResult.DiastolicBloodPressureMmhg);
       console.log('  HRV:', latestResult.HrvSdnnMs);
       console.log('  Breathing Rate:', latestResult.BreathingRate);
-      console.log('  SpO2:', latestResult.SpO2 || 'N/A');
+      console.log('  SpO2:', latestResult.OxygonSaturation || 'N/A');
       console.log('  Scan Type:', latestResult.ScanType);
       console.log('  Scan Date:', latestResult.ScanDate);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

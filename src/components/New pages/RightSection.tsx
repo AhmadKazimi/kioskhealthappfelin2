@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { useTranslation } from "@/hooks/useTranslation";
 
 interface RightSectionProps {
   children?: React.ReactNode;
@@ -19,7 +18,6 @@ const RightSection: React.FC<RightSectionProps> = React.memo(({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  // const { i18n } = useTranslation();
 
   // Video event handlers
   const handleVideoLoadedMetadata = useCallback(() => {

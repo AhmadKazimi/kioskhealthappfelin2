@@ -64,14 +64,12 @@ export const FingerprintScanScreen = ({
   const [scanStarted, setScanStarted] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
   const [scanProgress, setScanProgress] = useState(0)
-  const [frameNumber, setFrameNumber] = useState(0)
   const [fingerDetected, setFingerDetected] = useState(false)
-  const [clientFps, setClientFps] = useState(0)
 
   // Vitals state
   const [vitals, setVitals] = useState<VitalsResult | null>(null)
   const [bloodPressure, setBloodPressure] = useState<BloodPressureResult | null>(null)
-  const [arrhythmia, setArrhythmia] = useState<ArrhythmiaResult | null>(null)
+  const [, setArrhythmia] = useState<ArrhythmiaResult | null>(null)
   const [waitingForBloodPressure, setWaitingForBloodPressure] = useState(false)
   const [scanComplete, setScanComplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -114,17 +112,6 @@ export const FingerprintScanScreen = ({
     setFrameNumber(0)
     setError(null)
     setScanComplete(false)
-  }
-
-  const handleFingerLost = () => {
-    if (!measurementActiveRef.current) {
-      return
-    }
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-    console.log('🛑 Finger lost - resetting measurement state')
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-    stopMeasurement({ preserveResults: true })
-    resetMeasurementState({ clearResults: false, clearCompletion: false })
   }
 
   const stopMeasurement = (options?: { showError?: string; complete?: boolean; preserveResults?: boolean }) => {
@@ -226,7 +213,7 @@ export const FingerprintScanScreen = ({
             cancelled = true
           }
         }
-        const accessToken = await getAuthToken().finally(() => {
+        await getAuthToken().finally(() => {
           pendingAuthRef.current = null
         })
         if (cancelled || !isMountedRef.current) {
@@ -327,7 +314,7 @@ export const FingerprintScanScreen = ({
 
     try {
       // Get auth token
-      const accessToken = await getAuthToken()
+      await getAuthToken()
 
       // Get socket service
       socketServiceRef.current = await fingerprintSocketManager.getOrCreateSocket(componentId)
@@ -338,7 +325,6 @@ export const FingerprintScanScreen = ({
           console.log(`[${componentId}] 🔄 Socket not connected, connecting now...`)
           
           await new Promise<void>((resolve, reject) => {
-            const startTimestamp = Date.now()
             const timeout = setTimeout(() => {
               reject(new Error('Socket connection timeout after 10 seconds'))
             }, 10000)
@@ -510,7 +496,7 @@ export const FingerprintScanScreen = ({
               // Log detected arrhythmias for debugging
               const detected = Object.entries(arrhythmiaData)
                 .filter(([, value]) => value.detected)
-                .map(([key, value]) => value.arrhythmia_name);
+                .map(([, value]) => value.arrhythmia_name);
 
               if (detected.length > 0) {
                 console.log('⚠️ Detected:', detected.join(', '))
@@ -610,7 +596,7 @@ export const FingerprintScanScreen = ({
         console.log('📹 Starting frame capture - waiting for server finger detection')
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
-        frameCaptureRef.current.startCapture((base64Image, captureTimestamp) => {
+        frameCaptureRef.current.startCapture((base64Image) => {
           if (!socketServiceRef.current || !isMountedRef.current || isCleaningUpRef.current) {
             return 0
           }
@@ -865,7 +851,7 @@ export const FingerprintScanScreen = ({
                             
                             // Get auth token
                             console.log('🔐 Getting authentication token...')
-                            const accessToken = await getAuthToken()
+                            await getAuthToken()
                             console.log('✅ Access token obtained')
                             setAuthReady(true)
                             
