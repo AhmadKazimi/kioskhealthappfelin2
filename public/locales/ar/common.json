@@ -6,14 +6,14 @@
     "subtitle2": "انقر على ابدأ الفحص الان للبدء",
     "logoAlt": "شعار الفحص الصحي",
     "startButton": "ابدأ الفحص الآن",
-    "button": "ابدأ الفحص الآن",  
-    "getHealthInsights1":   "احصل على ", 
+    "button": "ابدأ الفحص الآن",
+    "getHealthInsights1": "احصل على ",
     "getHealthInsights2": "مؤشراتك الصحية",
     "aiAnalyzes": "يقوم التعلم الآلي بتحليل",
     "aiAnalyzesSymptoms": "الأعراض",
     "aiAnalyzesSymptomsSubtitle": "الأعراض التي تعاني منها",
     "answerSimpleQuestions1": "اجب على أسئلة ",
-    "answerSimpleQuestions2":"بسيطة", 
+    "answerSimpleQuestions2": "بسيطة",
     "answerSimpleQuestionsSubtitle": "الأسئلة البسيطة التي تعاني منها",
     "disclaimer": "إخلاء المسؤولية:\nتم تصميم هذه الأداة للفحص الأولي والتوعية الصحية العامة فقط. لا تُعد جهازًا طبيًا ولا تقدم تشخيصًا. إذا كنت تعاني من أعراض أو لديك أي مخاوف صحية، يُرجى مراجعة الطبيب المختص."
   },
@@ -89,7 +89,6 @@
       "bpm": "نبضة/دقيقة"
     }
   },
-
   "fastScan": {
     "pageTitle": "كير فيجن",
     "scannerTitle": "ماسح الوجه كير فيجن",
@@ -146,7 +145,7 @@
       "outOf100": "/100"
     }
   },
-      "userInfo": {
+  "userInfo": {
     "title": "أخبرنا عنك",
     "subtitle": "يرجى اختيار عمرك وجنسك لتخصيص تجربة التقييم الصحي الخاصة بك",
     "age": "العمر",
@@ -157,7 +156,7 @@
     "selectGender": "اختر جنسك",
     "male": "ذكر",
     "female": "أنثى",
-    "other": "آخر", 
+    "other": "آخر",
     "years": "سنوات",
     "tapToEnterAge": "اضغط لإدخال العمر باستخدام لوحة المفاتيح",
     "errors": {
@@ -211,7 +210,7 @@
     "savingResults": "جارٍ حفظ النتائج...",
     "loadingClientData": "جارٍ تحميل بيانات العميل...",
     "patientHealthAssessment": "التقييم الصحي",
-    "patientAssessment": "التقييم الصحي",  
+    "patientAssessment": "التقييم الصحي",
     "yes": "نعم",
     "no": "لا",
     "sometimes": "أحياناً",
@@ -227,7 +226,7 @@
     "selectOption": "اختر خياراً",
     "noQuestionnaireAvailable": "لا يوجد استبيان متاح لهذه الحالة."
   },
-      "healthSummary": {
+  "healthSummary": {
     "title": "ملخص التقييم الصحي",
     "overview": "نظرة عامة",
     "trends": "الاتجاهات",
@@ -245,7 +244,7 @@
     "heartRateVariability": "تفاوت معدل ضربات القلب: مللي ثانية",
     "breathingRate": "معدل التنفس: نفس/دقيقة",
     "breathingRateUnit": "نفس/دقيقة",
-    "noSymptoms": "لا توجد أعراض",  
+    "noSymptoms": "لا توجد أعراض",
     "scanToViewMobile": "امسح للعرض على الموبايل",
     "importantNoticeTitle": "تنبيه مهم",
     "importantNotice": "هذا ملخص آلي للتقييم الصحي. لا يُعتبر تشخيصًا طبيًا. يرجى استشارة مقدم الرعاية الصحية للتقييم الطبي المناسب والعلاج.",
@@ -743,5 +742,66 @@
     "answer": "الإجابة",
     "editAnswers": "تعديل الإجابات",
     "submitAllAnswers": "إرسال جميع الإجابات"
+  },
+  "scanType": {
+    "title": "اختر نوع المسح",
+    "subtitle": "حدد كيف تريد قياس المؤشرات الحيوية",
+    "faceScan": "مسح الوجه",
+    "faceScanDesc": "امسح وجهك باستخدام تقنية الذكاء الاصطناعي",
+    "fingerprintScan": "مسح بصمة الإصبع",
+    "fingerprintScanDesc": "ضع إصبعك على الكاميرا"
+  },
+  "fingerprintScan": {
+    "title": "مسح بصمة الإصبع",
+    "preparing": "جارٍ التحضير...",
+    "clickToStart": "انقر على 'بدء المسح' عندما تكون جاهزاً",
+    "keepStill": "حافظ على ثبات إصبعك",
+    "instruction": "ضع إصبعك على الكاميرا",
+    "readyToScan": "جاهز لبدء المسح",
+    "placeFingerAndStart": "ضع إصبعك على الكاميرا وانقر على ابدأ",
+    "startButton": "بدء المسح",
+    "placeFinger": "ضع إصبعك على الكاميرا",
+    "fingerDetected": "تم اكتشاف الإصبع",
+    "initializingCamera": "جارٍ تهيئة الكاميرا...",
+    "allowCameraAccess": "يرجى السماح بالوصول إلى الكاميرا",
+    "scanComplete": "اكتمل المسح!",
+    "processingResults": "جارٍ معالجة النتائج...",
+    "scanProgress": "تقدم المسح",
+    "startTime": "0 ثانية",
+    "endTime": "30 ثانية",
+    "calibrated": "معاير",
+    "oxygen": "الأكسجين",
+    "calculatingBloodPressure": "جارٍ حساب ضغط الدم",
+    "pleaseWait": "يرجى الانتظار...",
+    "instructions": {
+      "title": "تعليمات مسح بصمة الإصبع",
+      "subtitle": "اتبع هذه الخطوات للحصول على نتائج دقيقة",
+      "step1": {
+        "title": "نظف إصبعك",
+        "desc": "تأكد من أن إصبعك نظيف وجاف"
+      },
+      "step2": {
+        "title": "غطي الكاميرا",
+        "desc": "ضع إصبعك بالكامل على الكاميرا"
+      },
+      "step3": {
+        "title": "ابق ثابتاً",
+        "desc": "حافظ على ثبات إصبعك لمدة 30 ثانية"
+      },
+      "step4": {
+        "title": "ابق مسترخياً",
+        "desc": "تنفس بشكل طبيعي وابق هادئاً أثناء المسح"
+      }
+    },
+    "errors": {
+      "timeout": "انتهى وقت المسح. حاول مرة أخرى.",
+      "noFinger": "لم يتم اكتشاف الإصبع. يرجى تغطية الكاميرا بالكامل.",
+      "connectionFailed": "فشل الاتصال بخادم القياسات الحيوية. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.",
+      "cameraFailed": "فشل الوصول إلى الكاميرا. يرجى السماح بأذونات الكاميرا والمحاولة مرة أخرى.",
+      "authenticationFailed": "فشلت المصادقة. يرجى الاتصال بالدعم الفني."
+    },
+    "reviewAndContinue": "راجع نتائجك أدناه وانقر على التالي للمتابعة",
+    "clickNextBelow": "انقر على زر \"التالي\" أدناه للمتابعة",
+    "fingerNotDetectedContinuing": "لم يتم اكتشاف الإصبع - ضع إصبعك مرة أخرى على الكاميرا"
   }
-} 
+}

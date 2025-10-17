@@ -7,7 +7,7 @@
     "logoAlt": "Health Check Logo",
     "startButton": "Start Health Check",
     "button": "Start Health Check",
-    "getHealthInsights1": "Get health ", 
+    "getHealthInsights1": "Get health ",
     "getHealthInsights2": " insights",
     "aiAnalyzes": "AI analyzes",
     "aiAnalyzesSymptoms": "symptoms",
@@ -15,7 +15,7 @@
     "answerSimpleQuestions2": "questions",
     "answerSimpleQuestionsSubtitle": "the simple questions you are experiencing",
     "aiAnalyzesSymptomsSubtitle": "the symptoms you are experiencing",
-    "symptoms": "symptoms", 
+    "symptoms": "symptoms",
     "disclaimer": "This tool is designed for general wellness screening and informational purposes only. It is not a medical device and does not provide a diagnosis. If you are experiencing symptoms or have any health concerns, please consult a physician."
   },
   "personalInfo": {
@@ -25,7 +25,7 @@
     "fullNamePlaceholder": "Enter your full name",
     "fullNamePlaceholderExample": "e.g. John Smith",
     "email": "Email Address",
-    "emailPlaceholder": "Enter your email address", 
+    "emailPlaceholder": "Enter your email address",
     "emailPlaceholderExample": "e.g. john.smith@email.com",
     "phone": "Phone Number",
     "phonePlaceholder": "Enter your phone number",
@@ -150,7 +150,7 @@
     "title": "Tell Us About Yourself",
     "subtitle": "Please select your age and gender to help us personalize your health check.",
     "age": "Age",
-    "ageAndGender": "Age & Gender"  , 
+    "ageAndGender": "Age & Gender",
     "pleaseSelect": "Please select your age and gender",
     "selectAge": "Select your age:",
     "gender": "Gender",
@@ -563,7 +563,7 @@
     "ageAndGenderDescription": "Choose your age and gender to personalize your check",
     "faceScanDescription": "Scan your face to get personalized recommendations",
     "scanCompletedDescription": "Your face scan is complete",
-      "symptomsDescription": "What is your symptoms to get personalized recommendations",
+    "symptomsDescription": "What is your symptoms to get personalized recommendations",
     "welcome": "Welcome",
     "healthAssessmentSummary": "Health Assessment Summary",
     "current": "Current",
@@ -746,5 +746,66 @@
     "answer": "Answer",
     "editAnswers": "Edit Answers",
     "submitAllAnswers": "Submit All Answers"
+  },
+  "scanType": {
+    "title": "Choose Scan Type",
+    "subtitle": "Select how you would like to measure your vitals",
+    "faceScan": "Face Scan",
+    "faceScanDesc": "Scan your face using AI technology",
+    "fingerprintScan": "Fingerprint Scan",
+    "fingerprintScanDesc": "Place your finger on the camera"
+  },
+  "fingerprintScan": {
+    "title": "Fingerprint Scan",
+    "preparing": "Preparing...",
+    "clickToStart": "Click 'Start Scan' when ready",
+    "keepStill": "Keep your finger still",
+    "instruction": "Place your finger on the camera",
+    "readyToScan": "Ready to start scan",
+    "placeFingerAndStart": "Place your finger on camera and click start",
+    "startButton": "Start Scan",
+    "placeFinger": "Place your finger over the camera",
+    "fingerDetected": "Finger detected",
+    "initializingCamera": "Initializing camera...",
+    "allowCameraAccess": "Please allow camera access",
+    "scanComplete": "Scan Complete!",
+    "processingResults": "Processing results...",
+    "scanProgress": "Scan Progress",
+    "startTime": "0 seconds",
+    "endTime": "30 seconds",
+    "calibrated": "Calibrated",
+    "oxygen": "Oxygen",
+    "calculatingBloodPressure": "Calculating Blood Pressure",
+    "pleaseWait": "Please wait...",
+    "instructions": {
+      "title": "Fingerprint Scan Instructions",
+      "subtitle": "Follow these steps for accurate results",
+      "step1": {
+        "title": "Clean Your Finger",
+        "desc": "Make sure your finger is clean and dry"
+      },
+      "step2": {
+        "title": "Cover Camera",
+        "desc": "Place your finger completely over the rear camera"
+      },
+      "step3": {
+        "title": "Hold Still",
+        "desc": "Keep your finger steady for 30 seconds"
+      },
+      "step4": {
+        "title": "Stay Relaxed",
+        "desc": "Breathe normally and stay calm during the scan"
+      }
+    },
+    "errors": {
+      "timeout": "Scan timed out. Please try again.",
+      "noFinger": "No finger detected. Please cover the camera completely.",
+      "connectionFailed": "Failed to connect to vitals server. Please check your internet connection and try again.",
+      "cameraFailed": "Failed to access camera. Please allow camera permissions and try again.",
+      "authenticationFailed": "Authentication failed. Please contact support."
+    },
+    "reviewAndContinue": "Review your results below and click Next to continue",
+    "clickNextBelow": "Click \"Next\" button below to continue",
+    "fingerNotDetectedContinuing": "Finger not detected - place finger back on camera"
   }
-} 
+}

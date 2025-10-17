@@ -82,7 +82,7 @@ export default function HomeScreen() {
     setUserData({ ...userData, ...data });
   }; 
 
-  const renderStepForDesktop = () => { 
+  const renderStepForDesktop = () => {
     switch (step) {
       case 0:
         return <WelcomeScreen onNext={nextStep} />;
@@ -92,9 +92,9 @@ export default function HomeScreen() {
       case 4:
       case 5:
       case 6:
+        // All steps 1-6 handled by NewLayout (includes scan type selection and health summary)
         return (
-      
-          <NewLayout 
+          <NewLayout
             userData={userData}
             updateUserData={updateUserData}
             onNext={nextStep}
@@ -102,56 +102,26 @@ export default function HomeScreen() {
             currentStep={step}
             totalSteps={6}
           />
-  
         );
-        case 7:
-          // Get client data from session storage
-          const sessionClientData = sessionStorage.getItem('clientData');
-          const clientData = sessionClientData ? JSON.parse(sessionClientData) : null;
-          
-          return (
-            <HealthSummaryPage
-              isOpen={true}
-              onClose={prevStep}
-              userData={clientData || {
-                Id: userData.id || 0,
-                UserName: userData.personalInfo?.fullName || "",
-                Email: userData.personalInfo?.email || "",
-                FullName: userData.personalInfo?.fullName || "",
-                Phone: userData.personalInfo?.phone || "",
-                NationalityId: String(userData.personalInfo?.nationalityId || ""),
-                HealthConcern: userData.complaint || "",
-                Age: userData.age || "",
-                Gender: userData.gender || "",
-                HeartRate: userData.vitals?.heartRate || 0,
-                BloodPressure: userData.vitals?.bloodPressure || "",
-                Temperature: userData.vitals?.temperature || 0,
-                OxygonSaturation: String(userData.vitals?.oxygenSaturation || ""),
-                ReportedSymptoms: userData.complaint || "",
-              }}
-            />
-          );
-      // case 6:
-      //   return <ChatbotScreen userData={userData} onReset={() => setStep(0)} />;
       default:
         return <WelcomeScreen onNext={nextStep} />;
     }
   };
  
   return (
-    <KioskLayout currentStep={step} totalSteps={7}>
+    <KioskLayout currentStep={step} totalSteps={6}>
       <div className="hidden md:block">
         {renderStepForDesktop()}
       </div>
       <div className="block md:hidden">
-      <NewLayout 
+      <NewLayout
             userData={userData}
             updateUserData={updateUserData}
             onNext={nextStep}
             onPrev={prevStep}
             currentStep={step}
-            totalSteps={7}
-          />    
+            totalSteps={6}
+          />
             </div>
     </KioskLayout>
   );

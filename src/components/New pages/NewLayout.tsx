@@ -15,6 +15,10 @@ import { ClientModel } from "@/payload-types";
 import React, { useState } from "react";
 import ProgressTracker, { ProgressTrackerRef } from "../ProgressTracker";
 import { useTranslation } from "@/hooks/useTranslation";
+// NEW: Import fingerprint scan components
+import { ScanTypeSelection } from "../scan-type-selection";
+import { BeforeFingerprintScanning } from "./beforeFingerprintScanning";
+import { FingerprintScanScreen } from "../fingerprint-scan-screen";
 
 interface NewLayoutProps {
     userData: UserData;
@@ -32,16 +36,19 @@ export default function NewLayout({
     onNext,
     onPrev,
     currentStep = 1,
-    totalSteps = 7,
+    totalSteps = 6, // Updated from 7 to 6 (removed old step 4 FaceScanResult)
     //localApiData = null
 }: NewLayoutProps) {
     const [storedApiData, setStoredApiData] = useState<ClientModel | null>(null);
     const progressTrackerRef = React.useRef<ProgressTrackerRef>(null);
     const { t, i18n } = useTranslation();
+    // NEW: Track selected scan type
+    const [scanType, setScanType] = useState<'face' | 'fingerprint' | null>(null);
+    const [scanSubStep, setScanSubStep] = useState<'selection' | 'instructions' | 'scanning'>('selection');
     
-    // Load client data from sessionStorage on mount or when step changes to 7
+    // Load client data from sessionStorage on mount or when step changes to 6 (Health Summary)
     React.useEffect(() => {
-        if (currentStep === 7 && !storedApiData) {
+        if (currentStep === 6 && !storedApiData) {
             const sessionClientData = sessionStorage.getItem('clientData');
             console.log('NewLayout - sessionStorage clientData:', sessionClientData);
             if (sessionClientData) {
@@ -57,6 +64,14 @@ export default function NewLayout({
             }
         }
     }, [currentStep, storedApiData]);
+
+    // NEW: Reset scan state when entering/leaving step 3
+    React.useEffect(() => {
+        if (currentStep === 3) {
+            setScanSubStep('selection');
+            setScanType(null);
+        }
+    }, [currentStep]);
     
     const nextStep = (apiData?: ClientModel | null) => {
         // Check if apiData is actually a valid ClientModel object and not an event or HTML element
@@ -113,17 +128,86 @@ export default function NewLayout({
               />
             );
           case 3:
+            // NEW: Multi-step scanning flow (selection → instructions → scanning)
+            if (scanSubStep === 'selection') {
+              return (
+                <ScanTypeSelection
+                  onSelectScanType={(type) => {
+                    setScanType(type);
+                    setScanSubStep('instructions');
+                  }}
+                  onBack={prevStep}
+                />
+              );
+            } else if (scanSubStep === 'instructions') {
+              if (scanType === 'face') {
+                return (
+                  <BeforeScanning
+                    onNext={() => setScanSubStep('scanning')}
+                    onPrev={() => setScanSubStep('selection')}
+                  />
+                );
+              } else if (scanType === 'fingerprint') {
+                return (
+                  <BeforeFingerprintScanning
+                    onStart={() => setScanSubStep('scanning')}
+                    onBack={() => setScanSubStep('selection')}
+                  />
+                );
+              }
+            } else if (scanSubStep === 'scanning') {
+              if (scanType === 'face') {
+                return (
+                  <FaceScanResult
+                    userData={userData}
+                    updateUserData={updateUserData}
+                    onNext={nextStep}
+                    onPrev={() => setScanSubStep('instructions')}
+                  />
+                );
+              } else if (scanType === 'fingerprint') {
+                return (
+                  <FingerprintScanScreen
+                    userId={String(userData.id || '0')}
+                    userEmail={userData.personalInfo?.email || ''}
+                    userAge={parseInt(userData.age) || 25}
+                    userGender={(userData.gender?.toLowerCase() === 'male' ? 'male' : 'female') as 'male' | 'female'}
+                    onBack={() => setScanSubStep('instructions')}
+                    onNext={nextStep}
+                    onLocalResults={(results) => {
+                      // Update userData with fingerprint scan results
+                      updateUserData({
+                        vitals: {
+                          heartRate: results.heartRate,
+                          bloodPressure: results.bloodPressure,
+                          hrvSdnnMs: results.hrvSdnnMs,
+                          breathingRate: results.breathingRate,
+                          temperature: results.temperature || 0,
+                          oxygenSaturation: results.oxygenSaturation || 0,
+                          systolicBP: results.systolicBP,
+                          diastolicBP: results.diastolicBP,
+                        }
+                      });
+                    }}
+                  />
+                );
+              }
+            }
+            // Fallback to scan type selection if something goes wrong
             return (
-              <BeforeScanning 
-                onNext={nextStep}
-                onPrev={prevStep}
+              <ScanTypeSelection
+                onSelectScanType={(type) => {
+                  setScanType(type);
+                  setScanSubStep('instructions');
+                }}
+                onBack={prevStep}
               />
             );
-           
-             
+
             case 4:
+            // Step 4 is now Complaints (moved from step 5)
             return (
-              <FaceScanResult 
+              <ComplaintScreen
                 userData={userData}
                 updateUserData={updateUserData}
                 onNext={nextStep}
@@ -131,20 +215,13 @@ export default function NewLayout({
               />
             );
             case 5:
-            return (
-              <ComplaintScreen
-                userData={userData}
-                updateUserData={updateUserData}
-                onNext={nextStep}
-                onPrev={prevStep}
-              />  
-            );
-            case 6:
+            // Step 5 is now Client Assessment (moved from step 6)
             return (
               <ClientAssessment onNext={nextStep} onPrev={prevStep}/>
             );
-            case 7:
-            console.log('NewLayout - Step 7 Debug:');
+            case 6:
+            // Step 6 is now Health Summary (moved from step 7)
+            console.log('NewLayout - Step 6 (Health Summary) Debug:');
             console.log('- storedApiData:', storedApiData);
             console.log('- userData:', userData);
             console.log('- Screen width:', window.innerWidth);
@@ -211,28 +288,23 @@ export default function NewLayout({
 
           };
         case 4:
-          return {
-            title:t('faceScan.scanCompleteSubtitle'),
-            description: "Carevision",
-            image: isEnglish ? "/video/en_result2.mp4" : "/video/result2.mp4",
-            className:''
-          };
-        case 5:
+          // Step 4 is now Complaints
           return {
             title: t('complaint.subtitle1'),
             description: "Carevision",
             image: isEnglish ? "/video/en_qastion.mp4" : "/video/qastion.mp4",
             className:''
           };
-        case 6:
+        case 5:
+          // Step 5 is now Client Assessment
           return {
             title: t('progress.symptomsDescription'),
             description: "Carevision",
             image: isEnglish ? "/video/en_answer.mp4" : "/video/answer.mp4",
             className:''
-
           };
-        case 7:
+        case 6:
+          // Step 6 is now Health Summary
           return {
             title: t('progress.healthAssessmentSummary'),
             description: "Carevision",
@@ -251,7 +323,7 @@ export default function NewLayout({
       <>
       {/* Mobile View (up to md breakpoint) */}
       <div className="block md:hidden h-full w-full bg-white rounded-t-3xl">
-      {currentStep >= 1 && currentStep <= 6 && (
+      {currentStep >= 1 && currentStep <= 5 && (
         <ProgressTracker
           ref={progressTrackerRef}
           initialStep={currentStep}
@@ -261,14 +333,14 @@ export default function NewLayout({
           disabled={false}
         />
         )}
-        <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
+        <div className={`${currentStep === 6 ? 'h-full' : ''} w-full`}>
           {renderStep()}
         </div>
       </div>
-      
+
       {/* Tablet View (md to lg breakpoint: 768px-1023px) */}
       <div className="hidden md:block lg:hidden h-full w-full bg-white rounded-t-3xl">
-        {currentStep >= 1 && currentStep <= 6 && (
+        {currentStep >= 1 && currentStep <= 5 && (
           <ProgressTracker
             ref={progressTrackerRef}
             initialStep={currentStep}
@@ -278,7 +350,7 @@ export default function NewLayout({
             disabled={false}
           />
         )}
-        <div className={`${currentStep === 7 ? 'h-full' : ''} w-full`}>
+        <div className={`${currentStep === 6 ? 'h-full' : ''} w-full`}>
           {renderStep()}
         </div>
       </div>
