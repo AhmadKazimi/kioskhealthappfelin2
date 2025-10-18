@@ -808,5 +808,12 @@
     "reviewAndContinue": "Review your results below and click Next to continue",
     "clickNextBelow": "Click \"Next\" button below to continue",
     "fingerNotDetectedContinuing": "Finger not detected - place finger back on camera"
+  },
+  "vitals": {
+    "heartRate": "Heart Rate",
+    "spo2": "SpO2",
+    "hrv": "HRV",
+    "respRate": "Respiration Rate",
+    "bloodPressure": "Blood Pressure"
   }
 }
