@@ -768,10 +768,11 @@
     "processingResults": "جارٍ معالجة النتائج...",
     "scanProgress": "تقدم المسح",
     "startTime": "0 ثانية",
-    "endTime": "30 ثانية",
+    "endTime": "100 ثانية",
     "calibrated": "معاير",
     "oxygen": "الأكسجين",
     "calculatingBloodPressure": "جارٍ حساب ضغط الدم",
+    "savingResults": "جارٍ حفظ النتائج...",
     "pleaseWait": "يرجى الانتظار...",
     "instructions": {
       "title": "تعليمات مسح بصمة الإصبع",
@@ -786,7 +787,7 @@
       },
       "step3": {
         "title": "ابق ثابتاً",
-        "desc": "حافظ على ثبات إصبعك لمدة 30 ثانية"
+        "desc": "حافظ على ثبات إصبعك لمدة 100 ثانية"
       },
       "step4": {
         "title": "ابق مسترخياً",

@@ -73,6 +73,7 @@ export const FingerprintScanScreen = ({
   const [waitingForBloodPressure, setWaitingForBloodPressure] = useState(false)
   const [scanComplete, setScanComplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const latestVitalsRef = useRef<VitalsResult | null>(null)
 
   const resetMeasurementState = (options?: { clearResults?: boolean; clearCompletion?: boolean }) => {
@@ -357,9 +358,9 @@ export const FingerprintScanScreen = ({
               checkStroke: false,
               client: 'health-kiosk',
               engageCarolChat: false,
-              longMeasurement: false,
+              longMeasurement: true, // Enable long measurement mode for 100-second scans to allow server to detect stable_readings and calculate BP
               party: userId,
-              sampleTime: 30,
+              sampleTime: 100, // Changed from 30 to 100 to match face scan duration and collect ~120 heartbeats for arrhythmia detection
               storeResult: false, // We handle storage ourselves
               suspectedHypertensive: false,
               suspectedHypotensive: false,
@@ -418,7 +419,8 @@ export const FingerprintScanScreen = ({
 
                 const vitalsToSave = latestVitalsRef.current
                 if (vitalsToSave) {
-                  // Push local results upward immediately for summary
+                  // Push local results upward immediately for UI display
+                  // Note: We do NOT save to backend here - saving happens when user clicks Next button
                   try {
                     const systolic = bpData.bp_calibrated ? Math.round(bpData.calibrated_systolic_blood_pressure || 0) : Math.round(bpData.systolic_blood_pressure)
                     const diastolic = bpData.bp_calibrated ? Math.round(bpData.calibrated_diastolic_blood_pressure || 0) : Math.round(bpData.diastolic_blood_pressure)
@@ -432,54 +434,14 @@ export const FingerprintScanScreen = ({
                       diastolicBP: diastolic,
                       bloodPressure: `${systolic}/${diastolic}`,
                     })
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                    console.log('✅ SCAN COMPLETE - Results ready for display')
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+                    console.log('💡 Results will be saved when user clicks "Next" button')
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
                   } catch (e) {
                     console.warn('Failed to emit local results:', e)
                   }
-                  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                  console.log('💾 FINGERPRINT SCAN - INITIATING SAVE')
-                  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                  console.log('📋 Save Details:')
-                  console.log('  ClientId:', userId)
-                  console.log('  Timestamp:', new Date().toISOString())
-                  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                  console.log('📊 Vitals Data Being Saved:')
-                  console.log('  Heart Rate:', vitalsToSave.vitals_results.heart_rate, 'BPM')
-                  console.log('  HRV SDNN:', vitalsToSave.vitals_results.hrv_rate, 'ms')
-                  console.log('  SpO2:', vitalsToSave.vitals_results.spo2_rate, '%')
-                  console.log('  Breathing Rate:', vitalsToSave.vitals_results.resp_rate, 'BPM')
-                  console.log('  Perfusion Index:', vitalsToSave.vitals_results.perfusion_index)
-                  console.log('  Mean RR:', vitalsToSave.vitals_results.mean_rr, 'ms')
-                  console.log('  RR Intervals Count:', vitalsToSave.vitals_results.rr_intervals?.length || 0)
-                  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                  console.log('🩺 Blood Pressure Data Being Saved:')
-                  console.log('  BP Calibrated:', bpData.bp_calibrated)
-                  if (bpData.bp_calibrated) {
-                    console.log('  Calibrated Systolic:', Math.round(bpData.calibrated_systolic_blood_pressure!), 'mmHg')
-                    console.log('  Calibrated Diastolic:', Math.round(bpData.calibrated_diastolic_blood_pressure!), 'mmHg')
-                  } else {
-                    console.log('  Systolic:', Math.round(bpData.systolic_blood_pressure), 'mmHg')
-                    console.log('  Diastolic:', Math.round(bpData.diastolic_blood_pressure), 'mmHg')
-                  }
-                  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                  console.log('📤 Calling saveFingerprintScan service...')
-                  saveFingerprintScan(userId, vitalsToSave, bpData).then((result) => {
-                    if (!result.success) {
-                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                      console.log('❌ FINGERPRINT SCAN - SAVE FAILED')
-                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                      console.log('Error Message:', result.message)
-                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                      setError(result.message)
-                    } else {
-                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                      console.log('✅ FINGERPRINT SCAN - SAVE SUCCESSFUL')
-                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                      console.log('Message:', result.message)
-                      console.log('ClientId:', userId)
-                      console.log('Saved at:', new Date().toISOString())
-                      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                    }
-                  })
                 }
               }
             },
@@ -586,7 +548,7 @@ export const FingerprintScanScreen = ({
         // Start frame capture and send all frames to server
         // Server will detect finger and send finger_detected in response
         const FPS = 30 // 30 FPS for camera capture
-        const SAMPLE_TIME_SECONDS = 30
+        const SAMPLE_TIME_SECONDS = 100 // Match the sampleTime parameter sent to socket connection (changed from 30 to 100)
 
         resetMeasurementState({ clearResults: false, clearCompletion: false })
 
@@ -673,6 +635,43 @@ export const FingerprintScanScreen = ({
         }
       }
     }
+
+  // Handle Next button click - ensure data is saved before proceeding
+  const handleNext = async () => {
+    // Prevent double-clicking
+    if (isSaving) return
+
+    // If we have vitals and BP data, save them before proceeding
+    if (vitals && bloodPressure) {
+      setIsSaving(true)
+
+      try {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        console.log('💾 NEXT BUTTON CLICKED - Saving fingerprint scan results...')
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+        const result = await saveFingerprintScan(userId, vitals, bloodPressure)
+
+        if (result.success) {
+          console.log('✅ Save successful, proceeding to next step')
+          setIsSaving(false)
+          onNext()
+        } else {
+          console.error('❌ Save failed:', result.message)
+          setError(result.message)
+          setIsSaving(false)
+        }
+      } catch (error) {
+        console.error('❌ Save error:', error)
+        setError(error instanceof Error ? error.message : 'Failed to save results')
+        setIsSaving(false)
+      }
+    } else {
+      // No data to save, just proceed
+      console.warn('⚠️ No vitals or BP data to save, proceeding anyway')
+      onNext()
+    }
+  }
 
   return (
     <div className="h-full flex flex-col" dir={isArabic ? 'rtl' : 'ltr'}>
@@ -788,7 +787,7 @@ export const FingerprintScanScreen = ({
                 )}
 
                 {/* Scan Complete */}
-                {scanComplete && (
+                {scanComplete && !isSaving && (
                   <div className="absolute inset-0 flex items-center justify-center bg-green-500/90">
                     <div className="text-center text-white px-4">
                       <div className="mb-4 lg:mb-6 text-6xl lg:text-7xl xl:text-8xl">✓</div>
@@ -800,6 +799,21 @@ export const FingerprintScanScreen = ({
                         <span>👇</span>
                         <span>{t('fingerprintScan.clickNextBelow') || 'Click "Next" button below to continue'}</span>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Saving Results Overlay */}
+                {isSaving && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/95 z-50">
+                    <div className="text-center px-4">
+                      <div className="mx-auto mb-4 lg:mb-6 h-16 w-16 lg:h-20 lg:w-20 xl:h-24 xl:w-24 animate-spin rounded-full border-4 lg:border-[6px] border-[#407EFF]/30 border-t-[#407EFF]" />
+                      <p className="text-lg lg:text-2xl xl:text-3xl font-semibold text-[#407EFF]">
+                        {t('fingerprintScan.savingResults') || 'Saving results...'}
+                      </p>
+                      <p className="mt-2 text-sm lg:text-base xl:text-lg text-gray-600">
+                        {t('fingerprintScan.pleaseWait') || 'Please wait...'}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -1039,8 +1053,8 @@ export const FingerprintScanScreen = ({
             {t('buttons.back')}
           </button>
           <button
-            onClick={onNext}
-            disabled={!scanComplete || waitingForBloodPressure}
+            onClick={handleNext}
+            disabled={!scanComplete || waitingForBloodPressure || isSaving}
             className="group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3
                      text-sm md:text-base font-medium text-white bg-gradient-to-r from-[#407EFF] to-[#1E40AF]
                      rounded-xl shadow-lg

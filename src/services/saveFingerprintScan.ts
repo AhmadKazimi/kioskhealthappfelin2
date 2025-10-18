@@ -1,22 +1,25 @@
 import { VitalsResult, BloodPressureResult } from './fingerprintSocketService';
 
-// Backend DTO Interface (CORRECTED to match actual backend schema)
-// Backend expects camelCase field names!
+// Backend DTO Interface - MATCHES FACE SCAN EXACTLY
+// Backend expects camelCase field names (starts with lowercase)
 interface ScanResultDto {
-  ClientId: number;
-  HeartRate10s: number;
-  HeartRate4s?: number;
-  RealTimeHeartRate?: number;
-  SystolicBloodPressureMmhg: number;
-  DiastolicBloodPressureMmhg: number;
-  BreathingRate: number;
-  HrvSdnnMs: number;
-  CardiacStress?: number;
-  HRIntervals?: string;
-  HearRateIntervals?: string;
-  Temperature?: number;
-  Glucose?: number;
-  Hba1c?: number;
+  clientId: string;                         // camelCase! (string to match face scan)
+  heartRate10s: number;                     // camelCase!
+  heartRate4s?: number;                     // camelCase!
+  realtimeHeartRate?: number;               // camelCase!
+  hrvSdnn?: number;                         // camelCase!
+  cardiacStress?: number;                   // camelCase!
+  systolicBloodPressure?: number;           // camelCase!
+  healthRisks?: string;                     // camelCase! (match face scan)
+  diastolicBloodPressure?: number;          // camelCase!
+  breathingRate: number;                    // camelCase!
+  hrvSdnnMs: number;                        // camelCase!
+  systolicBloodPressureMmhg: number;        // camelCase!
+  diastolicBloodPressureMmhg: number;       // camelCase!
+  temperature?: number;
+  glucose?: number;
+  hba1c?: number;
+  heartRateIntervals: number[];             // Array of numbers (NOT JSON string)
 }
 
 /**
@@ -43,33 +46,58 @@ export async function saveFingerprintScan(
   bloodPressure: BloodPressureResult
 ): Promise<{ success: boolean; message: string }> {
 
+  // Get clientId from cookie (same as face scan) if the passed clientId is invalid
+  const clientIdFromCookie = typeof document !== 'undefined'
+    ? document.cookie.split('; ').find(r => r.startsWith('userId='))?.split('=')[1]
+    : null;
+
+  const actualClientId = (clientId && clientId !== '0') ? clientId : clientIdFromCookie;
+
+  if (!actualClientId || actualClientId === '0') {
+    console.error('❌ No valid clientId found - cannot save scan results');
+    return {
+      success: false,
+      message: 'No client ID available. Please complete personal information first.'
+    };
+  }
+
   // Map SocketIO data to backend DTO (CORRECTED to match backend schema)
   const scanResultDto: ScanResultDto = {
-    ClientId: Number(clientId),
+    clientId: actualClientId,
 
-    // Vitals mapping (PascalCase to match current backend responses)
-    HeartRate10s: vitals.vitals_results.heart_rate,
-    HrvSdnnMs: vitals.vitals_results.hrv_rate,
-    BreathingRate: vitals.vitals_results.resp_rate,
+    // Vitals mapping - match face scan exactly
+    heartRate10s: vitals.vitals_results.heart_rate,
+    heartRate4s: vitals.vitals_results.heart_rate, // Use same as HeartRate10s (4s data not available from fingerprint API)
+    realtimeHeartRate: vitals.vitals_results.heart_rate, // Use same as HeartRate10s for compatibility with face scan
+    hrvSdnn: vitals.vitals_results.hrv_rate, // Face scan sends this
+    hrvSdnnMs: vitals.vitals_results.hrv_rate,
+    breathingRate: vitals.vitals_results.resp_rate,
+    healthRisks: undefined, // Face scan sends this, but fingerprint API doesn't provide it
 
     // Blood pressure mapping (use calibrated if available)
-    SystolicBloodPressureMmhg: bloodPressure.bp_calibrated
+    // Send both formats to match face scan
+    systolicBloodPressure: bloodPressure.bp_calibrated
       ? bloodPressure.calibrated_systolic_blood_pressure!
       : bloodPressure.systolic_blood_pressure,
-    DiastolicBloodPressureMmhg: bloodPressure.bp_calibrated
+    diastolicBloodPressure: bloodPressure.bp_calibrated
+      ? bloodPressure.calibrated_diastolic_blood_pressure!
+      : bloodPressure.diastolic_blood_pressure,
+    systolicBloodPressureMmhg: bloodPressure.bp_calibrated
+      ? bloodPressure.calibrated_systolic_blood_pressure!
+      : bloodPressure.systolic_blood_pressure,
+    diastolicBloodPressureMmhg: bloodPressure.bp_calibrated
       ? bloodPressure.calibrated_diastolic_blood_pressure!
       : bloodPressure.diastolic_blood_pressure,
 
-    // Optional fields
-    HRIntervals: vitals.vitals_results.rr_intervals
-      ? JSON.stringify(vitals.vitals_results.rr_intervals)
-      : undefined,
-    HearRateIntervals: vitals.vitals_results.rr_intervals
-      ? JSON.stringify(vitals.vitals_results.rr_intervals)
-      : undefined,
+    // Optional fields - RR intervals for arrhythmia detection
+    heartRateIntervals: vitals.vitals_results.rr_intervals || [],
 
-    // REMOVED: SpO2, PerfusionIndex, MeanRR - not in backend schema
-    // REMOVED: ScanType, ScanDate - not in backend schema (uses auto CreationTime)
+    // EXPLICITLY EXCLUDED (not in backend schema or not available from fingerprint API):
+    // ❌ SpO2 - available from API but not in backend schema
+    // ❌ PerfusionIndex - available from API but not in backend schema
+    // ❌ MeanRR - not in backend schema
+    // ❌ CardiacStress - not available from fingerprint API (only face scan SDK provides this)
+    // ❌ ScanType, ScanDate - not in backend schema (backend uses auto CreationTime)
   };
 
   try {
@@ -94,15 +122,17 @@ export async function saveFingerprintScan(
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('Request ID:', requestId);
     console.log('Endpoint:', `POST ${apiUrl}/ScanResult/AddScanResult`);
-    console.log('ClientId:', scanResultDto.ClientId);
+    console.log('ClientId:', scanResultDto.clientId);
     console.log('Scan Type:', 'Fingerprint (not sent to backend - backend uses CreationTime)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📊 Vitals Summary (CORRECTED FIELD NAMES):');
-    console.log('  Heart Rate (10s):', scanResultDto.HeartRate10s, 'BPM');
-    console.log('  HRV (HrvSdnnMs):', scanResultDto.HrvSdnnMs, 'ms');
-    console.log('  Breathing Rate:', scanResultDto.BreathingRate, 'BPM');
-    console.log('  Blood Pressure:', `${scanResultDto.SystolicBloodPressureMmhg}/${scanResultDto.DiastolicBloodPressureMmhg}`, 'mmHg');
-    console.log('  RR Intervals:', scanResultDto.HRIntervals ? 'Included (JSON string)' : 'Not available');
+    console.log('📊 Vitals Summary:');
+    console.log('  Heart Rate (10s):', scanResultDto.heartRate10s, 'BPM');
+    console.log('  Heart Rate (4s):', scanResultDto.heartRate4s, 'BPM');
+    console.log('  Real-time Heart Rate:', scanResultDto.realtimeHeartRate, 'BPM');
+    console.log('  HRV (SDNN):', scanResultDto.hrvSdnnMs, 'ms');
+    console.log('  Breathing Rate:', scanResultDto.breathingRate, 'BPM');
+    console.log('  Blood Pressure:', `${scanResultDto.systolicBloodPressureMmhg}/${scanResultDto.diastolicBloodPressureMmhg}`, 'mmHg');
+    console.log('  RR Intervals:', scanResultDto.heartRateIntervals?.length || 0, 'values (number array)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📦 Full Request Body:', JSON.stringify(scanResultDto, null, 2));
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -122,7 +152,7 @@ export async function saveFingerprintScan(
       console.error('❌ API CALL 1: Scan result save FAILED');
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.error('Request ID:', requestId);
-      console.error('ClientId:', scanResultDto.ClientId);
+      console.error('ClientId:', scanResultDto.clientId);
       console.error('Status Code:', response.status);
       console.error('Status Text:', response.statusText);
       console.error('Error Response:', errorText);
@@ -135,24 +165,25 @@ export async function saveFingerprintScan(
     console.log('✅ API CALL 1: Scan Result Saved Successfully');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('Request ID:', requestId);
-    console.log('ClientId:', scanResultDto.ClientId);
+    console.log('ClientId:', scanResultDto.clientId);
     console.log('Response Status:', response.status);
     console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
     console.log('Response Body:', JSON.stringify(result, null, 2));
     console.log('Saved Vitals (CORRECTED FIELD NAMES):');
-    console.log('  HR:', scanResultDto.HeartRate10s, 'BP:', `${scanResultDto.SystolicBloodPressureMmhg}/${scanResultDto.DiastolicBloodPressureMmhg}`, 'BR:', scanResultDto.BreathingRate);
+    console.log('  HR:', scanResultDto.heartRate10s, 'BP:', `${scanResultDto.systolicBloodPressureMmhg}/${scanResultDto.diastolicBloodPressureMmhg}`, 'BR:', scanResultDto.breathingRate);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // ============================================================
     // API CALL 2: Trigger Arrhythmia Detection (Same as Face Scan)
     // ============================================================
     const rrIntervals = vitals.vitals_results.rr_intervals || [];
+    const MIN_RR_INTERVALS_FOR_ARRHYTHMIA = 60; // Minimum heartbeats required for reliable arrhythmia detection
 
-    // Only call arrhythmia detection if we have valid RR intervals array
-    if (rrIntervals.length > 0) {
+    // Only call arrhythmia detection if we have sufficient RR intervals
+    if (rrIntervals.length >= MIN_RR_INTERVALS_FOR_ARRHYTHMIA) {
       try {
         const arrhythmiaRequestData = {
-          clientId: clientId,
+          clientId: actualClientId,
           inputs: [rrIntervals]  // Same format as face scan - array wrapped in array
         };
 
@@ -161,7 +192,7 @@ export async function saveFingerprintScan(
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('Endpoint:', `POST ${apiUrl}/Arrhythmia/AddArrhythmiaRequest`);
         console.log('Request Data:', JSON.stringify(arrhythmiaRequestData, null, 2));
-        console.log('RR Intervals Count:', rrIntervals.length);
+        console.log('RR Intervals Count:', rrIntervals.length, `(minimum required: ${MIN_RR_INTERVALS_FOR_ARRHYTHMIA})`);
         console.log('Sample RR Intervals:', rrIntervals.slice(0, 5).join(', '), '...');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
@@ -202,11 +233,13 @@ export async function saveFingerprintScan(
       }
     } else {
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.warn('⚠️ SKIPPING API CALL 2: No RR intervals available');
+      console.warn('⚠️ SKIPPING API CALL 2: Insufficient RR intervals for arrhythmia detection');
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.warn('RR Intervals:', rrIntervals);
+      console.warn('RR Intervals Count:', rrIntervals.length);
+      console.warn('Minimum Required:', MIN_RR_INTERVALS_FOR_ARRHYTHMIA);
       console.warn('Arrhythmia detection will not be triggered');
-      console.warn('Note: Ensure checkArrhythmias is enabled in socket connection');
+      console.warn('Note: Scan duration increased to 100s should provide ~120 heartbeats at 72 BPM');
+      console.warn('Troubleshooting: Ensure checkArrhythmias is enabled in socket connection');
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }
 

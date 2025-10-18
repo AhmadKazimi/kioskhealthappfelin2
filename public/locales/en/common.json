@@ -772,10 +772,11 @@
     "processingResults": "Processing results...",
     "scanProgress": "Scan Progress",
     "startTime": "0 seconds",
-    "endTime": "30 seconds",
+    "endTime": "100 seconds",
     "calibrated": "Calibrated",
     "oxygen": "Oxygen",
     "calculatingBloodPressure": "Calculating Blood Pressure",
+    "savingResults": "Saving results...",
     "pleaseWait": "Please wait...",
     "instructions": {
       "title": "Fingerprint Scan Instructions",
@@ -790,7 +791,7 @@
       },
       "step3": {
         "title": "Hold Still",
-        "desc": "Keep your finger steady for 30 seconds"
+        "desc": "Keep your finger steady for 100 seconds"
       },
       "step4": {
         "title": "Stay Relaxed",
