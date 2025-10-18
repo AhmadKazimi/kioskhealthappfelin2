@@ -149,25 +149,25 @@
     const vitalSigns = latestResult ? [
       {
         name: t('faceScan.vitals.heartRate'),
-        value: `${latestResult.HeartRate10s || "N/A"} ${t('fastScan.units.bpm')}`,
+        value: `${latestResult.HeartRate10s ? Math.round(latestResult.HeartRate10s) : "N/A"} ${t('fastScan.units.bpm')}`,
         normalRange: `60-100 ${t('fastScan.units.bpm')}`,
         status: latestResult.HeartRate10s && latestResult.HeartRate10s >= 60 && latestResult.HeartRate10s <= 100 ? t('healthSummary.normal') : t('healthSummary.abnormal')
       },
       {
         name: t('faceScan.vitals.bloodPressure'),
-        value: `${latestResult.SystolicBloodPressureMmhg || "N/A"}/${latestResult.DiastolicBloodPressureMmhg || "N/A"} ${t('fastScan.units.mmhg')}`,
+        value: `${latestResult.SystolicBloodPressureMmhg ? Math.round(latestResult.SystolicBloodPressureMmhg) : "N/A"}/${latestResult.DiastolicBloodPressureMmhg ? Math.round(latestResult.DiastolicBloodPressureMmhg) : "N/A"} ${t('fastScan.units.mmhg')}`,
         normalRange: `<120/<80 ${t('fastScan.units.mmhg')}`,
-        status: latestResult.SystolicBloodPressureMmhg && latestResult.SystolicBloodPressureMmhg < 120 && latestResult.DiastolicBloodPressureMmhg && latestResult.DiastolicBloodPressureMmhg < 80 ? t('healthSummary.normal') : t('healthSummary.abnormal')
+        status: latestResult.SystolicBloodPressureMmhg && latestResult.DiastolicBloodPressureMmhg && latestResult.SystolicBloodPressureMmhg < 120 && latestResult.DiastolicBloodPressureMmhg < 80 ? t('healthSummary.normal') : t('healthSummary.abnormal')
       },
       {
         name: t('faceScan.vitals.heartRateVariability'),
-        value: `${latestResult.HrvSdnnMs || "N/A"} ${t('fastScan.units.ms')}`,
+        value: `${latestResult.HrvSdnnMs ? Math.round(latestResult.HrvSdnnMs) : "N/A"} ${t('fastScan.units.ms')}`,
         normalRange: `20-100 ${t('fastScan.units.ms')}`,
         status: latestResult.HrvSdnnMs && latestResult.HrvSdnnMs >= 20 && latestResult.HrvSdnnMs <= 100 ? t('healthSummary.normal') : t('healthSummary.abnormal')
       },
       {
         name: t('faceScan.vitals.respirationRate'),
-        value: `${latestResult.BreathingRate || "N/A"} ${t('healthSummary.breathingRateUnit')}`,
+        value: `${latestResult.BreathingRate ? Math.round(latestResult.BreathingRate) : "N/A"} ${t('healthSummary.breathingRateUnit')}`,
         normalRange: `12-20 ${t('healthSummary.breathingRateUnit')}`,
         status: latestResult.BreathingRate && latestResult.BreathingRate >= 12 && latestResult.BreathingRate <= 20 ? t('healthSummary.normal') : t('healthSummary.abnormal')
       }
@@ -196,6 +196,8 @@
     const handleClose = useCallback(() => {
       setIsTimerActive(false);
       onClose();
+      // Redirect to main page when user clicks close
+      window.location.href = '/';
     }, [onClose]);
 
     // Timer countdown effect (avoid navigation inside state updater)
@@ -214,6 +216,8 @@
       if (timer === 0) {
         setIsTimerActive(false);
         onClose();
+        // Redirect to main page when timer finishes
+        window.location.href = '/';
       }
     }, [timer, isTimerActive, onClose]);
 
@@ -248,10 +252,10 @@
             ),
             age: userData?.Age || "N/A",
             gender: userData?.Gender || "N/A",
-            heartRate: latestResult?.HeartRate10s || "N/A",
-            bloodPressure: latestResult ? `${latestResult.SystolicBloodPressureMmhg}/${latestResult.DiastolicBloodPressureMmhg}` : "N/A",
-            heartRateVariability: latestResult?.HrvSdnnMs || "N/A",
-            respirationRate: latestResult?.BreathingRate || "N/A",
+            heartRate: latestResult?.HeartRate10s ? Math.round(latestResult.HeartRate10s) : "N/A",
+            bloodPressure: latestResult ? `${Math.round(latestResult.SystolicBloodPressureMmhg)}/${Math.round(latestResult.DiastolicBloodPressureMmhg)}` : "N/A",
+            heartRateVariability: latestResult?.HrvSdnnMs ? Math.round(latestResult.HrvSdnnMs) : "N/A",
+            respirationRate: latestResult?.BreathingRate ? Math.round(latestResult.BreathingRate) : "N/A",
             reportedSymptoms: symptoms.length > 0 ? symptoms.join(', ') : t('healthSummary.noSymptomsReported')
           }
         };
@@ -334,11 +338,9 @@
     }, []); // Empty dependency array - only log once on mount
     
     return (
-      <div className="flex justify-center items-start h-screen overflow-hidden p-2 sm:p-4 lg:p-6">
-        <div className={`border-0 ${isArabic ? 'rtl' : 'ltr'} transition-all duration-1000 ease-out w-full max-w-7xl h-full flex flex-col ${
-          isAnimating ? 'w-full' : 'w-full'
-        }`}>
-          <div className={`p-2 sm:p-4 lg:p-6 flex-1 overflow-y-auto ${isAnimating ? 'opacity-100' : 'opacity-0'}`}>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className={`${isArabic ? 'rtl' : 'ltr'} max-w-[95vw] sm:max-w-[90vw] lg:max-w-6xl xl:max-w-7xl max-h-[95vh] overflow-y-auto p-0 border-0`}>
+          <div className={`p-2 sm:p-4 lg:p-6 ${isAnimating ? 'opacity-100' : 'opacity-0'} transition-opacity duration-1000`}>
             <div className="bg-white rounded-[20px] sm:rounded-[25px] lg:rounded-[30px] p-3 sm:p-4 md:p-6 lg:p-8 shadow-xl">
               {/* Title */}
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-medium text-blue-500 text-center mb-3 sm:mb-4 md:mb-6">
@@ -470,11 +472,11 @@
                 </button>
               </div>
 
-        
+
             </div>
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     );
   });
 
