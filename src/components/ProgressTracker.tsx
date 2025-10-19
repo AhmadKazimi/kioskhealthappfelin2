@@ -170,20 +170,18 @@ const ProgressTracker = forwardRef<ProgressTrackerRef, ProgressTrackerProps>(({
             }}
           >
             {/* Step Number */}
-            <div 
+            <div
               className={`
-                rounded-lg flex items-center justify-center font-semibold 
-                transition-all duration-300 ease-in-out cursor-pointer relative z-10
-                transform hover:scale-110
+                rounded-lg flex items-center justify-center font-semibold
+                transition-all duration-300 ease-in-out relative z-10
                 ${
-                  step.number === activeStep 
-                  ? 'w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#004CE9] to-[#0040C0] text-white shadow-lg ring-4 ring-blue-200/50 scale-110' 
-                  : step.number < activeStep 
-                    ? 'w-6 h-6 sm:w-7 sm:h-7 bg-[#004CE9] text-white hover:bg-[#0040C0] shadow-sm'
-                    : 'w-6 h-6 sm:w-7 sm:h-7 bg-gray-200 text-gray-500 hover:bg-gray-300 hover:text-gray-600'
-                }   
+                  step.number === activeStep
+                  ? 'w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#004CE9] to-[#0040C0] text-white shadow-lg ring-4 ring-blue-200/50 scale-110'
+                  : step.number < activeStep
+                    ? 'w-6 h-6 sm:w-7 sm:h-7 bg-[#004CE9] text-white shadow-sm'
+                    : 'w-6 h-6 sm:w-7 sm:h-7 bg-gray-200 text-gray-500'
+                }
               `}
-              onClick={() => handleStepClick(step.number)}
               style={{
                 fontSize: step.number === activeStep ? '14px' : '12px'
               }}
@@ -222,19 +220,18 @@ const ProgressTracker = forwardRef<ProgressTrackerRef, ProgressTrackerProps>(({
           <div key={index} className="flex items-start w-full gap-3">
             {/* Step Number */}
             <div className="flex flex-col items-center flex-shrink-0">
-              <div 
+              <div
                 className={`
-                  w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold 
-                  transition-colors duration-200 ease-in-out shadow-sm cursor-pointer
+                  w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold
+                  transition-colors duration-200 ease-in-out shadow-sm
                   ${
-                    step.number === activeStep 
-                    ? 'mb-10 bg-gradient-to-br from-[#004CE9] via-[#004CE9]/80 to-white text-white border-2 border-[#004CE9]/30' 
-                    : step.number > activeStep 
-                    ? 'bg-gray-200 text-gray-500 hover:bg-gray-300'
-                    : 'bg-[#004CE9] text-white hover:bg-[#004CE9]/90'
-                  }   
+                    step.number === activeStep
+                    ? 'mb-10 bg-gradient-to-br from-[#004CE9] via-[#004CE9]/80 to-white text-white border-2 border-[#004CE9]/30'
+                    : step.number > activeStep
+                    ? 'bg-gray-200 text-gray-500'
+                    : 'bg-[#004CE9] text-white'
+                  }
                 `}
-                onClick={() => handleStepClick(step.number)}
               >
                 {step.number}
               </div>

@@ -242,29 +242,6 @@ export default function UserInfoScreen({
                 {t('userInfo.tapToEnterAge')}
             </p>
           </div>
-
-          {/* Age Slider - Commented Out */}
-          {/*
-          <div className="relative w-full">
-            <input
-              type="range"
-              min="1"
-              max="100"
-              value={age}
-              onChange={(e) => setAge(Number.parseInt(e.target.value))}
-              className="w-full h-6 appearance-none cursor-pointer bg-gray-200 rounded-full slider"
-              style={{
-                background: isArabic 
-                  ? `linear-gradient(to left, #3b82f6 0%, #3b82f6 ${age}%, #e5e7eb ${age}%, #e5e7eb 100%)`
-                  : `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${age}%, #e5e7eb ${age}%, #e5e7eb 100%)`,
-              }}
-            />
-            <div className="flex justify-between mt-2 text-sm text-gray-600">
-              <span>0</span>
-              <span>100</span>
-            </div>
-          </div>
-          */}
         </div>
 
           {/* Gender Section */}

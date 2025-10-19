@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Select, { SingleValue } from "react-select";
 import { Country } from "@/payload-types";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useCountries } from "@/hooks/useCountries";
 
 type Props = {
     language: "en" | "ar";
@@ -20,10 +21,7 @@ interface DropDownOption {
 
 const CountrySelector = ({ language, value, onSelect }: Props) => {
     const { t } = useTranslation();
-    const [countries, setCountries] = useState<Country[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const { countries, isLoading } = useCountries();
     const isArabic = language === "ar";
 
     const options: DropDownOption[] = countries.map((country) => ({
@@ -78,32 +76,6 @@ const CountrySelector = ({ language, value, onSelect }: Props) => {
             color: "#374151",
         }),
     };
-
-    useEffect(() => {
-        const fetchCountries = async () => {
-            try {
-                setIsLoading(true);
-                const response = await fetch(`${apiUrl}/Common/GetCountries`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "ngrok-skip-browser-warning": "true",
-                    },
-                });
-
-                const responseJson = await response.json();
-                if (!responseJson.IsSuccess) throw new Error("Failed to fetch data");
-
-                setCountries(responseJson.Result.filter((country: Country) => country.Id !== 0));
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchCountries();
-    }, []);
 
     return (
         <div className="">
