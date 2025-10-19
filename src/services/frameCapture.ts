@@ -36,50 +36,90 @@ export class FrameCaptureService {
       }
       
       // Score each camera based on how likely it is to be the primary back camera
+      // Enhanced algorithm for universal compatibility (iPhone, Android, Samsung, Pixel, etc.)
       const scoredCameras = videoDevices.map(device => {
         const label = device.label.toLowerCase();
         let score = 0;
-        
-        // Positive indicators (higher score = more likely to be primary)
-        if (label.includes('back')) score += 100;
-        if (label.includes('rear')) score += 100;
-        if (label.includes('environment')) score += 100;
-        
-        if (label.includes('main')) score += 50;
-        if (label.includes('primary')) score += 50;
-        if (label.includes('wide') && !label.includes('ultra')) score += 40;
-        if (label.includes('standard')) score += 30;
-        if (label.includes('normal')) score += 30;
-        
+
+        // ═══════════════════════════════════════════════════════════
+        // HIGH PRIORITY - Main Camera Indicators (+100 to +200)
+        // ═══════════════════════════════════════════════════════════
+
+        // iPhone-specific: "Back Dual Wide Camera" or "Back Wide Camera" = main camera
+        if (label.includes('back') && label.includes('dual') && label.includes('wide') && !label.includes('ultra')) {
+          score += 200; // iPhone Pro models - main camera
+        }
+        if (label.includes('back') && label.includes('wide') && !label.includes('ultra') && !label.includes('dual')) {
+          score += 180; // iPhone standard models - main camera
+        }
+
+        // Generic back camera (simple devices or fallback)
+        if (label.includes('back') && !label.includes('ultra') && !label.includes('tele')) score += 120;
+        if (label.includes('rear') && !label.includes('ultra') && !label.includes('tele')) score += 120;
+        if (label.includes('environment')) score += 110;
+
+        // Explicit main/primary labels
+        if (label.includes('main')) score += 150;
+        if (label.includes('primary')) score += 150;
+
+        // Wide camera (not ultra-wide) - Usually the main sensor
+        if (label.includes('wide') && !label.includes('ultra')) {
+          score += 100; // Bonus for wide (main) camera
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // MEDIUM PRIORITY - Position/Number Indicators (+30 to +80)
+        // ═══════════════════════════════════════════════════════════
+
         // Common patterns for first/default camera
-        if (label.includes('camera 0')) score += 40;
-        if (label.includes('camera0')) score += 40;
-        if (label.includes('facing back') && !label.includes('ultra')) score += 40;
-        
+        if (label.includes('camera 0') || label.includes('camera0')) score += 70;
+        if (label.includes('facing back') && !label.includes('ultra')) score += 60;
+
+        // Samsung-specific: "camera2 0" often means main back camera
+        if (label.includes('camera2 0') || label.includes('camera2')) score += 80;
+
+        // Google Pixel-specific: "back camera" (simple label)
+        if (label === 'back camera' || label === 'rear camera') score += 160;
+
         // Number patterns (camera 0, camera 1, etc.)
-        // Usually camera 0 is primary
         const cameraNumberMatch = label.match(/camera\s*(\d+)/i);
         if (cameraNumberMatch) {
           const cameraNum = parseInt(cameraNumberMatch[1]);
-          if (cameraNum === 0) score += 30;
-          else if (cameraNum === 1) score += 10; // Could be primary on some devices
+          if (cameraNum === 0) score += 50; // Usually primary
+          else if (cameraNum === 1) score += 20; // Could be primary on some devices
         }
-        
-        // Negative indicators (lower score = less likely to be primary)
-        if (label.includes('ultra')) score -= 200; // Ultra-wide is NOT primary
-        if (label.includes('telephoto')) score -= 200; // Telephoto is NOT primary
-        if (label.includes('tele')) score -= 200;
-        if (label.includes('zoom')) score -= 150;
-        if (label.includes('macro')) score -= 100;
-        if (label.includes('depth')) score -= 100;
-        if (label.includes('front')) score -= 300; // Front camera is NOT back
-        if (label.includes('selfie')) score -= 300;
-        if (label.includes('user')) score -= 300;
-        
-        // Special handling for specific devices
-        // Samsung often uses "camera2 0" for main back camera
-        if (label.includes('camera2 0')) score += 60;
-        
+
+        // Generic descriptors
+        if (label.includes('standard')) score += 40;
+        if (label.includes('normal')) score += 40;
+        if (label.includes('default')) score += 40;
+
+        // ═══════════════════════════════════════════════════════════
+        // NEGATIVE INDICATORS - Must Avoid (-100 to -500)
+        // ═══════════════════════════════════════════════════════════
+
+        // Ultra-wide is NOT the main camera (always avoid)
+        if (label.includes('ultra-wide') || label.includes('ultrawide')) score -= 500;
+        if (label.includes('ultra') && label.includes('wide')) score -= 500;
+        if (label.includes('ultra') && !label.includes('wide')) score -= 300; // Other "ultra" cameras
+
+        // Telephoto/Zoom cameras are NOT main camera
+        if (label.includes('telephoto')) score -= 400;
+        if (label.includes('tele')) score -= 400;
+        if (label.includes('zoom')) score -= 300;
+
+        // Special purpose cameras
+        if (label.includes('macro')) score -= 200;
+        if (label.includes('depth')) score -= 200;
+        if (label.includes('monochrome')) score -= 200;
+        if (label.includes('portrait')) score -= 150;
+
+        // Front-facing cameras (completely wrong direction)
+        if (label.includes('front')) score -= 1000;
+        if (label.includes('selfie')) score -= 1000;
+        if (label.includes('user')) score -= 1000;
+        if (label.includes('face')) score -= 800;
+
         return { device, score, label };
       });
       
@@ -140,20 +180,24 @@ export class FrameCaptureService {
       // First, try to find the primary back camera on multi-camera devices
       const primaryCameraId = await this.findPrimaryBackCamera();
       
-      // Build video constraints
+      // Build video constraints with STRICT camera locking
       const videoConstraints: MediaTrackConstraints = {
         width: { ideal: options.width },
         height: { ideal: options.height }
       };
-      
+
       if (primaryCameraId) {
-        // Use the specific primary camera we found
+        // CRITICAL: Use { exact: deviceId } to LOCK onto this specific camera
+        // This prevents the browser from switching cameras during the scan
         videoConstraints.deviceId = { exact: primaryCameraId };
-        console.log('🎯 Using specific primary camera');
+        console.log('🔒 Camera LOCKED to specific device ID (prevents switching)');
+        console.log('🎯 Using primary camera with exact constraint');
       } else {
         // Fallback to facingMode if we couldn't identify a specific camera
-        videoConstraints.facingMode = { ideal: 'environment' };
-        console.log('🎯 Using facingMode: environment (back camera preferred)');
+        // Even in fallback, prefer 'exact' to prevent switching
+        videoConstraints.facingMode = { exact: 'environment' };
+        console.log('🔒 Camera LOCKED to environment (back) facingMode');
+        console.log('🎯 Using facingMode: environment (exact constraint)');
       }
       
       this.stream = await navigator.mediaDevices.getUserMedia({
@@ -204,16 +248,35 @@ export class FrameCaptureService {
       console.log('📹 Video readyState:', this.videoElement.readyState);
       console.log('📹 Video paused:', this.videoElement.paused);
       
-      // Log which camera is actually being used
+      // ═══════════════════════════════════════════════════════════
+      // VERIFY CAMERA SELECTION - Ensure correct camera is locked
+      // ═══════════════════════════════════════════════════════════
       const videoTrack = this.stream.getVideoTracks()[0];
       if (videoTrack) {
         const settings = videoTrack.getSettings();
-        console.log('📷 Camera in use:', {
-          label: videoTrack.label,
-          facingMode: settings.facingMode || 'unknown',
-          resolution: `${settings.width}x${settings.height}`,
-          deviceId: settings.deviceId?.substring(0, 20) + '...'
-        });
+        const actualDeviceId = settings.deviceId;
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📷 CAMERA VERIFICATION - Confirming camera lock');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ Camera label:', videoTrack.label);
+        console.log('✅ Facing mode:', settings.facingMode || 'not specified');
+        console.log('✅ Resolution:', `${settings.width}x${settings.height}`);
+        console.log('✅ Device ID:', actualDeviceId?.substring(0, 30) + '...');
+
+        // Verify we got the camera we requested
+        if (primaryCameraId && actualDeviceId === primaryCameraId) {
+          console.log('✅ SUCCESS: Camera locked to selected primary camera');
+          console.log('✅ Camera will NOT switch during scan');
+        } else if (primaryCameraId && actualDeviceId !== primaryCameraId) {
+          console.warn('⚠️ WARNING: Different camera selected than requested!');
+          console.warn('⚠️ Requested:', primaryCameraId?.substring(0, 30));
+          console.warn('⚠️ Got:', actualDeviceId?.substring(0, 30));
+        } else {
+          console.log('✅ Using browser-selected back camera (facingMode)');
+        }
+
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       }
 
       // Setup canvas for frame capture
