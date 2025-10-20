@@ -1,0 +1,2347 @@
+let el = (x) => document.getElementById(x);
+let userEmail = "";
+let client;
+
+let localStream;
+let remoteStream;
+let streaming = false;
+let localCap;
+let room;
+let uid = randomUint32();
+let inRoom = false;
+let agoraToken = null;
+let callParams;
+let remoteVitals;
+
+// Define video elements.
+const localVideoContainer = el("localVideoContainer");
+const localFacePositionSvg = el("localFacePositionSvg");
+const localVideoFaceRect = el("localFacePositionRect");
+const localVidLabel = el("localVidLabel");
+const remoteVideo = el("remoteVideo");
+const remoteFacePositionSvg = el("remoteFacePositionSvg");
+const remoteVideoFaceRect = el("remoteFacePositionRect");
+const remoteVidLabel = el("remoteVidLabel");
+const canvasEl = el("canvasElement");
+const remoteCanvasEl = el("remoteCanvasElement");
+const hiddenCanvasEl = el("hiddenCanvasElement");
+const stableReadingsEl = el("stableReadings");
+let hiddenCtx = hiddenCanvasEl.getContext("2d");
+let selectedVideo = null;
+let selectedCanvas = canvasEl;
+let selectedStream = null;
+let selectedContainer = localVideoContainer;
+let localVideo;
+let localVideoWidth = null;
+let localVideoHeight = null;
+
+localVideoContainer.addEventListener("click", selectVideo);
+remoteVideo.addEventListener("click", selectVideo);
+
+if (window.screen.width < 1025) {
+  el("localVidLabel").classList.remove("mdl-cell--6-col");
+  el("localVidLabel").classList.add("mdl-cell--12-col");
+  el("remoteVidLabel").classList.remove("mdl-cell--6-col");
+  el("remoteVidLabel").classList.add("mdl-cell--12-col");
+}
+
+// Define action buttons.
+let editUserInputs = true;
+const startCameraBtn = el("startCamera");
+const getVitalsBtn = el("getVitals");
+const joinCallButton = el("joinCallButton");
+const hangupButton = el("hangupButton");
+const callBtn = el("joinCallButton");
+
+/////////////////////////////////////////////
+
+let loc = window.location;
+if (loc.pathname !== "/v1/remote") {
+	el("logout-btn").classList.remove("hidden");
+}
+
+let meetingSocket = null;
+let testSocket = null;
+let point1;
+let point2;
+let dst;
+let bbColour;
+const resultsDiv = el("results");
+const heartResult = el("heartResult");
+const respResult = el("respResult");
+const respResultMotion = el("respResultMotion");
+const spo2Result = el("spo2Result");
+const perfusionIndexReuslt = el("piResult");
+const hrvResult = el("hrvResult");
+const meanrrResult = el("meanrrResult");
+const afPredictionResult = el("afPredictionResult");
+const aflutterPredictionResult = el("aflutterPredictionResult");
+const apneaPredictionResult = el("apneaPredictionResult");
+const chfPredictionResult = el("chfPredictionResult");
+const hbPredictionResult = el("hbPredictionResult");
+const myoInfPredictionResult = el("myoInfPredictionResult");
+const sbPredictionResult = el("sbPredictionResult");
+const svtPredictionResult = el("svtPredictionResult");
+const pvcsPredictionResult = el("pvcsPredictionResult");
+const afPredictionConf = el("afPredictionConf");
+const aflutterPredictionConf = el("aflutterPredictionConf");
+const apneaPredictionConf = el("apneaPredictionConf");
+const chfPredictionConf = el("chfPredictionConf");
+const hbPredictionConf = el("hbPredictionConf");
+const myoInfoPredictionConf = el("myoInfPredictionConf");
+const sbPredictionConf = el("sbPredictionConf");
+const svtPredictionConf = el("svtPredictionConf");
+const pvcsPredictionConf = el("pvcsPredictionConf");
+let afConf;
+let afPrediction;
+let aflutterConf;
+let aflutterPrediction;
+let apneaConf;
+let apneaPrediction;
+let chfConf;
+let chfPrediction;
+let hbConf;
+let hbPrediction;
+let myoInfConf;
+let myoInfPrediction;
+let pvcsConf;
+let pvcsPrediction;
+let sbConf;
+let sbPrediction;
+let svtConf;
+let svtPrediction;
+let faceReading;
+let heart_rate;
+let hrv_rate;
+let resp_rate;
+let mean_rr;
+let spo2_rate;
+
+function joinRoom() {
+  if (window.screen.width < 1025) {
+    remoteVidLabel.classList.remove("hidden");
+    remoteCanvasEl.classList.remove("hidden");
+  }
+
+  if (loc.protocol === "http:") {
+    meetingSocket = io("ws://" + loc.hostname + ":" + loc.port + "/api/v1/meeting", {
+      transports: ["websocket"],
+      auth: {},
+      forceNew: true,
+    });
+  } else {
+    meetingSocket = io("wss://" + loc.hostname + ":" + loc.port + "/api/v1/meeting", {
+      transports: ["websocket"],
+      forceNew: true,
+      auth: {},
+    });
+  }
+  // console.log("meeting_socket", meetingSocket);
+
+  meetingSocket.on("created", (room) => {
+    console.log("room name: " + room + " created.");
+    inRoom = true;
+    callAction(room);
+  });
+
+  meetingSocket.on("joined", (room) => {
+    console.log("room name: " + room + " joined");
+    inRoom = true;
+    callAction(room);
+  });
+
+  meetingSocket.on("full", (room) => {
+    console.log("room name: " + room + " can't add another user ");
+    alert("Room full, please choose another room");
+  });
+
+  meetingSocket.on("token", (token) => {
+    agoraToken = token;
+    // console.log('token', token);
+  });
+
+  meetingSocket.on("getting_vitals", (data) => {
+    console.log("room name: " + data["room"] + " getting vitals...");
+    el("getVitals").setAttribute("disabled", true);
+
+    if (data["selectedContainer"] === "remoteVideo") {
+      // localVideoContainer.classList.add('hidden');
+      // canvasEl.classList.remove('hidden');
+      el("localFramesNeeded").classList.remove("hidden");
+      el("localFramesNeededLabel").classList.remove("hidden");
+
+      stableReadingsEl.classList.remove("hidden");
+      stableReadingsEl.innerHTML =
+        "Wait for stable readings... <br>Keep very still and look at the camera.<br>If the box doesn't turn green within 30secs please try again.";
+
+      dst = new cv.Mat();
+
+      bbColour = [255, 0, 0, 255];
+      point1 = new cv.Point(0, 0);
+      point2 = new cv.Point(0, 0);
+    }
+
+    afPredictionResult.innerHTML = "--";
+    aflutterPredictionResult.innerHTML = "--";
+    chfPredictionResult.innerHTML = "--";
+    pvcsPredictionResult.innerHTML = "--";
+    sbPredictionResult.innerHTML = "--";
+    svtPredictionResult.innerHTML = "--";
+    afPredictionConf.innerHTML = "--";
+    aflutterPredictionConf.innerHTML = "--";
+    chfPredictionConf.innerHTML = "--";
+    pvcsPredictionConf.innerHTML = "--";
+    sbPredictionConf.innerHTML = "--";
+    svtPredictionConf.innerHTML = "--";
+  });
+
+  meetingSocket.on("remote_result", (response) => {
+    console.log("remote_result", response);
+
+    // start processing.
+    let imgData = localStream.getCurrentFrameData();
+    // let dst = new cv.Mat();
+    let src = cv.matFromImageData(imgData);
+    // let srcImgData = new ImageData(new Uint8ClampedArray(src.data), src.cols, src.rows);
+    // console.log('localStream', localStream);
+    // let src = new cv.Mat(localVideo.height, localVideo.width, cv.CV_8UC4);
+    // let dst = new cv.Mat(localVideo.height, localVideo.width, cv.CV_8UC1);
+
+    // localCap.read(src);
+    cv.flip(src, src, 1);
+    // cv.cvtColor(src, dst, cv.COLOR_RGBA2RGB);
+    src.copyTo(dst);
+
+    if (response.calculation_parameters.bb_colour[1] === 255) {
+      bbColour = [0, 255, 0, 255];
+      localVideoFaceRect.style.stroke = "lime";
+    } else {
+      bbColour = [255, 0, 0, 255];
+      localVideoFaceRect.style.stroke = "red";
+    }
+    // let point1 = new cv.Point(response.bb_points[0], response.bb_points[1]);
+    // let point2 = new cv.Point(response.bb_points[2], response.bb_points[3]);
+
+    // cv.rectangle(dst, point1, point2, bbColour, 2);
+    cv.imshow(canvasEl.id, dst);
+
+    src.delete();
+    // dst.delete();
+    delete imgData;
+    // delete point1;
+    // delete point2;
+    // delete srcImgData;
+
+    resultsDiv.innerHTML = "";
+
+    faceReading = response.request_calculation_parameters.face_detected;
+    heart_rate = parseInt(response.vitals_results.heart_rate.toFixed(0));
+    resp_rate = parseInt(response.vitals_results.resp_rate.toFixed(0));
+    resp_rate_motion = parseInt(response.vitals_results.resp_rate_motion.toFixed(0));
+    spo2_rate = parseInt(response.vitals_results.spo2_rate.toFixed(0));
+    hrv_rate = parseInt(response.vitals_results.hrv_rate.toFixed(0));
+    mean_rr = parseInt(response.vitals_results.mean_rr.toFixed(0));
+
+    heartResult.innerHTML = heart_rate;
+    respResult.innerHTML = resp_rate;
+    respResultMotion.innerHTML = resp_rate_motion;
+    spo2Result.innerHTML = spo2_rate;
+    hrvResult.innerHTML = hrv_rate;
+    meanrrResult.innerHTML = mean_rr;
+    // pctComplete = (((response.calculation_parameters.N - response.calculation_parameters.frames_needed) / response.calculation_parameters.N) * 100);
+    pctComplete = response.calculation_parameters.pct_complete;
+
+    el("localFramesNeeded").MaterialProgress.setProgress(pctComplete);
+
+    if (response.calculation_parameters.stable_readings == true) {
+      stableReadingsEl.innerHTML = "<strong>STABLE READINGS</strong>";
+      localVideoContainer.classList.remove("hidden");
+      localFacePositionSvg.classList.add("hidden");
+      localVideoFaceRect.style.stroke = "red";
+      // canvasEl.classList.add("hidden");
+
+      getVitalsBtn.disabled = false;
+      startCameraBtn.disabled = false;
+      if (!inRoom && telemedicine.checked) {
+        joinCallButton.disabled = false;
+      }
+      el("localFramesNeeded").classList.add("hidden");
+      el("localFramesNeededLabel").classList.add("hidden");
+    }
+    delete response;
+  });
+
+  meetingSocket.on("arrhythmia_remote_result", (arrhythmia_detection_results) => {
+    if (arrhythmia_detection_results) {
+      if (!arrhythmia_detection_results.atrial_fibrillation.detected) {
+        afPrediction = "N";
+        afPredText = "Normal";
+      } else {
+        afPrediction = "I";
+        afPredText = "AFIB";
+      }
+
+      if (!arrhythmia_detection_results.atrial_flutter.detected) {
+        aflutterPrediction = "N";
+        aflutterPredText = "Normal";
+      } else {
+        aflutterPrediction = "I";
+        aflutterPredText = "AFLUTTER";
+      }
+
+      if (!arrhythmia_detection_results.congestive_heart_failure.detected) {
+        chfPrediction = "N";
+        chfPredText = "Normal";
+      } else {
+        chfPrediction = "I";
+        chfPredText = "CHF";
+      }
+
+      if (!arrhythmia_detection_results.heart_block.detected) {
+        hbPrediction = "N";
+        hbPredText = "Normal";
+      } else {
+        hbPrediction = "I";
+        hbPredText = "HEART BLOCK";
+      }
+
+      if (!arrhythmia_detection_results.myocardial_infarction.detected) {
+        myoInfPrediction = "N";
+        myoInfPredText = "Normal";
+      } else {
+        myoInfPrediction = "I";
+        myoInfPredText = "MYO INF";
+      }
+
+      if (!arrhythmia_detection_results.premature_ventricular_contractions.detected) {
+        pvcsPrediction = "N";
+        pvcsPredText = "Normal";
+      } else {
+        pvcsPrediction = "I";
+        pvcsPredText = "PVC";
+      }
+
+      if (!arrhythmia_detection_results.sinus_bradycardia.detected) {
+        sbPrediction = "N";
+        sbPredText = "Normal";
+      } else {
+        sbPrediction = "I";
+        sbPredText = "SB";
+      }
+
+      if (!arrhythmia_detection_results.supraventricular_tachycardia.detected) {
+        svtPrediction = "N";
+        svtPredText = "Normal";
+      } else {
+        svtPrediction = "I";
+        svtPredText = "SVT";
+      }
+
+      afConf = arrhythmia_detection_results.atrial_fibrillation.confidence;
+      aflutterConf = arrhythmia_detection_results.atrial_flutter.confidence;
+      apneaConf = arrhythmia_detection_results.apnea.confidence;
+      chfConf = arrhythmia_detection_results.congestive_heart_failure.confidence;
+      hbConf = arrhythmia_detection_results.heart_block.confidence;
+      myoInfConf = arrhythmia_detection_results.myocardial_infarction.confidence;
+      pvcsConf = arrhythmia_detection_results.premature_ventricular_contractions.confidence;
+      sbConf = svtConf = arrhythmia_detection_results.sinus_bradycardia.confidence;
+      svtConf = arrhythmia_detection_results.supraventricular_tachycardia.confidence;
+      afPredictionResult.innerHTML = afPrediction;
+      aflutterPredictionResult.innerHTML = aflutterPrediction;
+      apneaPredictionResult.innerHTML = apneaPrediction;
+      chfPredictionResult.innerHTML = chfPrediction;
+      hbPredictionResult.innerHTML = hbPrediction;
+      myoInfPredictionResult.innerHTML = myoInfPrediction;
+      pvcsPredictionResult.innerHTML = pvcsPrediction;
+      sbPredictionResult.innerHTML = sbPrediction;
+      svtPredictionResult.innerHTML = svtPrediction;
+      afPredictionConf.innerHTML = afConf + "%";
+      aflutterPredictionConf.innerHTML = aflutterConf + "%";
+      apneaPredictionConf.innerHTML = apneaConf + "%";
+      chfPredictionConf.innerHTML = chfConf + "%";
+      hbPredictionConf.innerHTML = hbConf + "%";
+      myoInfoPredictionConf.innerHTML = myoInfConf + "%";
+      pvcsPredictionConf.innerHTML = pvcsConf + "%";
+      sbPredictionConf.innerHTML = sbConf + "%";
+      svtPredictionConf.innerHTML = svtConf + "%";
+    }
+  });
+
+  meetingSocket.on("remote_stable_readings", (room) => {
+    console.log("room name: " + room + " stable readings received");
+  });
+
+  meetingSocket.on("vitals_complete", (room) => {
+    console.log("room name: " + room + " vitals complete");
+    el("getVitals").removeAttribute("disabled");
+  });
+
+  room = prompt("Enter room name:");
+  if (room != "") {
+    callParams = {
+      channelName: room,
+      uid: uid,
+    };
+    meetingSocket.emit("get_token", callParams);
+    meetingSocket.emit("join", room);
+    joinCallButton.setAttribute("disabled", true);
+  } else {
+    alert("Room name cannot be blank");
+    console.log("Room name cannot be blank");
+  }
+
+  meetingSocket.on("peer_left", (room) => {
+    console.log("room name: " + room + " peer left the room");
+    resetCanvas(remoteCanvasEl);
+    remoteCanvasEl.classList.remove("hidden");
+    remoteVideo.classList.add("hidden");
+    if (cameraStart) {
+      localVideoContainer.classList.remove("hidden");
+      canvasEl.classList.add("hidden");
+      resetCanvas(canvasEl);
+      getVitalsBtn.removeAttribute("disabled");
+    }
+    localVideoContainer.click();
+    el("localFramesNeeded").classList.add("hidden");
+    el("localFramesNeededLabel").classList.add("hidden");
+    el("remoteFramesNeeded").classList.add("hidden");
+    el("remoteFramesNeededLabel").classList.add("hidden");
+  });
+}
+
+// Agora Video Call Functions
+// Client Setup
+// Defines a client for RTC
+function onAgoraReady() {
+  client = AgoraRTC.createClient({
+    mode: "rtc",
+    codec: "vp8",
+  });
+
+  //When a stream is added to a channel
+  client.on("user-published", async (remoteUser, mediaType) => {
+    console.log("inRoom", inRoom);
+    if (inRoom) {
+      await client.subscribe(remoteUser, mediaType);
+      if (mediaType === "video") {
+        console.log("subscribe video success");
+        remoteCanvasEl.classList.add("hidden");
+        remoteVideo.classList.remove("hidden");
+        remoteUser.videoTrack.play("remoteVideo", {
+          mirror: true,
+        });
+        remoteStream = remoteUser.videoTrack;
+        // console.log('remote_user', remoteUser);
+        let remoteVideoEl = el("video_" + remoteUser._videoTrack._ID);
+        remoteCanvasEl.style.height = remoteVideoEl.offsetHeight + "px";
+        remoteCanvasEl.style.width = remoteVideoEl.offsetWidth + "px";
+        remoteCanvasEl.style.objectFit = "cover";
+        remoteVideoFaceRect.setAttribute("height", 0);
+        remoteVideoFaceRect.setAttribute("width", 0);
+        remoteVideoFaceRect.style.stroke = "red";
+      }
+    }
+  });
+
+  // When a stream is removed from a channel
+  client.on("user-unpublished", async (remoteUser) => {
+    await client.unsubscribe(remoteUser);
+    remoteCanvasEl.classList.remove("hidden");
+    remoteVideo.classList.add("hidden");
+    streaming = false;
+  });
+
+  // Token will expire
+  client.on("token-privilege-will-expire", () => {
+    meetingSocket.emit("get_token", callParams);
+  });
+
+  // Token did expire
+  client.on("token-privilege-did-expire", () => {
+    meetingSocket.emit("leave_room", room);
+    joinRoom();
+  });
+}
+
+async function callAction(room) {
+  try {
+    // The client joins the channel
+    await client.join("4b3c254af5514ef7bad5309324f3fa93", room, agoraToken, uid);
+
+    console.log("join success");
+    await client.publish([localStream]);
+    console.log("publish success");
+    hangupButton.removeAttribute("disabled");
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+////////////////////////////////////////////////
+
+function selectVideo() {
+  // for debug
+  // console.log('this.id', this.id)
+  switch (this.id) {
+    case "localVideoContainer":
+      localVideoContainer.style.boxShadow = "0px 0px 6px 5px rgb(0, 188, 212)";
+      canvasEl.style.boxShadow = "0px 0px 6px 5px rgb(0, 188, 212)";
+      remoteVideo.style.boxShadow = "none";
+      remoteCanvasEl.style.boxShadow = "none";
+      selectedVideo = el("video_" + localStream.getTrackId());
+      selectedContainer = el("localVideoContainer");
+      // console.log(selectedVideo);
+      selectedCanvas = el("canvasElement");
+      selectedStream = localStream;
+      break;
+    case "remoteVideo":
+      localVideoContainer.style.boxShadow = "none";
+      canvasEl.style.boxShadow = "none";
+      remoteVideo.style.boxShadow = "0px 0px 6px 5px rgb(0, 188, 212)";
+      remoteCanvasEl.style.boxShadow = "0px 0px 6px 5px rgb(0, 188, 212)";
+      // console.log('remote_user', remoteStream);
+      selectedVideo = el("video_" + remoteStream._ID);
+      selectedContainer = el("remoteVideo");
+      selectedCanvas = el("remoteCanvasElement");
+      selectedStream = remoteStream;
+      break;
+    default:
+      break;
+  }
+}
+
+////////////////////////////////////////////////
+const emailInput = el("emailInput");
+const ageInput = el("ageInput");
+const sexSelectInput = el("sex-select-input");
+const skinSelectInput = el("skin-select-input");
+const oximeterSelectInput = el("oximeter-select-input");
+const selfReadingCheck = el("self-reading");
+const saveMeasurements = el("save-measurements");
+const longMeasurement = el("long-measurement");
+const telemedicine = el("telemedicine");
+const checkArrhythmias = el("check-arrhythmias");
+const checkStroke = el("check-stroke");
+const engageCarolChat = el("engage-carol-chat");
+const manualReadings = el("manual-readings");
+const suspectedHypertensive = el("suspected-hypertensive");
+const suspectedHypotensive = el("suspected-hypotensive");
+const submitUserDetailsBtn = el("submitUserDetailsBtn");
+const editUserDetailsBtn = el("editUserDetailsBtn");
+let modalSPO2 = el("mdl-spo2");
+let modalHr = el("mdl-heart-rate");
+let modalResp = el("mdl-resp-rate");
+let timeSlider = el("time-slider");
+let timeSliderValue = el("time-slider-value");
+const existingCond = el("existing-condition");
+const asthma = el("asthma");
+const copd = el("copd");
+const calibrateBPCheck = el("calibrate-bp");
+let allInputs;
+let manualSpo2 = null;
+let manualHr = null;
+let manualResp = null;
+let gotDevicesBool = false;
+let cameraStart = false;
+let sampleTime;
+let userDiastolic = [];
+let userSystolic = [];
+let systemDiastolic = [];
+let systemSystolic = [];
+let diastolicAdjustment;
+let systolicAdjustment;
+
+function updateSliderNumber() {
+  el("time-slider-value").value = el("time-slider").value;
+}
+
+function updateSliderValue() {
+  el("time-slider").MaterialSlider.change(el("time-slider-value").value);
+}
+
+function toggleCalibrateBP() {
+  el("calib-bp-select-grid").classList.toggle("hidden");
+
+  let numReadings = parseInt(el("calib-bp-select-input").value);
+
+  if (calibrateBPCheck.checked) {
+    switch (numReadings) {
+      case 1:
+        el("user-bp1-grid").classList.remove("hidden");
+        el("user-bp2-grid").classList.add("hidden");
+        el("user-bp3-grid").classList.add("hidden");
+        el("system-bp1-grid").classList.remove("hidden");
+        el("system-bp2-grid").classList.add("hidden");
+        el("system-bp3-grid").classList.add("hidden");
+        el("user-bp-1reading-spacer").classList.remove("hidden");
+        el("system-bp-1reading-spacer").classList.remove("hidden");
+        break;
+      case 2:
+        el("user-bp1-grid").classList.remove("hidden");
+        el("user-bp2-grid").classList.remove("hidden");
+        el("user-bp3-grid").classList.add("hidden");
+        el("system-bp1-grid").classList.remove("hidden");
+        el("system-bp2-grid").classList.remove("hidden");
+        el("system-bp3-grid").classList.add("hidden");
+        el("user-bp-2reading-spacer").classList.remove("hidden");
+        el("system-bp-2reading-spacer").classList.remove("hidden");
+        break;
+      case 3:
+        el("user-bp1-grid").classList.remove("hidden");
+        el("user-bp2-grid").classList.remove("hidden");
+        el("user-bp3-grid").classList.remove("hidden");
+        el("system-bp1-grid").classList.remove("hidden");
+        el("system-bp2-grid").classList.remove("hidden");
+        el("system-bp3-grid").classList.remove("hidden");
+        el("user-bp-3reading-spacer").classList.remove("hidden");
+        el("system-bp-3reading-spacer").classList.remove("hidden");
+        break;
+      default:
+        break;
+    }
+  } else {
+    el("user-bp1-grid").classList.add("hidden");
+    el("user-bp2-grid").classList.add("hidden");
+    el("user-bp3-grid").classList.add("hidden");
+    el("system-bp1-grid").classList.add("hidden");
+    el("system-bp2-grid").classList.add("hidden");
+    el("system-bp3-grid").classList.add("hidden");
+    el("user-bp-1reading-spacer").classList.add("hidden");
+    el("user-bp-2reading-spacer").classList.add("hidden");
+    el("user-bp-3reading-spacer").classList.add("hidden");
+    el("system-bp-1reading-spacer").classList.add("hidden");
+    el("system-bp-2reading-spacer").classList.add("hidden");
+    el("system-bp-3reading-spacer").classList.add("hidden");
+  }
+}
+
+function numBPReadingsChanged() {
+  let numReadings = parseInt(el("calib-bp-select-input").value);
+
+  if (calibrateBPCheck.checked) {
+    switch (numReadings) {
+      case 1:
+        el("user-bp1-grid").classList.remove("hidden");
+        el("user-bp2-grid").classList.add("hidden");
+        el("user-bp3-grid").classList.add("hidden");
+        el("system-bp1-grid").classList.remove("hidden");
+        el("system-bp2-grid").classList.add("hidden");
+        el("system-bp3-grid").classList.add("hidden");
+        el("user-bp-1reading-spacer").classList.remove("hidden");
+        el("system-bp-1reading-spacer").classList.remove("hidden");
+        el("user-bp-2reading-spacer").classList.add("hidden");
+        el("system-bp-2reading-spacer").classList.add("hidden");
+        el("user-bp-3reading-spacer").classList.add("hidden");
+        el("system-bp-3reading-spacer").classList.add("hidden");
+        break;
+      case 2:
+        el("user-bp1-grid").classList.remove("hidden");
+        el("user-bp2-grid").classList.remove("hidden");
+        el("user-bp3-grid").classList.add("hidden");
+        el("system-bp1-grid").classList.remove("hidden");
+        el("system-bp2-grid").classList.remove("hidden");
+        el("system-bp3-grid").classList.add("hidden");
+        el("user-bp-1reading-spacer").classList.add("hidden");
+        el("system-bp-1reading-spacer").classList.add("hidden");
+        el("user-bp-2reading-spacer").classList.remove("hidden");
+        el("system-bp-2reading-spacer").classList.remove("hidden");
+        el("user-bp-3reading-spacer").classList.add("hidden");
+        el("system-bp-3reading-spacer").classList.add("hidden");
+        break;
+      case 3:
+        el("user-bp1-grid").classList.remove("hidden");
+        el("user-bp2-grid").classList.remove("hidden");
+        el("user-bp3-grid").classList.remove("hidden");
+        el("system-bp1-grid").classList.remove("hidden");
+        el("system-bp2-grid").classList.remove("hidden");
+        el("system-bp3-grid").classList.remove("hidden");
+        el("user-bp-1reading-spacer").classList.add("hidden");
+        el("system-bp-1reading-spacer").classList.add("hidden");
+        el("user-bp-2reading-spacer").classList.add("hidden");
+        el("system-bp-2reading-spacer").classList.add("hidden");
+        el("user-bp-3reading-spacer").classList.remove("hidden");
+        el("system-bp-3reading-spacer").classList.remove("hidden");
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+function showHideOximeter() {
+  el("oximeter-select-grid").classList.toggle("hidden");
+  if (!manualReadings.checked) {
+    el("oximeter-unchecked-spacer-grid").classList.remove("hidden");
+    el("oximeter-checked-spacer-grid").classList.add("hidden");
+    if (checkArrhythmias.checked) {
+      el("oximeter-unchecked-spacer-grid").classList.remove("hidden");
+      el("oximeter-checked-spacer-grid").classList.remove("hidden");
+    }
+  } else {
+    if (checkArrhythmias.checked) {
+      el("oximeter-unchecked-spacer-grid").classList.remove("hidden");
+      el("oximeter-checked-spacer-grid").classList.add("hidden");
+    } else {
+      el("oximeter-unchecked-spacer-grid").classList.add("hidden");
+      el("oximeter-checked-spacer-grid").classList.remove("hidden");
+    }
+  }
+}
+
+function toggleCheckArrhythmias() {
+  if (checkArrhythmias.checked) {
+    timeSlider.setAttribute("disabled", true);
+    timeSliderValue.setAttribute("disabled", true);
+    el("time-slider").MaterialSlider.change(60);
+    timeSliderValue.value = 60;
+    el("time-slider-grid").classList.add("hidden");
+    el("time-slider-value-grid").classList.add("hidden");
+    if (el("manual-readings").checked) {
+      el("oximeter-unchecked-spacer-grid").classList.remove("hidden");
+    } else {
+      el("oximeter-checked-spacer-grid").classList.remove("hidden");
+    }
+  } else {
+    timeSlider.removeAttribute("disabled");
+    timeSliderValue.removeAttribute("disabled");
+    el("time-slider").MaterialSlider.change(30);
+    timeSliderValue.value = 30;
+    el("time-slider-grid").classList.remove("hidden");
+    el("time-slider-value-grid").classList.remove("hidden");
+    if (el("manual-readings").checked) {
+      el("oximeter-unchecked-spacer-grid").classList.add("hidden");
+      el("oximeter-checked-spacer-grid").classList.remove("hidden");
+    } else {
+      el("oximeter-checked-spacer-grid").classList.add("hidden");
+    }
+  }
+}
+
+function toggleUserDetails() {
+  el("email").classList.toggle("hidden");
+  if (emailInput.value != "") {
+    emailInput.value = "";
+  }
+  el("age").classList.toggle("hidden");
+  if (ageInput.value != "") {
+    ageInput.value = "";
+  }
+  el("sex-select-grid").classList.toggle("hidden");
+  if (sexSelectInput.value != "") {
+    sexSelectInput.value = "";
+    getmdlSelect.init("#sex-select");
+  }
+  el("skin-select-grid").classList.toggle("hidden");
+  el("existing-condition-grid").classList.toggle("hidden");
+  el("existing-cond-unchecked-spacer").classList.toggle("hidden");
+  if (existingCond.checked) {
+    el("asthma-grid").classList.add("hidden");
+    el("copd-grid").classList.add("hidden");
+    el("existing-cond-checked-spacer").classList.add("hidden");
+    existingCond.parentElement.MaterialCheckbox.uncheck();
+    asthma.parentElement.MaterialCheckbox.uncheck();
+    copd.parentElement.MaterialCheckbox.uncheck();
+  }
+  if (!el("manual-readings").checked && checkArrhythmias.checked) {
+    el("oximeter-unchecked-spacer-grid").classList.toggle("hidden");
+    el("oximeter-checked-spacer-grid").classList.toggle("hidden");
+  }
+}
+
+function toggleExistingConditions() {
+  el("asthma-grid").classList.toggle("hidden");
+  el("copd-grid").classList.toggle("hidden");
+  el("existing-cond-unchecked-spacer").classList.toggle("hidden");
+  el("existing-cond-checked-spacer").classList.toggle("hidden");
+}
+
+function toggleLongMeasurement() {
+  el("time-slider").toggleAttribute("disabled");
+  el("time-slider-value").toggleAttribute("disabled");
+}
+
+function toggleTelemedicine() {
+  remoteVidLabel.classList.toggle("hidden");
+  remoteCanvasEl.classList.toggle("hidden");
+  if (telemedicine.checked) {
+    el("videoElements").style.flexDirection = "row";
+    if (cameraStart && !editUserInputs) {
+      joinCallButton.removeAttribute("disabled");
+    }
+  } else {
+    if (window.screen.width > 1024) {
+      el("videoElements").style.flexDirection = "column";
+    } else {
+      el("videoElements").style.flexDirection = "row";
+    }
+    // if (cameraStart) {
+    joinCallButton.setAttribute("disabled", true);
+    // }
+  }
+}
+
+function handleHyperHypotensionClick(elClicked) {
+	if (elClicked.id === "suspected-hypertensive" && suspectedHypotensive.checked === true) {
+		suspectedHypotensive.click();
+	} else if (elClicked.id === "suspected-hypotensive" && suspectedHypertensive.checked === true) {
+		suspectedHypertensive.click();
+	}
+}
+
+function validateBPInput(inputNum) {
+  let userBPInput = el("userBPInput" + inputNum);
+  let systemBPInput = el("systemBPInput" + inputNum);
+  let errorText = "";
+  let userDiastolic;
+  let userSystolic;
+  let systemDiastolic;
+  let systemSystolic;
+
+  if (!userBPInput.value || !userBPInput.validity.valid) {
+    errorText += "User BP Input " + inputNum + " ";
+  } else {
+    userDiastolic = parseInt(userBPInput.value.split("/")[1]);
+    if (userDiastolic > 100 || userDiastolic < 60) {
+      errorText += "User BP Input " + inputNum + ": Diastolic should be greater than 90 and less than 180mmHG ";
+    }
+    userSystolic = parseInt(userBPInput.value.split("/")[0]);
+    if (userSystolic > 180 || userSystolic < 90) {
+      errorText += "User BP Input " + inputNum + ": Systolic should be greater than 60 and less than 100mmHG ";
+    }
+  }
+  if (!systemBPInput.value || !systemBPInput.validity.valid) {
+    errorText += "System BP Input " + inputNum + " ";
+  } else {
+    systemDiastolic = parseInt(systemBPInput.value.split("/")[1]);
+    if (systemDiastolic > 100 || systemDiastolic < 60) {
+      errorText += "System BP Input " + inputNum + ": Diastolic should be greater than 90 and less than 180mmHG ";
+    }
+    systemSystolic = parseInt(systemBPInput.value.split("/")[0]);
+    if (systemSystolic > 180 || systemSystolic < 90) {
+      errorText += "System BP Input " + inputNum + ": Systolic should be greater than 60 and less than 100mmHG ";
+    }
+  }
+  return {
+    userDiastolic: userDiastolic,
+    userSystolic: userSystolic,
+    systemDiastolic: systemDiastolic,
+    systemSystolic: systemSystolic,
+    errorText: errorText,
+  };
+}
+
+async function submitUserDetails() {
+  let userEmail = emailInput.value;
+  let userAge = ageInput.value;
+  let userSex = sexSelectInput.value;
+  let userSkinType = skinSelectInput.value;
+  let userOximeterType = oximeterSelectInput.value;
+  let userSelfReading = selfReadingCheck.checked;
+  let sampleTime = timeSliderValue.value;
+  let sendDataToDashboard = saveMeasurements.checked;
+  let userlongMeasurement = longMeasurement.checked;
+  let userCheckArrhythmias = checkArrhythmias.checked;
+  let userCheckStroke = checkStroke.checked;
+  let userEngageCarolChat = engageCarolChat.checked;
+  let enterManualReadings = manualReadings.checked;
+  let userExistingCond = existingCond.checked;
+  let userSuspectedHyperTensive = suspectedHypertensive.checked;
+	let userSuspectedHypotensive = suspectedHypotensive.checked;
+  let userAsthma = asthma.checked;
+  let userCopd = copd.checked;
+  let userCalibrateBp = calibrateBPCheck.checked;
+
+  allInputs = {
+    age: { value: userAge, text: "Age" },
+    asthma: { value: userAsthma, text: "Asthma" },
+    calibrate_bp: { value: userCalibrateBp, text: "BP inputs" },
+    check_arrhythmias: { value: userCheckArrhythmias, text: "Check Arrhythmias" },
+    check_stroke: { value: userCheckStroke, text: "Check Stroke" },
+    engage_carol_chat: { value: userEngageCarolChat, text: "Engage CAROL Chat"},
+    long_measurement: { value: userlongMeasurement, text: "Long Measurement" },
+    copd: { value: userCopd, text: "COPD" },
+    email: { value: userEmail, text: "Email" },
+    manual_readings: { value: enterManualReadings, text: "Manual Readings" },
+    oximeter: { value: userOximeterType, text: "Oximeter" },
+    existing_condition: { value: userExistingCond, text: "Pre-existing Condition" },
+    sample_time: { value: sampleTime, text: "Sample Time" },
+    self_reading: { value: userSelfReading, text: "Self Reading" },
+    sex: { value: userSex, text: "Sex" },
+    send_to_api: { value: sendDataToDashboard, text: "Send to Dashboard" },
+    skin_type: { value: userSkinType, text: "Skin type" },
+    suspected_hypertensive: { value: userSuspectedHyperTensive, text: "Suspected Hypertensive" },
+		suspected_hypotensive: { value: userSuspectedHypotensive, text: "Suspected Hypotensive"}
+  };
+  console.log('all_inputs', allInputs);
+  let badInputs = "";
+
+  for (item in allInputs) {
+    if (item === "sample_time") {
+      if (allInputs[item].value > 90 || allInputs[item].value < 10) {
+        badInputs += allInputs[item].text + " ";
+      }
+    }
+    if (item === "existing_condition" && allInputs["existing_condition"].value === true) {
+      if (allInputs["asthma"].value === false && allInputs["copd"].value === false) {
+        badInputs += allInputs[item].text + " ";
+      }
+    }
+    if (item === "oximeter" && allInputs["manual_readings"].value === false) {
+      badInputs += "";
+    }
+		if (item === "suspected_hypertensive") {
+			if (allInputs[item].value === true && allInputs["suspected_hypotensive"].value === true) {
+				badInputs += "Suspected hypertension and suspected hypotension are mutally exclusive. Please unselect one of the conditions";
+			} 
+		} else if (item === "suspected_hypotensive") {
+			if (allInputs[item].value === true && allInputs["suspected_hypertensive"].value === true) {
+				badInputs += "Suspected hypertension and suspected hypotension are mutally exclusive. Please unselect one of the conditions";
+			} else if (allInputs[item].value === true && (userAge === '' || userSex === '')) {
+				badInputs += "Suspected hypotension adjustment requires both patient age and sex to be entered"
+			} else if (allInputs[item].value === true && userAge < 70) {
+				badInputs += "Suspected hypotension adjustment should only be applied for patients aged 70 or older"
+			}
+		}
+    if (item === "calibrate_bp") {
+      let numReadings = parseInt(el("calib-bp-select-input").value);
+      if (calibrateBPCheck.checked) {
+        userDiastolic = [];
+        userSystolic = [];
+        systemDiastolic = [];
+        systemSystolic = [];
+        switch (numReadings) {
+          case 1:
+            bpReadings = validateBPInput(1);
+            userDiastolic.push(bpReadings.userDiastolic);
+            userSystolic.push(bpReadings.userSystolic);
+            systemDiastolic.push(bpReadings.systemDiastolic);
+            systemSystolic.push(bpReadings.systemSystolic);
+            badInputs += bpReadings.errorText;
+            break;
+          case 2:
+            bpReadings = validateBPInput(1);
+            userDiastolic.push(bpReadings.userDiastolic);
+            userSystolic.push(bpReadings.userSystolic);
+            systemDiastolic.push(bpReadings.systemDiastolic);
+            systemSystolic.push(bpReadings.systemSystolic);
+            badInputs += bpReadings.errorText;
+            bpReadings = validateBPInput(2);
+            userDiastolic.push(bpReadings.userDiastolic);
+            userSystolic.push(bpReadings.userSystolic);
+            systemDiastolic.push(bpReadings.systemDiastolic);
+            systemSystolic.push(bpReadings.systemSystolic);
+            badInputs += bpReadings.errorText;
+            break;
+          case 3:
+            bpReadings = validateBPInput(1);
+            userDiastolic.push(bpReadings.userDiastolic);
+            userSystolic.push(bpReadings.userSystolic);
+            systemDiastolic.push(bpReadings.systemDiastolic);
+            systemSystolic.push(bpReadings.systemSystolic);
+            badInputs += bpReadings.errorText;
+            bpReadings = validateBPInput(2);
+            userDiastolic.push(bpReadings.userDiastolic);
+            userSystolic.push(bpReadings.userSystolic);
+            systemDiastolic.push(bpReadings.systemDiastolic);
+            systemSystolic.push(bpReadings.systemSystolic);
+            badInputs += bpReadings.errorText;
+            bpReadings = validateBPInput(3);
+            userDiastolic.push(bpReadings.userDiastolic);
+            userSystolic.push(bpReadings.userSystolic);
+            systemDiastolic.push(bpReadings.systemDiastolic);
+            systemSystolic.push(bpReadings.systemSystolic);
+            badInputs += bpReadings.errorText;
+            break;
+          default:
+            break;
+        }
+      }
+    }
+    // else if (item === "email") {
+    //     badInputs += "";
+    // } else if (allInputs[item].value === "" || allInputs[item].value === "Select...") {
+    //     badInputs += allInputs[item].text + " ";
+    // }
+  }
+
+  // console.log(badInputs);
+  if (badInputs === "") {
+    let videoSelect = el("video-select");
+    videoSelect.classList.remove("hidden");
+
+    submitUserDetailsBtn.setAttribute("disabled", true);
+    editUserDetailsBtn.removeAttribute("disabled");
+    ageInput.setAttribute("disabled", true);
+    emailInput.setAttribute("disabled", true);
+    sexSelectInput.parentNode.MaterialTextfield.disable();
+    el("sex-arrow").classList.add("hidden");
+    skinSelectInput.parentNode.MaterialTextfield.disable();
+    el("skin-arrow").classList.add("hidden");
+    selfReadingCheck.setAttribute("disabled", true);
+    saveMeasurements.setAttribute("disabled", true);
+    checkArrhythmias.setAttribute("disabled", true);
+    checkStroke.setAttribute("disabled", true);
+    engageCarolChat.setAttribute("disabled", true);
+    longMeasurement.setAttribute("disabled", true);
+    manualReadings.setAttribute("disabled", true);
+    suspectedHypertensive.setAttribute("disabled", true);
+		suspectedHypotensive.setAttribute("disabled", true);
+    timeSlider.setAttribute("disabled", true);
+    timeSliderValue.setAttribute("disabled", true);
+    telemedicine.setAttribute("disabled", true);
+    el("calibrate-bp").setAttribute("disabled", true);
+    el("calib-bp-select-input").parentNode.MaterialTextfield.disable();
+    el("calib-bp-arrow").classList.add("hidden");
+    el("userBPInput1").setAttribute("disabled", true);
+    el("userBPInput2").setAttribute("disabled", true);
+    el("userBPInput3").setAttribute("disabled", true);
+    el("systemBPInput1").setAttribute("disabled", true);
+    el("systemBPInput2").setAttribute("disabled", true);
+    el("systemBPInput3").setAttribute("disabled", true);
+
+    if (calibrateBPCheck.checked) {
+      let data = {
+        system_diastolic: systemDiastolic,
+        system_systolic: systemSystolic,
+        user_diastolic: userDiastolic,
+        user_systolic: userSystolic,
+      };
+      console.log("pre_calib_data", data);
+      postBPDataCalibration(data);
+    }
+
+    if (!gotDevicesBool) {
+      const tempVideoStream = await AgoraRTC.createCameraVideoTrack();
+      if (tempVideoStream === null) {
+        console.log("failed to create video stream");
+      }
+      // After the capture, call getDevices to get device information
+      const devices = await AgoraRTC.getDevices((info) => {
+        console.log("get device info!", info);
+      });
+
+      await tempVideoStream.close();
+      delete tempVideoStream;
+
+      gotDevices(devices);
+      enableStart();
+    } else {
+      enableStart();
+      if (cameraStart) {
+        enableGetVitals();
+      }
+      if (telemedicine.checked) {
+        enableCall();
+      }
+    }
+    editUserInputs = false;
+  } else {
+    alert("Invalid input detected in: " + badInputs + ".\n\nPlease check and re-enter.");
+  }
+
+  // TEST SOCKET
+  // if (loc.protocol === "http:") {
+  //     testSocket = io("ws://" + loc.hostname + ":" + loc.port + "/api/v1/test", {
+  //         transports: ["websocket"],
+  //         forceNew: true,
+  //         withCredentials: true,
+  //         auth: {
+  //             Authorization:
+  //                 "Bearer "
+  //         }
+  //         // query: 'sampleTime=' + el('time-slider').value + '&longMeasurement=' + el('long-measurement').checked + '&checkArrhythmias=' + el('check-arrhythmias').checked + '&storeResult=' + saveMeasurements.checked + '&party=' + allInputs.email.value
+  //     });
+  // }
+}
+
+function editUserDetails() {
+  // testSocket.disconnect();
+
+  editUserInputs = true;
+  submitUserDetailsBtn.removeAttribute("disabled");
+  ageInput.removeAttribute("disabled");
+  emailInput.removeAttribute("disabled");
+  sexSelectInput.parentNode.MaterialTextfield.enable();
+  el("sex-arrow").classList.remove("hidden");
+  skinSelectInput.parentNode.MaterialTextfield.enable();
+  el("skin-arrow").classList.remove("hidden");
+  selfReadingCheck.removeAttribute("disabled");
+  saveMeasurements.removeAttribute("disabled");
+  checkArrhythmias.removeAttribute("disabled");
+  checkStroke.removeAttribute("disabled");
+  engageCarolChat.removeAttribute("disabled");
+  longMeasurement.removeAttribute("disabled");
+  manualReadings.removeAttribute("disabled");
+  suspectedHypertensive.removeAttribute("disabled");
+	suspectedHypotensive.removeAttribute("disabled");
+  timeSlider.removeAttribute("disabled");
+  timeSliderValue.removeAttribute("disabled");
+  telemedicine.removeAttribute("disabled");
+  el("calibrate-bp").removeAttribute("disabled");
+  el("calib-bp-select-input").parentNode.MaterialTextfield.enable();
+  el("calib-bp-arrow").classList.remove("hidden");
+  el("userBPInput1").removeAttribute("disabled");
+  el("userBPInput2").removeAttribute("disabled");
+  el("userBPInput3").removeAttribute("disabled");
+  el("systemBPInput1").removeAttribute("disabled");
+  el("systemBPInput2").removeAttribute("disabled");
+  el("systemBPInput3").removeAttribute("disabled");
+
+  startCameraBtn.setAttribute("disabled", true);
+  editUserDetailsBtn.setAttribute("disabled", true);
+  getVitalsBtn.setAttribute("disabled", true);
+  callBtn.setAttribute("disabled", true);
+}
+
+function enableStart() {
+  startCameraBtn.removeAttribute("disabled");
+}
+
+function enableGetVitals() {
+  getVitalsBtn.removeAttribute("disabled");
+}
+
+function enableCall() {
+  callBtn.removeAttribute("disabled");
+}
+
+function onOpenCvReady() {
+  if (cv.getBuildInformation) {
+    console.log(cv.getBuildInformation());
+    onloadCallback();
+  } else {
+    //wait for opencv.js compilation;
+    cv["onRuntimeInitialized"] = () => {
+      console.log(cv.getBuildInformation());
+      onloadCallback();
+    };
+  }
+}
+
+function resetCanvas(canvas) {
+  canvas.width = 640;
+  canvas.height = 480;
+  let ctx = canvas.getContext("2d");
+  let image = new Image();
+  image.onload = function () {
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  };
+  image.src = "/static/images/video-placeholder.png";
+  canvas.style.height = "auto";
+  if (window.screen.width < 700) {
+    canvas.style.width = "calc(100% - 16px)";
+  } else {
+    canvas.style.width = "480px";
+  }
+}
+
+async function hangUp() {
+  await client.leave();
+  // console.log("client", client);
+  if (telemedicine.checked) {
+    remoteCanvasEl.classList.remove("hidden");
+    el("remoteFramesNeeded").classList.add("hidden");
+    el("remoteFramesNeededLabel").classList.add("hidden");
+    joinCallButton.removeAttribute("disabled");
+  }
+  remoteVideo.classList.add("hidden");
+  remoteFacePositionSvg.classList.add("hidden");
+  hangupButton.setAttribute("disabled", true);
+  stableReadingsEl.classList.add("hidden");
+  if (streaming) {
+    streaming = false;
+    // selectedCanvas.classList.remove('hidden');
+    // selectedContainer.classList.add('hidden');
+    enableStart();
+    if (telemedicine.checked) {
+      enableCall();
+    }
+    enableGetVitals();
+  }
+  if (selectedContainer.id === "localVideoContainer") {
+    localVideoContainer.classList.remove("hidden");
+    canvasEl.classList.add("hidden");
+    resetCanvas(canvasEl);
+  } else {
+    localVideoContainer.click();
+  }
+  resetCanvas(remoteCanvasEl);
+  if (inRoom) {
+    meetingSocket.emit("leave_room", room);
+  }
+  inRoom = false;
+  console.log("inRoom", inRoom);
+  // onVideoStopped();
+  localVideoContainer.click();
+  el("localFramesNeeded").classList.add("hidden");
+  el("localFramesNeededLabel").classList.add("hidden");
+}
+
+function onloadCallback() {
+  if (checkArrhythmias.checked) {
+    toggleCheckArrhythmias();
+  }
+  console.log("OpenCV is ready");
+  let startCameraBtn = el("startCamera");
+  let getVitalsBtn = el("getVitals");
+  resetCanvas(canvasEl);
+  resetCanvas(remoteCanvasEl);
+
+  startCameraBtn.addEventListener("click", async () => {
+    if (!cameraStart) {
+      cameraStart = true;
+      console.log("window_screen_width", window.screen.width);
+      startCamera("vga", "localVideoContainer");
+      localVideoContainer.classList.remove("hidden");
+      localVideoFaceRect.style.stroke = "red";
+      canvasEl.classList.add("hidden");
+      canvasEl.style.boxShadow = "0px 0px 6px 5px rgb(0, 188, 212)";
+      enableGetVitals();
+      startCameraBtn.style.background = "red";
+      startCameraBtn.innerText = "Stop Camera";
+      if (telemedicine.checked) {
+        enableCall();
+      }
+    } else {
+      stopCamera();
+      await hangUp();
+      cameraStart = false;
+      localVideoContainer.classList.add("hidden");
+      localVideoFaceRect.style.stroke = "red";
+      canvasEl.classList.remove("hidden");
+      startCameraBtn.style.background = "rgb(0, 188, 212)";
+      startCameraBtn.innerText = "Start Camera";
+      joinCallButton.disabled = true;
+      getVitalsBtn.disabled = true;
+      resetCanvas(canvasEl);
+      canvasEl.style.boxShadow = "none";
+    }
+  });
+
+  getVitalsBtn.addEventListener("click", () => {
+    console.log("selected_container_id", selectedContainer.id);
+
+    if (!streaming) {
+      getVitalsBtn.disabled = true;
+      if (!inRoom && telemedicine.checked) {
+        joinCallButton.disabled = true;
+      }
+      // startCameraBtn.disabled = true;
+      if (meetingSocket) {
+        data = {
+          room: room,
+          selectedContainer: selectedContainer.id,
+        };
+        meetingSocket.emit("get_vitals", data);
+      }
+      onVideoStarted();
+    } else {
+      onVideoStopped();
+    }
+  });
+
+  joinCallButton.addEventListener("click", joinRoom);
+  hangupButton.addEventListener("click", hangUp);
+
+  function onVideoStarted() {
+    streaming = true;
+    resultsDiv.innerHTML = "";
+		el("emotion-results").innerHTML = "";
+    el("asymmetry-analysis-result").innerHTML = "";
+    el("asymmetry-analysis").classList.add("hidden");
+    el("bpResult").innerHTML = "-- / --";
+    startCameraBtn.innerText = "Stop Camera";
+    stableReadingsEl.classList.remove("hidden");
+    stableReadingsEl.innerHTML = "Wait for stable readings... <br>Keep very still and look at the camera.";
+    const loc = window.location;
+
+    console.log("selected_container_id", selectedContainer.id);
+
+    if (selectedContainer.id == "localVideoContainer") {
+      el("localFramesNeeded").classList.remove("hidden");
+      el("localFramesNeededLabel").classList.remove("hidden");
+      localFacePositionSvg.classList.remove("hidden");
+      // localVideoContainer.classList.add('hidden');
+      // canvasEl.classList.remove('hidden');
+      let viewBox = "0 0 " + selectedVideo.videoWidth + " " + selectedVideo.videoHeight;
+      console.log("viewBox", viewBox);
+      localFacePositionSvg.setAttribute("viewBox", viewBox);
+      localFacePositionSvg.style.height = selectedCanvas.style.height;
+      localFacePositionSvg.style.width = selectedCanvas.style.width;
+      // if (window.screen.width > 440) {
+      //     localVideoFaceRect.setAttribute('width', parseInt(selectedCanvas.style.width) * 0.4);
+      //     localVideoFaceRect.setAttribute('height', parseInt(selectedCanvas.style.height) * 0.7);
+      // } else {
+      //     localVideoFaceRect.setAttribute('width', parseInt(selectedCanvas.style.width) * 0.5);
+      //     localVideoFaceRect.setAttribute('height', parseInt(selectedCanvas.style.height) * 0.6);
+      // }
+      // localVideoFaceRect.setAttribute('x', parseInt(selectedCanvas.style.width) / 2 - (localVideoFaceRect.getAttribute('width') / 2));
+      // localVideoFaceRect.setAttribute('y', parseInt(selectedCanvas.style.height) / 2 - (localVideoFaceRect.getAttribute('height') / 2));
+      remoteVitals = false;
+      if (window.screen.width < 1025) {
+        if (inRoom && telemedicine.checked) {
+          remoteVidLabel.classList.add("hidden");
+          remoteVideo.classList.add("hidden");
+        } else {
+          remoteVidLabel.classList.add("hidden");
+          remoteCanvasEl.classList.add("hidden");
+        }
+      }
+    } else if (selectedContainer.id == "remoteVideo") {
+      el("remoteFramesNeeded").classList.remove("hidden");
+      el("remoteFramesNeededLabel").classList.remove("hidden");
+      remoteFacePositionSvg.classList.remove("hidden");
+      let viewBox = "0 0 " + selectedVideo.videoWidth + " " + selectedVideo.videoHeight;
+      console.log("viewBox", viewBox);
+      remoteFacePositionSvg.setAttribute("viewBox", viewBox);
+      remoteFacePositionSvg.style.height = selectedCanvas.style.height;
+      remoteFacePositionSvg.style.width = selectedCanvas.style.width;
+      // if (window.screen.width > 440) {
+      //     remoteVideoFaceRect.setAttribute('width', parseInt(selectedCanvas.style.width) * 0.4);
+      //     remoteVideoFaceRect.setAttribute('height', parseInt(selectedCanvas.style.height) * 0.7);
+      // } else {
+      //     remoteVideoFaceRect.setAttribute('width', parseInt(selectedCanvas.style.width) * 0.5);
+      //     remoteVideoFaceRect.setAttribute('height', parseInt(selectedCanvas.style.height) * 0.6);
+      // }
+      // remoteVideoFaceRect.setAttribute('x', parseInt(selectedCanvas.style.width) / 2 - (remoteVideoFaceRect.getAttribute('width') / 2));
+      // remoteVideoFaceRect.setAttribute('y', parseInt(selectedCanvas.style.height) / 2 - (remoteVideoFaceRect.getAttribute('height') / 2));
+      // remoteVideo.classList.add('hidden');
+      // remoteCanvasEl.classList.remove('hidden');
+      if (window.screen.width < 1025) {
+        localVidLabel.classList.add("hidden");
+        localVideoContainer.classList.add("hidden");
+      }
+      remoteVitals = true;
+    }
+
+    // let worker = new Worker('static/worker.js');
+
+    // worker.postMessage({
+    //     "socket_setup": true,
+    //     "sampleTime": el('time-slider').value,
+    //     "longMeasurement": el('long-measurement').checked,
+    //     "checkArrythmias": el('check-arrhythmias').checked
+    // });
+
+    let inputSocket = null;
+    let connectionParams = {
+      bpCalibrated: calibrateBPCheck.checked,
+      checkArrhythmias: el("check-arrhythmias").checked,
+      checkStroke: el("check-stroke").checked,
+      engageCarolChat: el("engage-carol-chat").checked,
+      client: "browser_v_vitals",
+      longMeasurement: el("long-measurement").checked,
+      party: allInputs.email.value,
+      sampleTime: el("time-slider").value,
+      storeResult: saveMeasurements.checked,
+      suspectedHypertensive: suspectedHypertensive.checked,
+			suspectedHypotensive: suspectedHypotensive.checked,
+      user_age: allInputs.age.value,
+      user_sex: allInputs.sex.value,
+    };
+    if (calibrateBPCheck.checked) {
+      connectionParams["diastolicAdj"] = diastolicAdjustment;
+      connectionParams["systolicAdj"] = systolicAdjustment;
+    }
+
+    // var inputSocket = new WebSocket("wss://" + loc.hostname + ":" + loc.port + "/api/v1/process_frame");
+    if (loc.protocol === "http:") {
+      inputSocket = io("ws://" + loc.hostname + ":" + loc.port + "/api/v1/process_frame", {
+        transports: ["websocket"],
+        forceNew: true,
+        auth: {},
+        // query: 'sampleTime=' + el('time-slider').value + '&longMeasurement=' + el('long-measurement').checked + '&checkArrhythmias=' + el('check-arrhythmias').checked + '&storeResult=' + saveMeasurements.checked + '&party=' + allInputs.email.value
+        query: connectionParams,
+      });
+    } else {
+      inputSocket = io("wss://" + loc.hostname + ":" + loc.port + "/api/v1/process_frame", {
+        transports: ["websocket"],
+        forceNew: true,
+        auth: {},
+        query: connectionParams,
+      });
+    }
+    // console.log(selectedVideo.videoHeight, selectedVideo.videoWidth);
+
+    // let imgData = selectedStream.getCurrentFrameData();
+    // let src = cv.matFromImageData(imgData);
+    // console.log('src', src);
+
+    console.log("selected_video", selectedVideo);
+    console.log("selected_canvas", selectedCanvas);
+    selectedVideo.height = selectedVideo.videoHeight;
+    selectedVideo.width = selectedVideo.videoWidth;
+    console.log("selected_canvas_css_height", selectedCanvas.style.height);
+    console.log("selected_canvas_css_width", selectedCanvas.style.width);
+    console.log("selected_video_height", selectedVideo.getAttribute("height"));
+    console.log("selected_video_width", selectedVideo.getAttribute("width"));
+    hiddenCanvasEl.width = selectedVideo.videoWidth;
+    hiddenCanvasEl.height = selectedVideo.videoHeight;
+    // let scaleFactorX;
+    // let scaleFactorY;
+    // scaleFactorX = selectedVideo.getAttribute('width') / parseInt(selectedCanvas.style.width);
+    // if (window.screen.width < 440) {
+    //     scaleFactorY = parseInt(selectedCanvas.style.height) / (selectedVideo.getAttribute('height') / scaleFactorX);
+    // } else {
+    //     scaleFactorY = selectedVideo.getAttribute('height') / parseInt(selectedCanvas.style.height);
+    // }
+    // console.log('scaleFactorX', scaleFactorX);
+    // console.log('scaleFactorY', scaleFactorY);
+    console.log("selected_stream_playing", selectedStream.isPlaying);
+    // selectedStream.play(selectedContainer);
+    // selectedVideo = el('video_' + selectedStream.getTrackId());
+    // console.log('selected_video', selectedVideo);
+    // let cap = new cv.VideoCapture(selectedVideo);
+    // console.log('cap', cap);
+
+    afPredictionResult.innerHTML = "--";
+    aflutterPredictionResult.innerHTML = "--";
+    apneaPredictionResult.innerHTML = "--";
+    chfPredictionResult.innerHTML = "--";
+    hbPredictionResult.innerHTML = "--";
+    myoInfPredictionResult.innerHTML = "--";
+    pvcsPredictionResult.innerHTML = "--";
+    sbPredictionResult.innerHTML = "--";
+    svtPredictionResult.innerHTML = "--";
+    afPredictionConf.innerHTML = "--";
+    aflutterPredictionConf.innerHTML = "--";
+    apneaPredictionConf.innerHTML = "--";
+    chfPredictionConf.innerHTML = "--";
+    hbPredictionConf.innerHTML = "--";
+    myoInfoPredictionConf.innerHTML = "--";
+    pvcsPredictionConf.innerHTML = "--";
+    sbPredictionConf.innerHTML = "--";
+    svtPredictionConf.innerHTML = "--";
+    let frameNumber = 0;
+    let heart_rate;
+    let hrv_rate;
+    let resp_rate;
+    let mean_rr;
+    let spo2_rate;
+    let perfusion_index;
+    let attempt = 1;
+    let faceLock = false;
+    let requestID = null;
+    let time0 = Date.now();
+    let timeLapse;
+    let timeStamp;
+    let faceReading;
+    let final_result;
+    let bp_result_received = false;
+    let carol_url_received = false;
+		let emotion_result_received = false;
+
+    const FPS = 30;
+    function processVideo() {
+      try {
+        if (!streaming) {
+          // clean and stop.
+          delete cap;
+          // src.delete();
+          // dst.delete();
+          inputSocket.emit("message", {
+            userEmail: "",
+            imageData: "",
+            stop: true,
+          });
+          // worker.postMessage(
+          //     {
+          //     "userEmail": "",
+          //     "imageData": "",
+          //     "stop": true
+          //     }
+          // )
+
+          // inputSocket.disconnect();
+          // worker.postMessage(
+          //     {
+          //     "userEmail": "",
+          //     "imageData": "",
+          //     "stop": true
+          //     }
+          // );
+          // cancelAnimationFrame(reqID);
+          return;
+        }
+        // start processing.
+        // cap.read(src);
+
+        if (timeLapse > 300) {
+          alert("Took too long! Please try again");
+
+          onVideoStopped();
+          stableReadingsEl.innerHTML = "<strong>STABLE READINGS</strong>";
+          selectedContainer.classList.remove("hidden");
+          selectedCanvas.classList.add("hidden");
+
+          getVitalsBtn.disabled = false;
+          startCameraBtn.disabled = false;
+          if (!inRoom && telemedicine.checked) {
+            console.log("telemedicine_checked", telemedicine.checked);
+            joinCallButton.disabled = false;
+          }
+
+          if (selectedContainer.id === "localVideoContainer") {
+            el("localFramesNeeded").classList.add("hidden");
+            el("localFramesNeededLabel").classList.add("hidden");
+            if (window.screen.width < 1025) {
+              if (telemedicine.checked) {
+                remoteVidLabel.classList.remove("hidden");
+                if (inRoom) {
+                  remoteVideo.classList.remove("hidden");
+                } else {
+                  remoteCanvasEl.classList.remove("hidden");
+                }
+              }
+            }
+          } else {
+            el("remoteFramesNeeded").classList.add("hidden");
+            el("remoteFramesNeededLabel").classList.add("hidden");
+            if (window.screen.width < 1025) {
+              localVidLabel.classList.remove("hidden");
+              localVideoContainer.classList.remove("hidden");
+            }
+          }
+          // worker.postMessage(
+          //     {
+          //     "userEmail": "",
+          //     "imageData": "",
+          //     "stop": true
+          //     }
+          // );
+          // worker.terminate();
+          inputSocket.disconnect();
+          return;
+        }
+        frameNumber += 1;
+
+        timeStamp = Date.now();
+        timeLapse = (timeStamp - time0) / 1000;
+        // let src = new cv.Mat(selectedVideo.height, selectedVideo.width, cv.CV_8UC4);
+        let imgData = selectedStream.getCurrentFrameData();
+        let src = cv.matFromImageData(imgData);
+        // let dst = new cv.Mat(selectedVideo.height, selectedVideo.width, cv.CV_8UC4);
+
+        // cap.read(src);
+        cv.flip(src, src, 1);
+        // src.copyTo(dst);
+        // cv.rectangle(dst, point1, point2, bbColour, 2);
+        // cv.cvtColor(src, dst, cv.COLOR_RGBA2RGB);
+
+        // cv.imshow(selectedCanvas.id, dst);
+        cv.imshow(hiddenCanvasEl.id, src);
+        let delay = 1000 / FPS - (Date.now() - timeStamp);
+        // debug
+        // console.log('selected_canvas_size', selectedCanvas.height, selectedCanvas.width);
+        // console.log('is_canvas_blank', isCanvasBlank(selectedCanvas));
+        // const observer = new IntersectionObserver((entries) => {
+        //     if(entries[0].isIntersecting){
+        //          // el is visible
+        //          console.log('canvas_visible', true);
+        //     } else {
+        //          // el is not visible
+        //          console.log('canvas_visible', false);
+        //     }
+        // });
+        // observer.observe(selectedCanvas);
+        // delete observer;
+
+        src.delete();
+        // dst.delete();
+        // delete imgData;
+        // delete srcImgData;
+        // delete dstImgData;
+        let dataURL = hiddenCanvasEl.toDataURL("image/jpeg");
+        let emailAndImageData = {
+          frameNumber: frameNumber,
+          imageData: dataURL,
+          remoteVitals: remoteVitals,
+          stop: false,
+          timeLapse: timeLapse,
+          userEmail: allInputs.email.value,
+        };
+        if (inRoom) {
+          emailAndImageData["room"] = room;
+          emailAndImageData["meetingSid"] = meetingSocket.id;
+        }
+
+        inputSocket.emit("message", emailAndImageData);
+        delete emailAndImageData;
+        delete dataURL;
+        // worker.postMessage(emailAndImageData);
+        // schedule the next one.
+        console.log("FPS", Math.min(Math.max(FPS - (Date.now() - timeStamp), 1), FPS));
+        console.log("time_delta", Date.now() - timeStamp);
+        setTimeout(processVideo, delay);
+        // reqID = window.requestAnimationFrame(processVideo);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    // schedule the first one.
+    setTimeout(processVideo, 0);
+    // reqId = window.requestAnimationFrame(processVideo);
+
+    inputSocket.on("disconnect", (e) => {
+      console.log("disconnect recieved");
+      if (streaming) {
+        onVideoStopped();
+        stableReadingsEl.innerHTML = "<strong>SOCKET CONNECTION ERROR - RELOAD PAGE AND TRY AGAIN.</strong>";
+      }
+    });
+
+    inputSocket.on("result", (response) => {
+      // worker.onmessage = function(e) {
+      console.log("result_received", response);
+      if (response.calculation_parameters.face_moved && faceLock) {
+        console.log("Face moved!");
+        attempt += 1;
+        stableReadingsEl.innerHTML = "Face/finger movement detected";
+        // time0 = Date.now();
+      } else if (response.calculation_parameters.illumination_changed) {
+        console.log("Illumination changed!");
+        attempt += 1;
+        stableReadingsEl.innerHTML = "Illumination change detected";
+        // time0 = Date.now();
+      }
+
+      faceReading = response.calculation_parameters.face_detected;
+      heart_rate = parseInt(response.vitals_results.heart_rate.toFixed(0));
+      resp_rate = parseInt(response.vitals_results.resp_rate.toFixed(0));
+      resp_rate_motion = parseInt(response.vitals_results.resp_rate_motion.toFixed(0));
+      spo2_rate = parseInt(response.vitals_results.spo2_rate.toFixed(0));
+      perfusion_index = parseFloat(response.vitals_results.perfusion_index.toFixed(2));
+      hrv_rate = parseInt(response.vitals_results.hrv_rate.toFixed(0));
+      mean_rr = parseInt(response.vitals_results.mean_rr.toFixed(0));
+
+      heartResult.innerHTML = heart_rate;
+      respResult.innerHTML = resp_rate;
+      respResultMotion.innerHTML = resp_rate_motion;
+      spo2Result.innerHTML = spo2_rate;
+      perfusionIndexReuslt.innerHTML = perfusion_index;
+      hrvResult.innerHTML = hrv_rate;
+      meanrrResult.innerHTML = mean_rr;
+      // pctComplete = (((response.calculation_parameters.N - response.calculation_parameters.frames_needed) / response.calculation_parameters.N) * 100);
+      pctComplete = response.calculation_parameters.pct_complete;
+
+      if (selectedContainer.id === "localVideoContainer") {
+        // localVideoFaceRect.setAttribute('x', (response.face_rect[0] / scaleFactorX));
+        // localVideoFaceRect.setAttribute('y', (response.face_rect[1] / scaleFactorY));
+        // localVideoFaceRect.setAttribute('width', (response.face_rect[2] / scaleFactorX));
+        // localVideoFaceRect.setAttribute('height', response.face_rect[3] / scaleFactorY);
+        localVideoFaceRect.setAttribute("x", response.calculation_parameters.face_rect[0]);
+        localVideoFaceRect.setAttribute("y", response.calculation_parameters.face_rect[1]);
+        localVideoFaceRect.setAttribute("width", response.calculation_parameters.face_rect[2]);
+        localVideoFaceRect.setAttribute("height", response.calculation_parameters.face_rect[3]);
+        el("localFramesNeeded").MaterialProgress.setProgress(pctComplete);
+        if (response.calculation_parameters.bb_colour[1] === 255) {
+          bbColour = [0, 255, 0, 255];
+          faceLock = true;
+          localVideoFaceRect.style.stroke = "lime";
+        } else {
+          bbColour = [255, 0, 0, 255];
+          localVideoFaceRect.style.stroke = "red";
+          faceLock = false;
+        }
+      } else {
+        // remoteVideoFaceRect.setAttribute('x', (response.face_rect[0] / scaleFactorX));
+        // remoteVideoFaceRect.setAttribute('y', response.face_rect[1] / scaleFactorY);
+        // remoteVideoFaceRect.setAttribute('width', (response.face_rect[2] / scaleFactorX));
+        // remoteVideoFaceRect.setAttribute('height', response.face_rect[3] / scaleFactorY);
+        remoteVideoFaceRect.setAttribute("x", response.calculation_parameters.face_rect[0]);
+        remoteVideoFaceRect.setAttribute("y", response.calculation_parameters.face_rect[1]);
+        remoteVideoFaceRect.setAttribute("width", response.calculation_parameters.face_rect[2]);
+        remoteVideoFaceRect.setAttribute("height", response.calculation_parameters.face_rect[3]);
+        el("remoteFramesNeeded").MaterialProgress.setProgress(pctComplete);
+        if (response.calculation_parameters.bb_colour[1] === 255) {
+          bbColour = [0, 255, 0, 255];
+          faceLock = true;
+          remoteVideoFaceRect.style.stroke = "lime";
+        } else {
+          bbColour = [255, 0, 0, 255];
+          remoteVideoFaceRect.style.stroke = "red";
+          faceLock = false;
+        }
+      }
+
+      // point1 = new cv.Point(response.bb_points[0], response.bb_points[1]);
+      // point2 = new cv.Point(response.bb_points[2], response.bb_points[3]);
+
+      if (response.calculation_parameters.stable_readings == true) {
+        requestID = response.request_id;
+        final_result = response;
+
+        onVideoStopped();
+        if (el("check-arrhythmias").checked && el("check-stroke").checked) {
+          stableReadingsEl.innerHTML =
+            "<strong>STABLE READINGS. AWAITING BLOOD PRESSURE, ARRHYTHMIA & ASYMMETRY ANALYSIS...</strong>";
+        } else if (el("check-arrhythmias").checked) {
+          stableReadingsEl.innerHTML =
+            "<strong>STABLE READINGS. AWAITING BLOOD PRESSURE & ARRHYTHMIA ANALYSIS...</strong>";
+        } else if (el("check-stroke").checked) {
+          stableReadingsEl.innerHTML =
+            "<strong>STABLE READINGS. AWAITING BLOOD PRESSURE & ASYMMETRY ANALYSIS...</strong>";
+        } else {
+          stableReadingsEl.innerHTML = "<strong>STABLE READINGS. MEASUREMENT COMPLETE</strong>";
+        }
+        selectedContainer.classList.remove("hidden");
+        selectedCanvas.classList.add("hidden");
+
+        getVitalsBtn.disabled = false;
+        startCameraBtn.disabled = false;
+        if (!inRoom && telemedicine.checked) {
+          console.log("telemedicine_checked", telemedicine.checked);
+          joinCallButton.disabled = false;
+        }
+
+        if (meetingSocket) {
+          meetingSocket.emit("vitals_complete", room);
+        }
+
+        if (selectedContainer.id === "localVideoContainer") {
+          el("localFramesNeeded").classList.add("hidden");
+          el("localFramesNeededLabel").classList.add("hidden");
+          localFacePositionSvg.classList.add("hidden");
+          if (window.screen.width < 1025) {
+            if (telemedicine.checked) {
+              remoteVidLabel.classList.remove("hidden");
+              if (inRoom) {
+                remoteVideo.classList.remove("hidden");
+              } else {
+                remoteCanvasEl.classList.remove("hidden");
+              }
+            }
+          }
+        } else {
+          el("remoteFramesNeeded").classList.add("hidden");
+          el("remoteFramesNeededLabel").classList.add("hidden");
+          remoteFacePositionSvg.classList.add("hidden");
+          if (window.screen.width < 1025) {
+            localVidLabel.classList.remove("hidden");
+            localVideoContainer.classList.remove("hidden");
+          }
+        }
+
+        if (allInputs.send_to_api.value === true) {
+          let dataToPost = {
+            app_version: "0.28.8",
+            data: {
+              age: parseInt(allInputs.age.value),
+              existing_condition: {
+                selected: allInputs.existing_condition.value,
+                asthma: allInputs.asthma.value,
+                copd: allInputs.copd.value,
+              },
+              sex: allInputs.sex.value,
+              self_reading: allInputs.self_reading.value,
+              skin_type: parseInt(allInputs.skin_type.value),
+            },
+            dapi_type: "browser_v_vitals",
+            request_id: requestID,
+            request_timestamp: parseInt(Date.now() / 1000),
+            party: allInputs.email.value,
+          };
+
+          if (allInputs.manual_readings.value === true) {
+            const modalEl = el("manual-readings-modal");
+            modalEl.style.display = "block";
+
+            el("submit-readings").addEventListener("click", () => {
+              submitManualReadings();
+              dataToPost["manual"] = true;
+              dataToPost.data["oximeter"] = allInputs.oximeter.value;
+              dataToPost.data["spo2_rate"] = parseInt(manualSpo2);
+              dataToPost.data["heart_rate"] = parseInt(manualHr);
+              dataToPost.data["resp_rate"] = parseInt(manualResp);
+              // console.log('data_to_post', dataToPost);
+              inputSocket.emit("user_data", dataToPost);
+              // modalSPO2.value = "";
+              // modalHr.value = "";
+              // modalResp.value = "";
+              // worker.postMessage(dataToPost);
+              // inputSocket.disconnect();
+            });
+          } else {
+            // console.log('data_to_post', dataToPost);
+            inputSocket.emit("user_data", dataToPost);
+            // worker.postMessage(dataToPost);
+            if (!el("check-arrhythmias").checked && !el("check-stroke").checked && !el("engage-carol-chat").checked && emotion_result_received) {
+              inputSocket.disconnect();
+            }
+          }
+        } else {
+          if (!el("check-arrhythmias").checked && !el("check-stroke").checked && !el("engage-carol-chat").checked && emotion_result_received) {
+            inputSocket.disconnect();
+          }
+        }
+      } else if (response.calculation_parameters.timeout) {
+        console.log("timeout");
+      }
+      delete response;
+    });
+
+    inputSocket.on("blood_pressure_result", (blood_pressure_result) => {
+      console.log("blood_pressure_result_received", blood_pressure_result);
+      bp_result_received = true;
+      if (blood_pressure_result.diastolic_blood_pressure) {
+        if (blood_pressure_result.bp_calibrated) {
+          el("bpResult").innerHTML =
+            parseInt(blood_pressure_result.calibrated_systolic_blood_pressure) +
+            " / " +
+            parseInt(blood_pressure_result.calibrated_diastolic_blood_pressure);
+        } else {
+          el("bpResult").innerHTML =
+            parseInt(blood_pressure_result.systolic_blood_pressure) +
+            " / " +
+            parseInt(blood_pressure_result.diastolic_blood_pressure);
+        }
+      } else {
+        stableReadingsEl.innerHTML += "Insufficient data for blood pressure calculation.";
+      }
+
+      if (!el("check-arrhythmias").checked && !el("check-stroke").checked && !el("engage-carol-chat").checked && emotion_result_received) {
+        inputSocket.disconnect();
+      }
+    });
+
+    inputSocket.on("arrhythmia_result", (arrhythmia_detection_results) => {
+      console.log("arrhythmia_result_received", arrhythmia_detection_results);
+      let afConf;
+      let afPrediction;
+      let aflutterConf;
+      let aflutterPrediction;
+      let apneaConf;
+      let apneaPrediction;
+      let chfConf;
+      let chfPrediction;
+      let hbConf;
+      let hbPrediction;
+      let myoInfConf;
+      let myoInfPrediction;
+      let pvcsConf;
+      let pvcsPrediction;
+      let sbConf;
+      let sbPrediction;
+      let svtConf;
+      let svtPrediction;
+
+      if (!isEmpty(arrhythmia_detection_results)) {
+        if (!arrhythmia_detection_results.atrial_fibrillation.detected) {
+          afPrediction = "N";
+          afPredText = "Normal";
+        } else {
+          afPrediction = "I";
+          afPredText = "AFIB";
+        }
+
+        if (!arrhythmia_detection_results.atrial_flutter.detected) {
+          aflutterPrediction = "N";
+          aflutterPredText = "Normal";
+        } else {
+          aflutterPrediction = "I";
+          aflutterPredText = "AFLUTTER";
+        }
+
+        if (!arrhythmia_detection_results.apnea.detected) {
+          apneaPrediction = "N";
+          apneaPredText = "Normal";
+        } else {
+          apneaPrediction = "I";
+          apneaPredText = "APNEA";
+        }
+
+        if (!arrhythmia_detection_results.congestive_heart_failure.detected) {
+          chfPrediction = "N";
+          chfPredText = "Normal";
+        } else {
+          chfPrediction = "I";
+          chfPredText = "CHF";
+        }
+
+        if (!arrhythmia_detection_results.heart_block.detected) {
+          hbPrediction = "N";
+          hbPredText = "Normal";
+        } else {
+          hbPrediction = "I";
+          hbPredText = "HEART BLOCK";
+        }
+
+        if (!arrhythmia_detection_results.myocardial_infarction.detected) {
+          myoInfPrediction = "N";
+          myoInfPredText = "Normal";
+        } else {
+          myoInfPrediction = "I";
+          myoInfPredText = "MYO INF";
+        }
+
+        if (!arrhythmia_detection_results.premature_ventricular_contractions.detected) {
+          pvcsPrediction = "N";
+          pvcsPredText = "Normal";
+        } else {
+          pvcsPrediction = "I";
+          pvcsPredText = "PVC";
+        }
+
+        if (!arrhythmia_detection_results.sinus_bradycardia.detected) {
+          sbPrediction = "N";
+          sbPredText = "Normal";
+        } else {
+          sbPrediction = "I";
+          sbPredText = "SB";
+        }
+
+        if (!arrhythmia_detection_results.supraventricular_tachycardia.detected) {
+          svtPrediction = "N";
+          svtPredText = "Normal";
+        } else {
+          svtPrediction = "I";
+          svtPredText = "SVT";
+        }
+
+        afConf = arrhythmia_detection_results.atrial_fibrillation.confidence;
+        aflutterConf = arrhythmia_detection_results.atrial_flutter.confidence;
+        apneaConf = arrhythmia_detection_results.apnea.confidence;
+        chfConf = arrhythmia_detection_results.congestive_heart_failure.confidence;
+        hbConf = arrhythmia_detection_results.heart_block.confidence;
+        myoInfConf = arrhythmia_detection_results.myocardial_infarction.confidence;
+        pvcsConf = arrhythmia_detection_results.premature_ventricular_contractions.confidence;
+        sbConf = arrhythmia_detection_results.sinus_bradycardia.confidence;
+        svtConf = arrhythmia_detection_results.supraventricular_tachycardia.confidence;
+        afPredictionResult.innerHTML = afPrediction;
+        aflutterPredictionResult.innerHTML = aflutterPrediction;
+        apneaPredictionResult.innerHTML = apneaPrediction;
+        chfPredictionResult.innerHTML = chfPrediction;
+        hbPredictionResult.innerHTML = hbPrediction;
+        myoInfPredictionResult.innerHTML = myoInfPrediction;
+        pvcsPredictionResult.innerHTML = pvcsPrediction;
+        sbPredictionResult.innerHTML = sbPrediction;
+        svtPredictionResult.innerHTML = svtPrediction;
+        afPredictionConf.innerHTML = afConf + "%";
+        aflutterPredictionConf.innerHTML = aflutterConf + "%";
+        apneaPredictionConf.innerHTML = apneaConf + "%";
+        chfPredictionConf.innerHTML = chfConf + "%";
+        hbPredictionConf.innerHTML = hbConf + "%";
+        myoInfoPredictionConf.innerHTML = myoInfConf + "%";
+        pvcsPredictionConf.innerHTML = pvcsConf + "%";
+        sbPredictionConf.innerHTML = sbConf + "%";
+        svtPredictionConf.innerHTML = svtConf + "%";
+      }
+      if (!el("check-stroke").checked && emotion_result_received && !el("engage-carol-chat").checked) {
+        inputSocket.disconnect();
+      }
+      stableReadingsEl.innerHTML = "<strong>STABLE READINGS. MEASUREMENT COMPLETE</strong>";
+    });
+
+    inputSocket.on("stroke_result", (stroke_detection_results) => {
+      console.log("stroke_result", stroke_detection_results);
+      el("asymmetry-analysis").classList.remove("hidden");
+      if (stroke_detection_results.base64montage != null) {
+        let resultMontage = document.createElement("img");
+        el("asymmetry-analysis-result").appendChild(resultMontage);
+        resultMontage.style.width = "85%";
+        resultMontage.src = "data:image/png;base64," + stroke_detection_results.base64montage;
+      } else {
+        let currFaceDeteced = stroke_detection_results.pose_analysis[0].currFaceDeteced;
+        if (currFaceDeteced == false) {
+          el("asymmetry-analysis-result").innerHTML =
+            "A face could not be detected for asymmetry analysis, please try again.";
+        }
+      }
+
+      stableReadingsEl.innerHTML = "<strong>STABLE READINGS. MEASUREMENT COMPLETE</strong>";
+      if (!allInputs.manual_readings.value === true && !el("engage-carol-chat").checked) {
+        inputSocket.disconnect();
+      }
+    });
+
+    inputSocket.on("stable_reading", (e) => {
+      console.log("stable_readings_received");
+      if (!el("check-arrhythmias").checked && !el("check-stroke").checked && bp_result_received && !el("engage-carol-chat").checked) {
+        stableReadingsEl.innerHTML = "<strong>STABLE READINGS. MEASUREMENT COMPLETE</strong>";
+      }
+      onVideoStopped();
+    });
+
+    inputSocket.on("timeout", (e) => {
+      console.log("timeout_received");
+      onVideoStopped();
+      stableReadingsEl.innerHTML = "<strong>MEASUREMENT TIMEOUT - TRY AGAIN</strong>";
+      selectedContainer.classList.remove("hidden");
+      selectedCanvas.classList.add("hidden");
+
+      getVitalsBtn.disabled = false;
+      startCameraBtn.disabled = false;
+      if (!inRoom && telemedicine.checked) {
+        console.log("telemedicine_checked", telemedicine.checked);
+        joinCallButton.disabled = false;
+      }
+
+      if (meetingSocket) {
+        meetingSocket.emit("vitals_complete", room);
+      }
+
+      if (selectedContainer.id === "localVideoContainer") {
+        el("localFramesNeeded").classList.add("hidden");
+        el("localFramesNeededLabel").classList.add("hidden");
+        localFacePositionSvg.classList.add("hidden");
+        if (window.screen.width < 1025) {
+          if (telemedicine.checked) {
+            remoteVidLabel.classList.remove("hidden");
+            if (inRoom) {
+              remoteVideo.classList.remove("hidden");
+            } else {
+              remoteCanvasEl.classList.remove("hidden");
+            }
+          }
+        }
+      } else {
+        el("remoteFramesNeeded").classList.add("hidden");
+        el("remoteFramesNeededLabel").classList.add("hidden");
+        remoteFacePositionSvg.classList.add("hidden");
+        if (window.screen.width < 1025) {
+          localVidLabel.classList.remove("hidden");
+          localVideoContainer.classList.remove("hidden");
+        }
+      }
+    });
+
+    inputSocket.on("low_fps", (e) => {
+      console.log("low_fps_received");
+      onVideoStopped();
+      stableReadingsEl.innerHTML = "<strong>MEASUREMENT ERROR: INSUFFICIENT NETWORK SPEED - TRY AGAIN</strong>";
+      selectedContainer.classList.remove("hidden");
+      selectedCanvas.classList.add("hidden");
+
+      getVitalsBtn.disabled = false;
+      startCameraBtn.disabled = false;
+      if (!inRoom && telemedicine.checked) {
+        console.log("telemedicine_checked", telemedicine.checked);
+        joinCallButton.disabled = false;
+      }
+
+      if (meetingSocket) {
+        meetingSocket.emit("vitals_complete", room);
+      }
+
+      if (selectedContainer.id === "localVideoContainer") {
+        el("localFramesNeeded").classList.add("hidden");
+        el("localFramesNeededLabel").classList.add("hidden");
+        localFacePositionSvg.classList.add("hidden");
+        if (window.screen.width < 1025) {
+          if (telemedicine.checked) {
+            remoteVidLabel.classList.remove("hidden");
+            if (inRoom) {
+              remoteVideo.classList.remove("hidden");
+            } else {
+              remoteCanvasEl.classList.remove("hidden");
+            }
+          }
+        }
+      } else {
+        el("remoteFramesNeeded").classList.add("hidden");
+        el("remoteFramesNeededLabel").classList.add("hidden");
+        remoteFacePositionSvg.classList.add("hidden");
+        if (window.screen.width < 1025) {
+          localVidLabel.classList.remove("hidden");
+          localVideoContainer.classList.remove("hidden");
+        }
+      }
+    });
+
+    inputSocket.on("emotion_result", (emotion_result) => {
+      console.log("emotion_result_received", emotion_result);
+      const labels = emotion_result.map((emotion) => emotion.Type);
+      const confidence = emotion_result.map((emotion) => emotion.Confidence.toFixed(2));
+
+      var data = [
+        {
+          x: labels,
+          y: confidence,
+          type: "bar",
+          marker: {
+            color: "#00bcd4",
+          },
+        },
+      ];
+
+      var layout = {
+        font: { size: 14 },
+				yaxis: { 
+					title: {
+						text: 'Confidence (%)'
+					},
+				}
+      };
+
+      Plotly.newPlot("emotion-results", data, layout);
+
+			if (bp_result_received && !el("engage-carol-chat").checked) {
+        inputSocket.disconnect();
+      }
+    });
+
+    inputSocket.on("carol_chat_url", (carol_chat_url) => {
+      console.log("carol_chat_url_received", carol_chat_url);
+      stableReadingsEl.innerHTML += "<br><p>To engage CAROL Chat click <a href=" + carol_chat_url + " target='_blank'>here</a>.</p>"
+      inputSocket.disconnect();
+    });
+  }
+
+  function onVideoStopped() {
+    streaming = false;
+    // ctx.clearRect(
+    //     0,
+    //     0,
+    //     canvasEl.width,
+    //     canvasEl.height
+    // );
+    hiddenCtx.clearRect(0, 0, hiddenCanvasEl.width, hiddenCanvasEl.height);
+  }
+}
+
+//utils
+async function startCamera(resolution, videoId) {
+  const videoSelect = el("cam-select");
+  const videoSource = videoSelect.value;
+  // console.log(videoSource);
+
+  const constraints = {
+    qvga: {
+      width: { ideal: 320 },
+      height: { ideal: 240 },
+      cameraId: videoSource ? { exact: videoSource } : undefined,
+    },
+    vga: {
+      width: { ideal: 640 },
+      height: { ideal: 480 },
+      cameraId: videoSource ? { exact: videoSource } : undefined,
+    },
+    vga_portrait: {
+      width: { ideal: 480 },
+      height: { ideal: 640 },
+      cameraId: videoSource ? { exact: videoSource } : undefined,
+    },
+  };
+  let video = el(videoId);
+  if (!video) {
+    video = document.createElement("localVideoContainer");
+  }
+  let videoConstraint = constraints[resolution];
+  if (!videoConstraint) {
+    videoConstraint = true;
+  }
+
+  localStream = await AgoraRTC.createCameraVideoTrack({
+    cameraId: videoConstraint.cameraId.exact,
+    encoderConfig: {
+      width: videoConstraint.width,
+      height: videoConstraint.height,
+    },
+  });
+
+  if (localStream) {
+    localStream.play(videoId, (config = { fit: "contain" }));
+    // console.log(localStream);
+    selectedVideo = el("video_" + localStream.getTrackId());
+    localVideo = el("video_" + localStream.getTrackId());
+    selectedContainer = el("localVideoContainer");
+    selectedCanvas = el("canvasElement");
+    selectedCanvas.style.height = selectedVideo.offsetHeight + "px";
+    selectedCanvas.style.width = selectedVideo.offsetWidth + "px";
+    selectedCanvas.width = selectedVideo.videoWidth;
+    selectedCanvas.height = selectedVideo.videoHeight;
+    selectedCanvas.style.objectFit = "contain";
+    console.log("selected_canvas_height", selectedCanvas.style.height);
+    console.log("selected_canvas_width", selectedCanvas.style.width);
+    selectedStream = localStream;
+  }
+}
+
+async function stopCamera() {
+  // let video = el('localVideoContainer');
+  // console.log('video', video);
+  // const stream = video.srcObject;
+
+  // // Stop all video streams.
+  // stream.getTracks().forEach(track => {
+  //     track.stop();
+  // });
+
+  // video.srcObject = null;
+  cameraStart = false;
+  localFacePositionSvg.classList.add("hidden");
+  if (localStream) {
+    await localStream.stop();
+    await localStream.close();
+  }
+}
+
+function submitManualReadings() {
+  const modalEl = el("manual-readings-modal");
+  modalEl.style.display = "none";
+
+  manualSpo2 = modalSPO2.value;
+  manualHr = modalHr.value;
+  manualResp = modalResp.value;
+}
+
+async function postBPDataCalibration(data) {
+  let request = new XMLHttpRequest();
+  let loc = window.location;
+  let url = `${loc.protocol}//${loc.hostname}:${loc.port}/api/v1/calibrate_bp`;
+  request.open("POST", url, true);
+  request.setRequestHeader("Content-Type", "application/json");
+  request.onload = function (e) {
+    request = this;
+    if (request.readyState === 4) {
+      let response = JSON.parse(e.target.responseText);
+      if (request.status === 200) {
+        console.log("Calibrate BP response:", response);
+        diastolicAdjustment = response.diastolic_adjustment;
+        systolicAdjustment = response.systolic_adjustment;
+        el("bpText").innerHTML = "YES";
+        if (!(el("bpResult").innerText.split("/")[0] == "-- / --")) {
+          let sys = parseInt(el("bpResult").innerText.split("/")[0] * systolicAdjustment);
+          let dia = parseInt(el("bpResult").innerText.split("/")[1] * diastolicAdjustment);
+          el("bpResult").innerHTML = sys + " / " + dia;
+        }
+      } else {
+        let error_text =
+          "Failed to calibrate BP. Error status: " +
+          request.status +
+          ". Detail: " +
+          request.detail.loc[1] +
+          " index: " +
+          request.detail.loc[2] +
+          " " +
+          request.detail[0].msg;
+        console.error(error_text);
+        alert(error_text);
+      }
+    }
+  };
+  request.send(JSON.stringify(data));
+}
+
+async function postDataToApi(data) {
+  let request = new XMLHttpRequest();
+  let url = "https://emadp.ainexus.com/nexapi/android_data";
+  request.open("POST", url);
+  request.setRequestHeader("Content-Type", "application/json");
+  request.onload = function (ev) {
+    request = this;
+    if (request.readyState === 4) {
+      if (request.status === 200) {
+        console.log("Data sent to API.");
+      } else {
+        console.error("Failed to send data to " + url + " status: " + request.status);
+      }
+    }
+  };
+  request.send(JSON.stringify(data));
+}
+
+function createFileFromUrl(path, url) {
+  let request = new XMLHttpRequest();
+  request.open("GET", url, true);
+  request.responseType = "arraybuffer";
+  request.onload = function (ev) {
+    request = this;
+    if (request.readyState === 4) {
+      if (request.status === 200) {
+        let data = new Uint8Array(request.response);
+        cv.FS_createDataFile("/", path, data, true, false, false);
+      } else {
+        console.error("Failed to load " + url + " status: " + request.status);
+      }
+    }
+  };
+  request.send();
+}
+
+function gotDevices(deviceInfos) {
+  const videoSelect = el("video-select");
+  const videoSelectList = el("video-select-list");
+  selectors = [videoSelect];
+  // Handles being called several times to update labels. Preserve values.
+  const values = selectors.map((select) => select.value);
+  selectors.forEach((select) => {
+    while (select.getElementsByTagName("ul").firstChild) {
+      select.removeChild(select.firstChild);
+    }
+  });
+
+  for (let i = 0; i !== deviceInfos.length; ++i) {
+    const deviceInfo = deviceInfos[i];
+    const option = document.createElement("li");
+    option.setAttribute("data-val", deviceInfo.deviceId);
+    option.classList.add("mdl-menu__item");
+    if (deviceInfo.kind === "videoinput") {
+      option.innerHTML = deviceInfo.label || `camera ${videoSelect.length + 1}`;
+      videoSelectList.appendChild(option);
+    }
+  }
+  getmdlSelect.init("#video-select");
+  selectors.forEach((select, selectorIndex) => {
+    if (Array.prototype.slice.call(select.childNodes).some((n) => n.value === values[selectorIndex])) {
+      select.value = values[selectorIndex];
+    }
+  });
+
+  gotDevicesBool = true;
+}
+
+function handleError(error) {
+  console.log("Error: ", error.message, error.name);
+}
+
+document.querySelectorAll(".mdl-accordion__content").forEach(function (accordion) {
+  accordion.style.marginTop = "-" + accordion.offsetHeight.toString() + "px";
+});
+
+document.querySelectorAll(".mdl-accordion__button").forEach(function (button) {
+  button.addEventListener("click", function (event) {
+    button.parentNode.classList.toggle("mdl-accordion--opened");
+  });
+});
+
+function randomUint32() {
+  if (window && window.crypto && window.crypto.getRandomValues && Uint32Array) {
+    var o = new Uint32Array(1);
+    window.crypto.getRandomValues(o);
+    return o[0];
+  } else {
+    console.warn("Falling back to pseudo-random client seed");
+    return Math.floor(Math.random() * Math.pow(2, 32));
+  }
+}
+
+// returns true if all color channels in each pixel are 0 (or "blank")
+function isCanvasBlank(canvas) {
+  return !canvas
+    .getContext("2d")
+    .getImageData(0, 0, canvas.width, canvas.height)
+    .data.some((channel) => channel !== 0);
+}
+
+function isEmpty(obj) {
+  for (var i in obj) return false;
+  return true;
+}
+
+function getCookie(cname) {
+  let name = cname + "=";
+  let decodedCookie = decodeURIComponent(document.cookie);
+  let ca = decodedCookie.split(";");
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == " ") {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}

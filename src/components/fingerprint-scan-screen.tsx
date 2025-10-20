@@ -16,17 +16,6 @@ interface FingerprintScanScreenProps {
   userGender: 'male' | 'female'
   onBack: () => void
   onNext: () => void
-  // emit measured values upward for local summary rendering
-  onLocalResults?: (results: {
-    heartRate: number;
-    breathingRate: number;
-    hrvSdnnMs: number;
-    systolicBP: number;
-    diastolicBP: number;
-    bloodPressure: string;
-    oxygenSaturation?: number;
-    temperature?: number;
-  }) => void
 }
 
 export const FingerprintScanScreen = ({
@@ -35,8 +24,7 @@ export const FingerprintScanScreen = ({
   userAge,
   userGender,
   onBack,
-  onNext,
-  onLocalResults
+  onNext
 }: FingerprintScanScreenProps) => {
   const { t, i18n } = useTranslation()
   const isArabic = i18n.language === 'ar'
@@ -44,6 +32,7 @@ export const FingerprintScanScreen = ({
   const videoRef = useRef<HTMLVideoElement>(null)
   const socketServiceRef = useRef<FingerprintSocketService | null>(null)
   const frameCaptureRef = useRef<FrameCaptureService | null>(null)
+  const frameProcessingLoopRef = useRef<NodeJS.Timeout | null>(null)
 
   const measurementStartTimeRef = useRef<number | null>(null)
   const measurementActiveRef = useRef(false)
@@ -117,7 +106,11 @@ export const FingerprintScanScreen = ({
     const { showError, complete, preserveResults } = options || {}
 
     measurementActiveRef.current = false
-    frameCaptureRef.current?.stopCapture()
+
+    if (frameProcessingLoopRef.current) {
+      clearTimeout(frameProcessingLoopRef.current);
+      frameProcessingLoopRef.current = null;
+    }
 
     if (!preserveResults) {
       socketServiceRef.current?.sendStopSignal()
@@ -147,12 +140,12 @@ export const FingerprintScanScreen = ({
 
   // STEP 1: Initialize camera and auth on mount (but don't start scanning)
   useEffect(() => {
-    const componentId = componentIdRef.current
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-    console.log(`[${componentId}] 🎬 Component mounted - initializing camera and auth`)
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-    isMountedRef.current = true
-    isCleaningUpRef.current = false
+    const componentId = componentIdRef.current;
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`[${componentId}] 🎬 Component mounted - initializing camera and auth`);
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    isMountedRef.current = true;
+    isCleaningUpRef.current = false;
 
     const initializeCameraAndAuth = async () => {
       // STRICT guard: Multiple checks to prevent duplicate initialization
@@ -235,7 +228,7 @@ export const FingerprintScanScreen = ({
         await frameCaptureRef.current.initialize(videoRef.current, {
           width: 640,
           height: 480,
-          fps: 30
+          fps: 15
         })
 
         console.log(`[${componentId}] ✅ Camera initialized successfully`)
@@ -295,365 +288,192 @@ export const FingerprintScanScreen = ({
       isInitializingRef.current = false
       hasInitializedRef.current = false
     }
-  }, []) // Run once on mount
+  }, [t]) // Run once on once on mount
 
   // STEP 2: Start scanning when user clicks the Start button
   const startScan = async () => {
     if (!cameraReady || !authReady || scanStarted) {
-      console.log('Cannot start scan:', { cameraReady, authReady, scanStarted })
-      return
+      return;
     }
 
-    const componentId = componentIdRef.current
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-    console.log(`[${componentId}] 🚀 User clicked Start - connecting socket and starting scan`)
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+    const componentId = componentIdRef.current;
+    console.log(`[${componentId}] 🚀 User clicked Start - replicating example logic`);
 
-    setScanStarted(true)
+    setScanStarted(true);
+    resetMeasurementState({ clearResults: true, clearCompletion: true });
 
     try {
-      // Get auth token
-      const accessToken = await getAuthToken()
+      const accessToken = await getAuthToken();
+      const socketService = await fingerprintSocketManager.getOrCreateSocket(componentId);
+      socketServiceRef.current = socketService;
 
-      // Get socket service
-      socketServiceRef.current = await fingerprintSocketManager.getOrCreateSocket(componentId)
-      console.log(`[${componentId}] 📡 Got socket service from manager`)
+      const SAMPLE_TIME_SECONDS = 100;
 
       // Connect socket
-      if (!socketServiceRef.current.isConnected()) {
-          console.log(`[${componentId}] 🔄 Socket not connected, connecting now...`)
-          
-          await new Promise<void>((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              reject(new Error('Socket connection timeout after 10 seconds'))
-            }, 10000)
-
-            let cancelled = false
-            pendingConnectPromiseRef.current = {
-              cancel: () => {
-                cancelled = true
-                clearTimeout(timeout)
-                reject(new Error('Socket connection cancelled'))
-              }
-            }
-
-            // CRITICAL: Set the onConnect callback BEFORE calling connect()
-            // to avoid race condition where socket connects before callback is registered
-            socketServiceRef.current!.onConnect(() => {
-              if (cancelled || !isMountedRef.current) {
-                console.log(`[${componentId}] ⚠️ Connect callback after cancel/unmount`)
-                return
-              }
-              console.log(`[${componentId}] ✅ Socket connected successfully`)
-              clearTimeout(timeout)
-              pendingConnectPromiseRef.current = null
-              resolve()
-            })
-
-            // NOW call connect() - callback is already registered
-            socketServiceRef.current!.connect(
+      if (!socketService.isConnected()) {
+        console.log(`[${componentId}] 🔄 Socket not connected, connecting now...`);
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Socket connection timeout')), 10000);
+          socketService.onConnect(() => {
+            clearTimeout(timeout);
+            resolve();
+          });
+          socketService.connect(
             {
               bpCalibrated: false,
               checkArrhythmias: true,
               checkStroke: false,
               client: 'health-kiosk',
               engageCarolChat: false,
-              longMeasurement: true, // Enable long measurement mode for 100-second scans to allow server to detect stable_readings and calculate BP
+              longMeasurement: true,
               party: userId,
-              sampleTime: 100, // Changed from 30 to 100 to match face scan duration and collect ~120 heartbeats for arrhythmia detection
-              storeResult: false, // We handle storage ourselves
+              sampleTime: SAMPLE_TIME_SECONDS,
+              storeResult: false,
               suspectedHypertensive: false,
               suspectedHypotensive: false,
               user_age: userAge,
-              user_sex: userGender
+              user_sex: userGender,
             },
             accessToken,
             // onVitals
             (vitalsData) => {
-              latestVitalsRef.current = vitalsData
-              setVitals(vitalsData)
-              
-              // Use server's finger detection to update UI, but don't stop on false
-              const serverFingerDetected = vitalsData.calculation_parameters.finger_detected
-              
-              // Finger just detected by server - start measurement if not already running
-              if (serverFingerDetected && !lastServerFingerStateRef.current) {
-                console.log('✅ Server detected finger - starting/continuing measurement')
-                fingerDetectedRef.current = true
-                setFingerDetected(true)
-                lastServerFingerStateRef.current = true
-                
-                // Start measurement if not already active
-                if (!measurementActiveRef.current) {
-                  beginMeasurement()
+              latestVitalsRef.current = vitalsData;
+              setVitals(vitalsData);
+              const params = vitalsData.calculation_parameters;
+              const serverFingerDetected = params.finger_detected;
+
+              if (serverFingerDetected && !measurementActiveRef.current) {
+                beginMeasurement();
+              }
+              setFingerDetected(serverFingerDetected);
+
+              if (params.stable_readings) {
+                console.log('🎉 STABLE READINGS RECEIVED! Stopping frame stream, but keeping socket open for BP result.');
+                if (frameProcessingLoopRef.current) {
+                  clearTimeout(frameProcessingLoopRef.current);
+                  frameProcessingLoopRef.current = null;
                 }
-              }
-              
-              // Finger temporarily not detected - just update UI but keep scanning
-              if (!serverFingerDetected && lastServerFingerStateRef.current) {
-                console.log('⚠️ Server reports finger temporarily not detected - continuing scan')
-                fingerDetectedRef.current = false
-                setFingerDetected(false)
-                lastServerFingerStateRef.current = false
-                // DO NOT call handleFingerLost() - keep scanning!
-              }
-              
-              // Always update UI with current detection state
-              if (serverFingerDetected !== fingerDetectedRef.current) {
-                fingerDetectedRef.current = serverFingerDetected
-                setFingerDetected(serverFingerDetected)
+                setWaitingForBloodPressure(true);
+                setScanProgress(100);
               }
             },
             // onBloodPressure
             (bpData) => {
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-              console.log('🩺 Blood pressure result received')
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-
-              setBloodPressure(bpData)
-              setWaitingForBloodPressure(false)
-
-              if (waitingForFinalResultsRef.current) {
-                waitingForFinalResultsRef.current = false
-                stopMeasurement({ complete: true, preserveResults: true })
-
-                const vitalsToSave = latestVitalsRef.current
-                if (vitalsToSave) {
-                  // Push local results upward immediately for UI display
-                  // Note: We do NOT save to backend here - saving happens when user clicks Next button
-                  try {
-                    const systolic = bpData.bp_calibrated ? Math.round(bpData.calibrated_systolic_blood_pressure || 0) : Math.round(bpData.systolic_blood_pressure)
-                    const diastolic = bpData.bp_calibrated ? Math.round(bpData.calibrated_diastolic_blood_pressure || 0) : Math.round(bpData.diastolic_blood_pressure)
-                    onLocalResults?.({
-                      heartRate: Math.round(vitalsToSave.vitals_results.heart_rate || 0),
-                      hrvSdnnMs: Math.round(vitalsToSave.vitals_results.hrv_rate || 0),
-                      breathingRate: Math.round(vitalsToSave.vitals_results.resp_rate || 0),
-                      oxygenSaturation: Math.round(vitalsToSave.vitals_results.spo2_rate || 0),
-                      temperature: 0,
-                      systolicBP: systolic,
-                      diastolicBP: diastolic,
-                      bloodPressure: `${systolic}/${diastolic}`,
-                    })
-                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                    console.log('✅ SCAN COMPLETE - Results ready for display')
-                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                    console.log('💡 Results will be saved when user clicks "Next" button')
-                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-                  } catch (e) {
-                    console.warn('Failed to emit local results:', e)
-                  }
-                }
-              }
+              console.log('🩺 BLOOD PRESSURE RESULT RECEIVED');
+              setBloodPressure(bpData);
+              setWaitingForBloodPressure(false);
+              setScanComplete(true);
+              // Now we can disconnect
+              socketService.disconnect();
             },
             // onArrhythmia
             (arrhythmiaData) => {
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-              console.log('❤️ Arrhythmia result received')
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-
-              setArrhythmia(arrhythmiaData)
-
-              // Log detected arrhythmias for debugging
-              const detected = Object.entries(arrhythmiaData)
-                .filter(([, value]) => value.detected)
-                .map(([, value]) => value.arrhythmia_name);
-
-              if (detected.length > 0) {
-                console.log('⚠️ Detected:', detected.join(', '))
-              } else {
-                console.log('✅ No arrhythmias detected')
-              }
+              setArrhythmia(arrhythmiaData);
             },
-            // onStableReadings
-            async () => {
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-              console.log('🎉 STABLE READINGS ACHIEVED!')
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-
-              waitingForFinalResultsRef.current = true
-              stopMeasurement({ preserveResults: true })
-              setScanProgress(100)
-              setWaitingForBloodPressure(true)
-
-              // Request blood pressure calculation from server
-              console.log('📤 Requesting blood pressure calculation from server...')
-              socketServiceRef.current?.sendStopSignal()
-
-              setTimeout(() => {
-                if (waitingForFinalResultsRef.current) {
-                  console.log('⚠️ Timeout waiting for blood pressure (5s elapsed)')
-                  waitingForFinalResultsRef.current = false
-                  setWaitingForBloodPressure(false)
-                  stopMeasurement({ complete: true })
-                }
-              }, 5000)
-            },
+            // onStableReadings (This is a separate event that might not be used, the flag in 'onVitals' is more reliable)
+            () => {},
             // onTimeout
             () => {
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-              console.log('⏱️ SCAN TIMEOUT - Measurement incomplete')
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-
-              waitingForFinalResultsRef.current = false
-              stopMeasurement({ showError: t('fingerprintScan.errors.timeout') })
-              socketServiceRef.current?.sendStopSignal()
-              reject(new Error('Scan timeout'))
+              console.log('⏱️ SERVER TIMEOUT');
+              if (frameProcessingLoopRef.current) {
+                clearTimeout(frameProcessingLoopRef.current);
+                frameProcessingLoopRef.current = null;
+              }
+              stopMeasurement({
+                showError: t('fingerprintScan.errors.timeout'),
+              });
             },
             // onError
             (errorMsg) => {
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-              console.log('❌ SCAN ERROR:', errorMsg)
-              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-
-              waitingForFinalResultsRef.current = false
-              stopMeasurement({ showError: errorMsg })
-              socketServiceRef.current?.sendStopSignal()
-              reject(new Error(errorMsg))
+              console.log('❌ SCAN ERROR:', errorMsg);
+              if (frameProcessingLoopRef.current) {
+                clearTimeout(frameProcessingLoopRef.current);
+                frameProcessingLoopRef.current = null;
+              }
+              stopMeasurement({ showError: errorMsg });
+              reject(new Error(errorMsg));
             }
-          )
-          })
-        } else {
-          console.log(`[${componentId}] ✅ Socket already connected, reusing existing connection`)
+          );
+        });
+      }
+
+      // Start frame capture
+      if (!frameCaptureRef.current) throw new Error('Camera not initialized');
+      
+      console.log('📹 Starting frame capture loop...');
+      setIsScanning(true);
+
+      const FPS = 15; // Target FPS
+      const processVideo = () => {
+        const timeStamp = Date.now();
+
+        if (!socketService.isConnected()) {
+            if (frameProcessingLoopRef.current) {
+                clearTimeout(frameProcessingLoopRef.current);
+                frameProcessingLoopRef.current = null;
+            }
+            return;
         }
 
-        // Check if still mounted
-        if (!isMountedRef.current) {
-          console.log(`[${componentId}] ⚠️ Component unmounted before starting frame capture`)
-          return
-        }
-
-        // Verify camera is ready
         if (!frameCaptureRef.current) {
-          throw new Error('Camera not initialized')
+            return;
+        }
+        const base64Image = frameCaptureRef.current.captureFrame();
+        if (!base64Image) {
+            frameProcessingLoopRef.current = setTimeout(processVideo, 1000 / FPS);
+            return;
         }
 
-        // CRITICAL: Verify socket is CONNECTED before starting frame capture
-        if (!socketServiceRef.current?.isConnected()) {
-          throw new Error('Socket not connected - cannot start frame capture')
+        const timeLapseSeconds = (Date.now() - (measurementStartTimeRef.current || Date.now())) / 1000;
+
+        if (measurementActiveRef.current) {
+            const progress = Math.min(99, (timeLapseSeconds / SAMPLE_TIME_SECONDS) * 100);
+            setScanProgress(progress);
         }
 
-        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-        console.log(`[${componentId}] ✅ Socket verified connected - ready to start frames`)
-        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
-
-        // Wait a moment to ensure everything is stable
-        await new Promise(resolve => setTimeout(resolve, 100))
-
-        // Final check before starting
-        if (!isMountedRef.current || isCleaningUpRef.current) {
-          console.log(`[${componentId}] ⚠️ Component unmounted or cleaning up before frame capture start`)
-          return
-        }
-
-        // Start frame capture and send all frames to server
-        // Server will detect finger and send finger_detected in response
-        const FPS = 30 // 30 FPS for camera capture
-        const SAMPLE_TIME_SECONDS = 100 // Match the sampleTime parameter sent to socket connection (changed from 30 to 100)
-
-        resetMeasurementState({ clearResults: false, clearCompletion: false })
-
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-        console.log('📹 Starting frame capture - waiting for server finger detection')
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-
-        frameCaptureRef.current.startCapture((base64Image) => {
-          if (!socketServiceRef.current || !isMountedRef.current || isCleaningUpRef.current) {
-            return 0
-          }
-
-          if (!socketServiceRef.current.isConnected()) {
-            return 0
-          }
-
-          // Always send frames to server - server will detect finger
-          const frameNumberToSend = socketFrameNumberRef.current
-          const startTime = Date.now()
-
-          // Calculate time lapse from measurement start (or from now if not started)
-          const measurementStart = measurementActiveRef.current 
-            ? (measurementStartTimeRef.current ?? Date.now())
-            : Date.now()
-          const timeLapseSeconds = (Date.now() - measurementStart) / 1000
-
-          if (frameNumberToSend === 0) {
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-            console.log(`[${componentId}] 🎬 Sending first frame - server will detect finger`)
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-          }
-
-          // Send frame immediately - server will analyze and return finger_detected
-          socketServiceRef.current!.sendFrame({
-            frameNumber: frameNumberToSend,
+        socketService.sendFrame({
+            frameNumber: socketFrameNumberRef.current++,
             imageData: base64Image,
             remoteVitals: false,
             stop: false,
             timeLapse: timeLapseSeconds,
-            userEmail
-          })
+            userEmail,
+        });
 
-          socketFrameNumberRef.current += 1
+        // The "Time Delta" logic
+        const processingTime = Date.now() - timeStamp;
+        const delay = Math.max(0, (1000 / FPS) - processingTime);
+        frameProcessingLoopRef.current = setTimeout(processVideo, delay);
+      };
 
-          // Update UI state - only show progress if measurement is active
-          const framesSent = socketFrameNumberRef.current
-          
-          if (measurementActiveRef.current) {
-            const progressRatio = Math.min(1, timeLapseSeconds / SAMPLE_TIME_SECONDS)
-            setScanProgress(progressRatio * 100)
-          }
+      // Start the loop
+      processVideo();
 
-          // Calculate actual FPS based on processing time
-          const processingTime = Date.now() - startTime
-          const idealInterval = 1000 / FPS
-          const actualInterval = Math.max(idealInterval, processingTime)
-          const actualClientFPS = Math.max(1, Math.round(1000 / actualInterval))
-
-          // Log every 30th frame for debugging
-          if (frameNumberToSend % 30 === 0) {
-            const status = fingerDetectedRef.current ? '✅ Finger detected' : '⏳ Waiting for finger'
-            console.log(`[${componentId}] 📊 Frame #${frameNumberToSend} | ${status} | Processing: ${processingTime.toFixed(1)}ms | Client FPS: ${actualClientFPS}`)
-          }
-
-          // Return processing time to adjust next frame delay
-          return processingTime
-        }, FPS)
-
-        setIsScanning(true)
-        console.log(`[${componentId}] ✅ Scan started successfully - sending frames to server`)
-
-      } catch (err) {
-        console.error(`[${componentId}] ❌ Start scan error:`, err)
-        setScanStarted(false)
-
-        if (err instanceof Error) {
-          if (err.message.includes('Socket connection timeout') || err.message.includes('Connection error')) {
-            setError(t('fingerprintScan.errors.connectionFailed'))
-          } else {
-            setError(err.message)
-          }
-        } else {
-          setError('Failed to start scan')
-        }
-      }
+    } catch (err) {
+      console.error(`[${componentId}] ❌ Start scan error:`, err);
+      setScanStarted(false);
+      setError(err instanceof Error ? err.message : 'Failed to start scan');
     }
+  };
 
-  // Handle Next button click - ensure data is saved before proceeding
+  // Handle Next button click - save data then navigate to results page
   const handleNext = async () => {
     // Prevent double-clicking
     if (isSaving) return
 
-    // If we have vitals and BP data, save them before proceeding
+    // If we have vitals and BP data, save them before proceeding to results
     if (vitals && bloodPressure) {
       setIsSaving(true)
 
       try {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-        console.log('💾 NEXT BUTTON CLICKED - Saving fingerprint scan results...')
+        console.log('💾 SAVING fingerprint scan results to backend...')
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
         const result = await saveFingerprintScan(userId, vitals, bloodPressure)
 
         if (result.success) {
-          console.log('✅ Save successful, proceeding to next step')
+          console.log('✅ Save successful, navigating to results page')
           setIsSaving(false)
           onNext()
         } else {
@@ -786,14 +606,27 @@ export const FingerprintScanScreen = ({
                   </div>
                 )}
 
+                {/* Waiting for Blood Pressure - Full Screen Overlay */}
+                {waitingForBloodPressure && !scanComplete && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#407EFF]/90">
+                    <div className="text-center text-white px-4">
+                      <div className="mx-auto mb-4 lg:mb-6 h-16 w-16 lg:h-20 lg:w-20 xl:h-24 xl:w-24 animate-spin rounded-full border-4 lg:border-[6px] border-white/30 border-t-white" />
+                      <p className="text-2xl lg:text-3xl xl:text-4xl font-bold mb-3">{t('fingerprintScan.calculatingBloodPressure') || 'Calculating Blood Pressure'}</p>
+                      <p className="text-base lg:text-lg xl:text-xl opacity-90">
+                        {t('fingerprintScan.pleaseWait') || 'Please wait while we analyze your results...'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Scan Complete */}
-                {scanComplete && !isSaving && (
+                {scanComplete && !waitingForBloodPressure && !isSaving && (
                   <div className="absolute inset-0 flex items-center justify-center bg-green-500/90">
                     <div className="text-center text-white px-4">
                       <div className="mb-4 lg:mb-6 text-6xl lg:text-7xl xl:text-8xl">✓</div>
                       <p className="text-2xl lg:text-3xl xl:text-4xl font-bold mb-3">{t('fingerprintScan.scanComplete') || 'Scan Complete!'}</p>
                       <p className="text-base lg:text-lg xl:text-xl opacity-90">
-                        {t('fingerprintScan.reviewAndContinue') || 'Review your results below and click Next to continue'}
+                        {t('fingerprintScan.reviewAndContinue') || 'Click Next to review your detailed results'}
                       </p>
                       <div className="mt-4 flex items-center justify-center gap-2 text-sm lg:text-base opacity-80">
                         <span>👇</span>
@@ -994,21 +827,8 @@ export const FingerprintScanScreen = ({
               </div>
             )}
 
-            {/* Blood Pressure */}
-            {waitingForBloodPressure ? (
-              <div 
-                className="bg-white rounded-2xl p-4"
-                style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
-              >
-                <div className="flex items-center justify-center space-x-3 py-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#407EFF]"></div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-700">{t('fingerprintScan.calculatingBloodPressure') || 'Calculating Blood Pressure'}</p>
-                    <p className="text-xs text-gray-500 mt-1">{t('fingerprintScan.pleaseWait') || 'Please wait...'}</p>
-                  </div>
-                </div>
-              </div>
-            ) : bloodPressure ? (
+            {/* Blood Pressure - Only show if we have the result and not waiting */}
+            {!waitingForBloodPressure && bloodPressure ? (
               <div 
                 className="bg-white rounded-2xl p-4"
                 style={{ boxShadow: '0px 4px 10px 0px rgba(64, 126, 255, 0.20)' }}
@@ -1064,7 +884,7 @@ export const FingerprintScanScreen = ({
                      active:scale-[0.98]
                      disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            <span>{waitingForBloodPressure ? (t('fingerprintScan.pleaseWait') || 'Please wait...') : t('buttons.next')}</span>
+            <span>{isSaving ? (t('fingerprintScan.savingResults') || 'Saving...') : t('buttons.next')}</span>
           </button>
         </div>
       </div>

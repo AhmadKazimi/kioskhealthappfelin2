@@ -44,7 +44,7 @@ export default function NewLayout({
     const { t, i18n } = useTranslation();
     // NEW: Track selected scan type
     const [scanType, setScanType] = useState<'face' | 'fingerprint' | null>(null);
-    const [scanSubStep, setScanSubStep] = useState<'selection' | 'instructions' | 'scanning'>('selection');
+    const [scanSubStep, setScanSubStep] = useState<'selection' | 'instructions' | 'scanning' | 'results'>('selection');
     
     // Load client data from sessionStorage on mount or when step changes to 6 (Health Summary)
     React.useEffect(() => {
@@ -157,6 +157,7 @@ export default function NewLayout({
               }
             } else if (scanSubStep === 'scanning') {
               if (scanType === 'face') {
+                // Face scan does actual scanning, then shows results in FaceScanResult component
                 return (
                   <FaceScanResult
                     userData={userData}
@@ -166,6 +167,7 @@ export default function NewLayout({
                   />
                 );
               } else if (scanType === 'fingerprint') {
+                // Fingerprint scan - show the scanning screen
                 return (
                   <FingerprintScanScreen
                     userId={String(userData.id || '0')}
@@ -173,25 +175,20 @@ export default function NewLayout({
                     userAge={parseInt(userData.age) || 25}
                     userGender={(userData.gender?.toLowerCase() === 'male' ? 'male' : 'female') as 'male' | 'female'}
                     onBack={() => setScanSubStep('instructions')}
-                    onNext={nextStep}
-                    onLocalResults={(results) => {
-                      // Update userData with fingerprint scan results
-                      updateUserData({
-                        vitals: {
-                          heartRate: results.heartRate,
-                          bloodPressure: results.bloodPressure,
-                          hrvSdnnMs: results.hrvSdnnMs,
-                          breathingRate: results.breathingRate,
-                          temperature: results.temperature || 0,
-                          oxygenSaturation: results.oxygenSaturation || 0,
-                          systolicBP: results.systolicBP,
-                          diastolicBP: results.diastolicBP,
-                        }
-                      });
-                    }}
+                    onNext={() => setScanSubStep('results')}
                   />
                 );
               }
+            } else if (scanSubStep === 'results') {
+              // Show results page after fingerprint scanning is complete
+              return (
+                <FaceScanResult
+                  userData={userData}
+                  updateUserData={updateUserData}
+                  onNext={nextStep}
+                  onPrev={() => setScanSubStep('scanning')}
+                />
+              );
             }
             // Fallback to scan type selection if something goes wrong
             return (
