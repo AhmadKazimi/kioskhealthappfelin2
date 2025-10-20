@@ -82,7 +82,7 @@ export const BeforeFingerprintScanning = ({
           >
             {t('buttons.back')}
           </button>
-          <button 
+          <button
             onClick={onStart}
             className="group relative flex items-center justify-center space-x-2 px-4 md:px-6 py-2 md:py-3
                      text-sm md:text-base font-medium text-white bg-gradient-to-r from-[#407EFF] to-[#1E40AF]
@@ -92,7 +92,7 @@ export const BeforeFingerprintScanning = ({
                      focus:outline-none focus:ring-4 focus:ring-[#407EFF]/30
                      active:scale-[0.98]"
           >
-            <span>{t('buttons.startScan')}</span>
+            <span>{t('fingerprintScan.startButton')}</span>
           </button>
         </div>
       </div>

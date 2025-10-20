@@ -186,9 +186,16 @@ export const FingerprintScanScreen = ({
         // Wait for DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 100))
 
-        // Check if video element is available
-        if (!videoRef.current) {
-          throw new Error('Video element not available. DOM may not be ready.')
+        // Check if video element is available with retries
+        let videoElement = videoRef.current
+        if (!videoElement) {
+          console.log(`[${componentId}] ⏳ Video element not ready, waiting...`)
+          await new Promise(resolve => setTimeout(resolve, 200))
+          videoElement = videoRef.current
+        }
+
+        if (!videoElement) {
+          throw new Error('Video element not available after waiting. DOM may not be ready.')
         }
 
         // Check if still mounted
@@ -223,16 +230,37 @@ export const FingerprintScanScreen = ({
           throw new Error('Video element lost during auth')
         }
 
-        // Initialize frame capture service
+        // Initialize frame capture service with retry logic
         frameCaptureRef.current = new FrameCaptureService()
-        await frameCaptureRef.current.initialize(videoRef.current, {
-          width: 640,
-          height: 480,
-          fps: 15
-        })
 
-        console.log(`[${componentId}] ✅ Camera initialized successfully`)
-        setCameraReady(true)
+        try {
+          await frameCaptureRef.current.initialize(videoRef.current, {
+            width: 640,
+            height: 480,
+            fps: 15
+          })
+          console.log(`[${componentId}] ✅ Camera initialized successfully`)
+          setCameraReady(true)
+        } catch (cameraError) {
+          console.warn(`[${componentId}] ⚠️ First camera init attempt failed, retrying...`, cameraError)
+
+          // Wait a bit and retry once
+          await new Promise(resolve => setTimeout(resolve, 500))
+
+          if (!isMountedRef.current) {
+            console.log(`[${componentId}] ⚠️ Component unmounted during camera retry`)
+            return
+          }
+
+          // Retry camera initialization
+          await frameCaptureRef.current.initialize(videoRef.current, {
+            width: 640,
+            height: 480,
+            fps: 15
+          })
+          console.log(`[${componentId}] ✅ Camera initialized successfully on retry`)
+          setCameraReady(true)
+        }
 
         // Mark as successfully initialized (camera + auth only)
         hasInitializedRef.current = true
@@ -244,11 +272,30 @@ export const FingerprintScanScreen = ({
         hasInitializedRef.current = false
 
         if (err instanceof Error) {
-          if (err.message.includes('Authentication') || err.message.includes('Login')) {
+          const errorMessage = err.message.toLowerCase()
+
+          // Check for specific error types
+          if (errorMessage.includes('authentication') || errorMessage.includes('login') || errorMessage.includes('token')) {
             setError(t('fingerprintScan.errors.authenticationFailed'))
-          } else if (err.message.includes('camera') || err.message.includes('Camera')) {
+          } else if (
+            errorMessage.includes('permission') ||
+            errorMessage.includes('notallowederror') ||
+            errorMessage.includes('access denied')
+          ) {
+            // Camera permission denied - legitimate error
             setError(t('fingerprintScan.errors.cameraFailed'))
+          } else if (
+            errorMessage.includes('notfounderror') ||
+            errorMessage.includes('no camera') ||
+            errorMessage.includes('camera not found')
+          ) {
+            // No camera device found
+            setError(t('fingerprintScan.errors.cameraFailed'))
+          } else if (errorMessage.includes('video element')) {
+            // DOM/React rendering issue - show generic message
+            setError('Camera initialization failed. Please try again.')
           } else {
+            // Generic error - show the actual message for debugging
             setError(err.message)
           }
         } else {
