@@ -184,13 +184,13 @@ export const FingerprintScanScreen = ({
         frameCaptureRef.current = null
 
         // Wait for DOM to be ready
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise(resolve => setTimeout(resolve, 200))
 
         // Check if video element is available with retries
         let videoElement = videoRef.current
         if (!videoElement) {
           console.log(`[${componentId}] ⏳ Video element not ready, waiting...`)
-          await new Promise(resolve => setTimeout(resolve, 200))
+          await new Promise(resolve => setTimeout(resolve, 500))
           videoElement = videoRef.current
         }
 

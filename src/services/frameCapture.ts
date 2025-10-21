@@ -25,7 +25,6 @@ export class FrameCaptureService {
         video: {
           width: { ideal: options.width },
           height: { ideal: options.height },
-          facingMode: { ideal: 'environment' },
         },
         audio: false,
       });
