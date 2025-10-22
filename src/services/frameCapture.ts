@@ -1,3 +1,5 @@
+import { ZoomIn } from "lucide-react";
+
 export interface FrameCaptureOptions {
   width: number;
   height: number;
@@ -10,6 +12,47 @@ export class FrameCaptureService {
   private canvas: HTMLCanvasElement | null = null;
   private context: CanvasRenderingContext2D | null = null;
 
+  /**
+   * Helper method to find the desired back camera ID.
+   * It prioritizes the "wide" camera, as it's typically the main lens.
+   */
+  private async getEnvironmentCameraId(): Promise<string | undefined> {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter((device) => device.kind === 'videoinput');
+
+      // Find all back-facing cameras
+      const backCameras = videoDevices.filter((device) =>
+        device.label.toLowerCase().includes('back')
+      );
+      
+      // If no cameras are explicitly labeled "back", we can make an educated guess.
+      // On many mobile devices, the last camera in the list is a back camera.
+      if (backCameras.length === 0 && videoDevices.length > 0) {
+        console.warn("No camera labeled 'back' found, falling back to the last video device.");
+        return videoDevices[videoDevices.length - 1].deviceId;
+      }
+
+      // Prefer the "wide" lens if available, as it's the standard non-zoomed lens
+      const wideCamera = backCameras.find((device) =>
+        device.label.toLowerCase().includes('wide')
+      );
+      if (wideCamera) {
+        console.log('Using wide back camera:', wideCamera.label);
+        return wideCamera.deviceId;
+      }
+
+      // If no "wide" lens is found, fall back to the first available back camera
+      if (backCameras.length > 0) {
+        console.log('Using first available back camera:', backCameras[0].label);
+        return backCameras[0].deviceId;
+      }
+    } catch (error) {
+      console.error('Could not enumerate devices:', error);
+    }
+    return undefined;
+  }
+
   async initialize(
     videoElement: HTMLVideoElement | null,
     options: FrameCaptureOptions = { width: 640, height: 480, fps: 15 }
@@ -21,13 +64,31 @@ export class FrameCaptureService {
     this.videoElement = videoElement;
 
     try {
+      // --- START OF MODIFICATIONS ---
+
+      // 1. Get the specific device ID for the back camera we want.
+      const deviceId = await this.getEnvironmentCameraId();
+      
+      // 2. Create the video constraints object.
+      const videoConstraints: MediaTrackConstraints = {
+        width: { ideal: options.width },
+        height: { ideal: options.height },
+      };
+
+      // 3. Add the specific deviceId if found, otherwise fall back to facingMode.
+      if (deviceId) {
+        videoConstraints.deviceId = { exact: deviceId };
+      } else {
+        videoConstraints.facingMode = { exact: 'environment' };
+      }
+
+      // 4. Request the stream with our specific constraints.
       this.stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: options.width },
-          height: { ideal: options.height },
-        },
+        video: videoConstraints,
         audio: false,
       });
+
+      // --- END OF MODIFICATIONS ---
 
       this.videoElement.srcObject = this.stream;
 
