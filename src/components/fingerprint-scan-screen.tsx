@@ -625,7 +625,11 @@ export const FingerprintScanScreen = ({
 
             {/* Camera Switch Button - Top Right Corner - Only show if multiple cameras available */}
             {cameraReady && !error && hasMultipleCameras && (
-              <div className={`absolute top-4 lg:top-6 z-10 ${isArabic ? 'left-4 lg:left-6' : 'right-4 lg:right-6'}`}>
+              <div className={`absolute z-10 transition-all duration-300 ${
+                scanStarted
+                  ? (isArabic ? 'left-4 lg:left-6 top-20 lg:top-24' : 'right-4 lg:right-6 top-20 lg:top-24')
+                  : (isArabic ? 'left-4 lg:left-6 top-4 lg:top-6' : 'right-4 lg:right-6 top-4 lg:top-6')
+              }`}>
                 <button
                   onClick={handleCameraSwitch}
                   disabled={isSwitchingCamera || (isScanning && !scanComplete)}
