@@ -11,6 +11,8 @@ export class FrameCaptureService {
   private videoElement: HTMLVideoElement | null = null;
   private canvas: HTMLCanvasElement | null = null;
   private context: CanvasRenderingContext2D | null = null;
+  private currentFacingMode: 'user' | 'environment' = 'environment';
+  private options: FrameCaptureOptions = { width: 640, height: 480, fps: 15 };
 
   /**
    * Helper method to find the desired back camera ID.
@@ -62,13 +64,14 @@ export class FrameCaptureService {
     }
 
     this.videoElement = videoElement;
+    this.options = options;
 
     try {
       // --- START OF MODIFICATIONS ---
 
       // 1. Get the specific device ID for the back camera we want.
       const deviceId = await this.getEnvironmentCameraId();
-      
+
       // 2. Create the video constraints object.
       const videoConstraints: MediaTrackConstraints = {
         width: { ideal: options.width },
@@ -117,6 +120,63 @@ export class FrameCaptureService {
     }
     this.context.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
     return this.canvas.toDataURL('image/jpeg', 0.7);
+  }
+
+  async switchCamera(): Promise<void> {
+    if (!this.videoElement) {
+      throw new Error('Video element not initialized');
+    }
+
+    // Toggle the facing mode
+    this.currentFacingMode = this.currentFacingMode === 'environment' ? 'user' : 'environment';
+
+    // Stop the current stream
+    if (this.stream) {
+      this.stream.getTracks().forEach((track) => track.stop());
+      this.stream = null;
+    }
+
+    try {
+      // Create video constraints for the new facing mode
+      const videoConstraints: MediaTrackConstraints = {
+        width: { ideal: this.options.width },
+        height: { ideal: this.options.height },
+        facingMode: { exact: this.currentFacingMode },
+      };
+
+      // Request the new stream
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: videoConstraints,
+        audio: false,
+      });
+
+      this.videoElement.srcObject = this.stream;
+
+      // Wait for the video to be ready
+      await new Promise<void>((resolve, reject) => {
+        if (!this.videoElement) return reject(new Error('Video element is null'));
+        this.videoElement.onloadedmetadata = () => resolve();
+        this.videoElement.onerror = () => reject(new Error('Failed to load video'));
+        setTimeout(() => reject(new Error('Video metadata loading timeout')), 5000);
+      });
+
+      await this.videoElement.play();
+
+      // Update canvas dimensions if they changed
+      if (this.canvas) {
+        this.canvas.width = this.videoElement.videoWidth;
+        this.canvas.height = this.videoElement.videoHeight;
+      }
+
+    } catch (error) {
+      // If switching fails, try to revert to the previous facing mode
+      this.currentFacingMode = this.currentFacingMode === 'environment' ? 'user' : 'environment';
+      throw new Error(`Failed to switch camera: ${error}`);
+    }
+  }
+
+  getCurrentFacingMode(): 'user' | 'environment' {
+    return this.currentFacingMode;
   }
 
   cleanup(): void {

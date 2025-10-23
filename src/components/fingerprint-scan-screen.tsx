@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useTranslation } from "@/hooks/useTranslation"
-import { Heart, Activity, Droplet, Wind } from "lucide-react"
+import { Heart, Activity, Droplet, Wind, SwitchCamera } from "lucide-react"
 import { FingerprintSocketService, VitalsResult, BloodPressureResult, ArrhythmiaResult } from "@/services/fingerprintSocketService"
 import { FrameCaptureService } from "@/services/frameCapture"
 import { saveFingerprintScan } from "@/services/saveFingerprintScan"
@@ -54,6 +54,7 @@ export const FingerprintScanScreen = ({
   const [isScanning, setIsScanning] = useState(false)
   const [scanProgress, setScanProgress] = useState(0)
   const [fingerDetected, setFingerDetected] = useState(false)
+  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false)
 
   // Vitals state
   const [vitals, setVitals] = useState<VitalsResult | null>(null)
@@ -540,6 +541,27 @@ export const FingerprintScanScreen = ({
     }
   }
 
+  // Handle camera switch
+  const handleCameraSwitch = async () => {
+    if (!frameCaptureRef.current || isSwitchingCamera || isScanning) {
+      return
+    }
+
+    setIsSwitchingCamera(true)
+
+    try {
+      console.log('📷 Switching camera...')
+      await frameCaptureRef.current.switchCamera()
+      const newFacingMode = frameCaptureRef.current.getCurrentFacingMode()
+      console.log(`✅ Camera switched to: ${newFacingMode}`)
+    } catch (error) {
+      console.error('❌ Failed to switch camera:', error)
+      setError(error instanceof Error ? error.message : 'Failed to switch camera')
+    } finally {
+      setIsSwitchingCamera(false)
+    }
+  }
+
   return (
     <div className="h-full flex flex-col" dir={isArabic ? 'rtl' : 'ltr'}>
       {/* Scrollable Content Area */}
@@ -589,6 +611,20 @@ export const FingerprintScanScreen = ({
                     </div>
                   </div>
                 )}
+
+            {/* Camera Switch Button - Top Right Corner */}
+            {cameraReady && !error && (
+              <div className={`absolute top-4 lg:top-6 z-10 ${isArabic ? 'left-4 lg:left-6' : 'right-4 lg:right-6'}`}>
+                <button
+                  onClick={handleCameraSwitch}
+                  disabled={isSwitchingCamera || (isScanning && !scanComplete)}
+                  className="flex items-center justify-center rounded-full bg-white/90 p-2 lg:p-3 shadow-lg hover:bg-white hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={t('fingerprintScan.switchCamera') || 'Switch Camera'}
+                >
+                  <SwitchCamera className={`h-5 w-5 lg:h-6 lg:w-6 text-[#407EFF] ${isSwitchingCamera ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            )}
 
             {/* Start Scan Button - Overlay (Both Mobile & Desktop) */}
             {cameraReady && authReady && !scanStarted && !error && (
