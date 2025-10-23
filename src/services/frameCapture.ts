@@ -1,5 +1,3 @@
-import { ZoomIn } from "lucide-react";
-
 export interface FrameCaptureOptions {
   width: number;
   height: number;
@@ -138,10 +136,11 @@ export class FrameCaptureService {
 
     try {
       // Create video constraints for the new facing mode
+      // Use 'ideal' instead of 'exact' to allow fallback if the exact camera isn't available
       const videoConstraints: MediaTrackConstraints = {
         width: { ideal: this.options.width },
         height: { ideal: this.options.height },
-        facingMode: { exact: this.currentFacingMode },
+        facingMode: { ideal: this.currentFacingMode },
       };
 
       // Request the new stream
@@ -171,12 +170,65 @@ export class FrameCaptureService {
     } catch (error) {
       // If switching fails, try to revert to the previous facing mode
       this.currentFacingMode = this.currentFacingMode === 'environment' ? 'user' : 'environment';
+
+      // Provide user-friendly error messages
+      if (error instanceof Error) {
+        if (error.name === 'OverconstrainedError') {
+          throw new Error('Camera switch not available - this device may only have one camera');
+        } else if (error.name === 'NotAllowedError') {
+          throw new Error('Camera permission denied');
+        } else if (error.name === 'NotFoundError') {
+          throw new Error('No camera found');
+        }
+      }
+
       throw new Error(`Failed to switch camera: ${error}`);
     }
   }
 
   getCurrentFacingMode(): 'user' | 'environment' {
     return this.currentFacingMode;
+  }
+
+  /**
+   * Check if the device has multiple cameras available
+   * Returns true if switching cameras is possible
+   */
+  async hasMultipleCameras(): Promise<boolean> {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter((device) => device.kind === 'videoinput');
+
+      // Need at least 2 cameras to switch
+      if (videoDevices.length < 2) {
+        return false;
+      }
+
+      // Check if we can identify both front and back cameras
+      const hasBackCamera = videoDevices.some((device) =>
+        device.label.toLowerCase().includes('back') ||
+        device.label.toLowerCase().includes('environment')
+      );
+
+      const hasFrontCamera = videoDevices.some((device) =>
+        device.label.toLowerCase().includes('front') ||
+        device.label.toLowerCase().includes('user') ||
+        device.label.toLowerCase().includes('face')
+      );
+
+      // If we can identify both types, definitely has multiple cameras
+      if (hasBackCamera && hasFrontCamera) {
+        return true;
+      }
+
+      // Otherwise, just check if there are multiple cameras
+      return videoDevices.length >= 2;
+
+    } catch (error) {
+      console.error('Error checking for multiple cameras:', error);
+      // If we can't check, assume switching might work
+      return true;
+    }
   }
 
   cleanup(): void {

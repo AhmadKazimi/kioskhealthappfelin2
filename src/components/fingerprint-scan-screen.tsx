@@ -55,6 +55,7 @@ export const FingerprintScanScreen = ({
   const [scanProgress, setScanProgress] = useState(0)
   const [fingerDetected, setFingerDetected] = useState(false)
   const [isSwitchingCamera, setIsSwitchingCamera] = useState(false)
+  const [hasMultipleCameras, setHasMultipleCameras] = useState(false)
 
   // Vitals state
   const [vitals, setVitals] = useState<VitalsResult | null>(null)
@@ -242,6 +243,11 @@ export const FingerprintScanScreen = ({
           })
           console.log(`[${componentId}] ✅ Camera initialized successfully`)
           setCameraReady(true)
+
+          // Check if device has multiple cameras for camera switch button
+          const multipleCameras = await frameCaptureRef.current.hasMultipleCameras()
+          console.log(`[${componentId}] 📷 Multiple cameras available: ${multipleCameras}`)
+          setHasMultipleCameras(multipleCameras)
         } catch (cameraError) {
           console.warn(`[${componentId}] ⚠️ First camera init attempt failed, retrying...`, cameraError)
 
@@ -261,6 +267,11 @@ export const FingerprintScanScreen = ({
           })
           console.log(`[${componentId}] ✅ Camera initialized successfully on retry`)
           setCameraReady(true)
+
+          // Check if device has multiple cameras for camera switch button
+          const multipleCameras = await frameCaptureRef.current.hasMultipleCameras()
+          console.log(`[${componentId}] 📷 Multiple cameras available: ${multipleCameras}`)
+          setHasMultipleCameras(multipleCameras)
         }
 
         // Mark as successfully initialized (camera + auth only)
@@ -612,8 +623,8 @@ export const FingerprintScanScreen = ({
                   </div>
                 )}
 
-            {/* Camera Switch Button - Top Right Corner */}
-            {cameraReady && !error && (
+            {/* Camera Switch Button - Top Right Corner - Only show if multiple cameras available */}
+            {cameraReady && !error && hasMultipleCameras && (
               <div className={`absolute top-4 lg:top-6 z-10 ${isArabic ? 'left-4 lg:left-6' : 'right-4 lg:right-6'}`}>
                 <button
                   onClick={handleCameraSwitch}
@@ -793,10 +804,14 @@ export const FingerprintScanScreen = ({
                               height: 480,
                               fps: 30
                             })
-                            
+
                             console.log('✅ Camera initialized - ready to scan')
                             setCameraReady(true)
                             hasInitializedRef.current = true
+
+                            // Check for multiple cameras
+                            const multipleCameras = await frameCaptureRef.current.hasMultipleCameras()
+                            setHasMultipleCameras(multipleCameras)
                             
                           } catch (err) {
                             console.error('❌ Retry initialization error:', err)
